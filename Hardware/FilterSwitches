@@ -1,0 +1,7 @@
+fc      SW IN   SW OUT  INCTL1  INCTL2  INCTL3  OUTCTL1 OUTCTL2 OUTCTL3
+340MHz  RF5     RF2     1       0       1       0       1       0
+500MHz  RF4     RF3     0       0       1       1       1       0  
+750MHz  RF3     RF4     1       1       0       0       0       1
+1.1GHz  RF2     RF5     0       1       0       1       0       1
+1.7GHz  RF1     RF6     1       0       0       1       1       1
+2.5GHz  RF6     RF1     1       1       1       1       0       0
