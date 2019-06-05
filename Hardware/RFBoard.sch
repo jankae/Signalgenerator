@@ -63,6 +63,7 @@
 <layer number="53" name="tPadExt" color="7" fill="1" visible="no" active="no"/>
 <layer number="54" name="bPadExt" color="1" fill="1" visible="no" active="no"/>
 <layer number="56" name="wert" color="7" fill="1" visible="no" active="no"/>
+<layer number="57" name="tCAD" color="7" fill="1" visible="no" active="no"/>
 <layer number="88" name="SimResults" color="9" fill="1" visible="yes" active="yes"/>
 <layer number="89" name="SimProbes" color="9" fill="1" visible="yes" active="yes"/>
 <layer number="90" name="Modules" color="5" fill="1" visible="yes" active="yes"/>
@@ -76,8 +77,68 @@
 <layer number="98" name="Guide" color="6" fill="1" visible="yes" active="yes"/>
 <layer number="99" name="SpiceOrder" color="5" fill="1" visible="yes" active="yes"/>
 <layer number="100" name="Muster" color="7" fill="1" visible="no" active="no"/>
+<layer number="101" name="Patch_Top" color="12" fill="4" visible="yes" active="yes"/>
+<layer number="102" name="Vscore" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="103" name="tMap" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="104" name="Name" color="16" fill="1" visible="yes" active="yes"/>
+<layer number="105" name="tPlate" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="106" name="bPlate" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="107" name="Crop" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="108" name="fp8" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="109" name="fp9" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="110" name="fp0" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="111" name="LPC17xx" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="112" name="tSilk" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="113" name="IDFDebug" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="116" name="Patch_BOT" color="9" fill="4" visible="yes" active="yes"/>
+<layer number="121" name="_tsilk" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="122" name="_bsilk" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="123" name="tTestmark" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="124" name="bTestmark" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="125" name="_tNames" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="126" name="_bNames" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="127" name="_tValues" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="128" name="_bValues" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="131" name="tAdjust" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="132" name="bAdjust" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="144" name="Drill_legend" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="150" name="Notes" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="151" name="HeatSink" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="152" name="_bDocu" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="153" name="FabDoc1" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="154" name="FabDoc2" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="155" name="FabDoc3" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="199" name="Contour" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="200" name="200bmp" color="1" fill="10" visible="yes" active="yes"/>
+<layer number="201" name="201bmp" color="1" fill="10" visible="yes" active="yes"/>
+<layer number="202" name="202bmp" color="3" fill="10" visible="yes" active="yes"/>
+<layer number="203" name="203bmp" color="4" fill="10" visible="yes" active="yes"/>
+<layer number="204" name="204bmp" color="5" fill="10" visible="yes" active="yes"/>
+<layer number="205" name="205bmp" color="6" fill="10" visible="yes" active="yes"/>
+<layer number="206" name="206bmp" color="7" fill="10" visible="yes" active="yes"/>
+<layer number="207" name="207bmp" color="8" fill="10" visible="yes" active="yes"/>
+<layer number="208" name="208bmp" color="9" fill="10" visible="yes" active="yes"/>
+<layer number="209" name="209bmp" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="210" name="210bmp" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="211" name="211bmp" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="212" name="212bmp" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="213" name="213bmp" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="214" name="214bmp" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="215" name="215bmp" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="216" name="216bmp" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="217" name="217bmp" color="18" fill="1" visible="no" active="no"/>
+<layer number="218" name="218bmp" color="19" fill="1" visible="no" active="no"/>
+<layer number="219" name="219bmp" color="20" fill="1" visible="no" active="no"/>
+<layer number="220" name="220bmp" color="21" fill="1" visible="no" active="no"/>
+<layer number="221" name="221bmp" color="22" fill="1" visible="no" active="no"/>
+<layer number="222" name="222bmp" color="23" fill="1" visible="no" active="no"/>
+<layer number="223" name="223bmp" color="24" fill="1" visible="no" active="no"/>
+<layer number="224" name="224bmp" color="25" fill="1" visible="no" active="no"/>
+<layer number="248" name="Housing" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="249" name="Edge" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="250" name="Descript" color="3" fill="1" visible="no" active="no"/>
 <layer number="251" name="SMDround" color="12" fill="11" visible="no" active="no"/>
+<layer number="254" name="cooling" color="7" fill="1" visible="yes" active="yes"/>
 </layers>
 <schematic xreflabel="%F%N/%S.%C%R" xrefpart="/%S.%C%R">
 <libraries>
@@ -18690,6 +18751,68 @@ Source: www.kingbright.com</description>
 </deviceset>
 </devicesets>
 </library>
+<library name="connector">
+<description>&lt;b&gt;LAB11&lt;/b&gt; - Connectors for various cable types.</description>
+<packages>
+<package name="U.FL_SMT">
+<description>U.FL SMT Antenna Connector</description>
+<smd name="GND2" x="1.475" y="0" dx="2.2" dy="1.05" layer="1" rot="R90"/>
+<smd name="GND1" x="-1.475" y="0" dx="2.2" dy="1.05" layer="1" rot="R90"/>
+<smd name="SIG" x="0" y="-1.525" dx="1.05" dy="1" layer="1" rot="R90"/>
+<wire x1="-1.5" y1="1.3" x2="-1.5" y2="-1.3" width="0.127" layer="51"/>
+<wire x1="-0.3" y1="-1.55" x2="0.3" y2="-1.55" width="0.127" layer="51"/>
+<wire x1="1.5" y1="1.3" x2="1.5" y2="-1.3" width="0.127" layer="51"/>
+<wire x1="-1.5" y1="-1.3" x2="-0.3" y2="-1.3" width="0.127" layer="51"/>
+<wire x1="-0.3" y1="-1.3" x2="-0.3" y2="-1.55" width="0.127" layer="51"/>
+<wire x1="0.3" y1="-1.3" x2="0.3" y2="-1.55" width="0.127" layer="51"/>
+<wire x1="0.3" y1="-1.3" x2="1.5" y2="-1.3" width="0.127" layer="51"/>
+<wire x1="-1" y1="0" x2="1" y2="0" width="0.127" layer="51" curve="180"/>
+<wire x1="-0.3" y1="1.55" x2="0.3" y2="1.55" width="0.127" layer="51"/>
+<wire x1="-0.3" y1="1.55" x2="-0.3" y2="1.3" width="0.127" layer="51"/>
+<wire x1="-0.3" y1="1.3" x2="-0.3" y2="1" width="0.127" layer="51"/>
+<wire x1="0.3" y1="1.55" x2="0.3" y2="1.3" width="0.127" layer="51"/>
+<wire x1="0.3" y1="1.3" x2="0.3" y2="1" width="0.127" layer="51"/>
+<wire x1="-1.5" y1="1.3" x2="-0.3" y2="1.3" width="0.127" layer="51"/>
+<wire x1="0.3" y1="1.3" x2="1.5" y2="1.3" width="0.127" layer="51"/>
+<wire x1="-1" y1="0" x2="1" y2="0" width="0.127" layer="51" curve="-180"/>
+<rectangle x1="-0.95" y1="-1.1" x2="0.95" y2="1.1" layer="39"/>
+<text x="0" y="2.794" size="1.016" layer="25" font="vector" ratio="12" rot="R180" align="bottom-center">&gt;NAME</text>
+</package>
+</packages>
+<symbols>
+<symbol name="SMA">
+<description>4 support pin sma connector</description>
+<circle x="0" y="0" radius="2.54" width="0.254" layer="94"/>
+<pin name="ANT" x="-2.54" y="0" visible="off" length="short"/>
+<pin name="P$2" x="0" y="-5.08" visible="off" length="short" rot="R90"/>
+<text x="0" y="3.048" size="1.27" layer="95">&gt;NAME</text>
+<text x="2.54" y="-2.54" size="1.27" layer="96">&gt;VALUE</text>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="U.FL-R-SMT" prefix="J">
+<description>U.FL-R-SMT Antenna Connector</description>
+<gates>
+<gate name="G$1" symbol="SMA" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="U.FL_SMT">
+<connects>
+<connect gate="G$1" pin="ANT" pad="SIG"/>
+<connect gate="G$1" pin="P$2" pad="GND1 GND2"/>
+</connects>
+<technologies>
+<technology name="">
+<attribute name="DIGIKEY" value="H122041-ND" constant="no"/>
+<attribute name="MANUFACTURER" value="Hirose" constant="no"/>
+<attribute name="MPN" value="U.FL-R-SMT-1(01)" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 </attributes>
@@ -19352,6 +19475,9 @@ Source: www.kingbright.com</description>
 <part name="GND209" library="supply1" deviceset="GND" device=""/>
 <part name="GND210" library="supply1" deviceset="GND" device=""/>
 <part name="GND211" library="supply1" deviceset="GND" device=""/>
+<part name="J1" library="connector" deviceset="U.FL-R-SMT" device=""/>
+<part name="GND212" library="supply1" deviceset="GND" device=""/>
+<part name="C184" library="rcl" deviceset="C-EU" device="C0603" value="100n"/>
 </parts>
 <sheets>
 <sheet>
@@ -26176,6 +26302,17 @@ output power</text>
 <instance part="GND205" gate="1" x="93.98" y="50.8" smashed="yes">
 <attribute name="VALUE" x="91.44" y="48.26" size="1.778" layer="96"/>
 </instance>
+<instance part="J1" gate="G$1" x="127" y="170.18" smashed="yes">
+<attribute name="NAME" x="127" y="173.228" size="1.27" layer="95"/>
+<attribute name="VALUE" x="129.54" y="167.64" size="1.27" layer="96"/>
+</instance>
+<instance part="GND212" gate="1" x="127" y="162.56" smashed="yes" rot="MR0">
+<attribute name="VALUE" x="129.54" y="160.02" size="1.778" layer="96" rot="MR0"/>
+</instance>
+<instance part="C184" gate="G$1" x="116.84" y="170.18" smashed="yes" rot="R90">
+<attribute name="NAME" x="116.459" y="171.704" size="1.778" layer="95" rot="R90"/>
+<attribute name="VALUE" x="121.539" y="171.704" size="1.778" layer="96" rot="R90"/>
+</instance>
 </instances>
 <busses>
 <bus name="IQDAC:CLKN,CLKP,DORI,I[0..11],Q[0..11],SELIQ">
@@ -26365,6 +26502,10 @@ output power</text>
 <pinref part="GND205" gate="1" pin="GND"/>
 <pinref part="C183" gate="G$1" pin="2"/>
 <wire x1="93.98" y1="53.34" x2="93.98" y2="55.88" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="J1" gate="G$1" pin="P$2"/>
+<pinref part="GND212" gate="1" pin="GND"/>
 </segment>
 </net>
 <net name="I0" class="0">
@@ -26862,8 +27003,12 @@ output power</text>
 <segment>
 <pinref part="R76" gate="G$1" pin="1"/>
 <wire x1="104.14" y1="127" x2="111.76" y2="127" width="0.1524" layer="91"/>
-<label x="111.76" y="129.54" size="1.778" layer="95" rot="R90" xref="yes"/>
-<wire x1="111.76" y1="127" x2="111.76" y2="129.54" width="0.1524" layer="91"/>
+<label x="109.22" y="170.18" size="1.778" layer="95" rot="R180" xref="yes"/>
+<wire x1="111.76" y1="127" x2="111.76" y2="170.18" width="0.1524" layer="91"/>
+<wire x1="111.76" y1="170.18" x2="109.22" y2="170.18" width="0.1524" layer="91"/>
+<pinref part="C184" gate="G$1" pin="1"/>
+<wire x1="114.3" y1="170.18" x2="111.76" y2="170.18" width="0.1524" layer="91"/>
+<junction x="111.76" y="170.18"/>
 </segment>
 </net>
 <net name="EN_INTREF" class="0">
@@ -27029,6 +27174,13 @@ output power</text>
 <wire x1="96.52" y1="157.48" x2="96.52" y2="139.7" width="0.1524" layer="91"/>
 <pinref part="U1" gate="B3" pin="IO_L36P_3"/>
 <wire x1="96.52" y1="139.7" x2="88.9" y2="139.7" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$178" class="0">
+<segment>
+<pinref part="C184" gate="G$1" pin="2"/>
+<pinref part="J1" gate="G$1" pin="ANT"/>
+<wire x1="121.92" y1="170.18" x2="124.46" y2="170.18" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
@@ -27448,6 +27600,69 @@ output power</text>
 </nets>
 </sheet>
 </sheets>
+<errors>
+<approved hash="104,1,40.64,162.56,IC3,VIN,+5V,,,"/>
+<approved hash="104,1,60.96,162.56,IC3,VOUT,N$10,,,"/>
+<approved hash="104,1,40.64,139.7,IC4,VIN,+5V,,,"/>
+<approved hash="104,1,60.96,139.7,IC4,VOUT,N$11,,,"/>
+<approved hash="104,1,40.64,114.3,IC5,VIN,+5V,,,"/>
+<approved hash="104,1,60.96,114.3,IC5,VOUT,N$13,,,"/>
+<approved hash="104,2,17.78,165.1,IC7,VIN,+5V,,,"/>
+<approved hash="104,2,38.1,165.1,IC7,VOUT,N$22,,,"/>
+<approved hash="104,2,17.78,142.24,IC8,VIN,+5V,,,"/>
+<approved hash="104,2,38.1,142.24,IC8,VOUT,DAC_DIG3.3,,,"/>
+<approved hash="104,2,134.62,165.1,IC9,VIN,+5V,,,"/>
+<approved hash="104,2,114.3,165.1,IC9,VOUT,N$25,,,"/>
+<approved hash="104,2,121.92,142.24,IC10,VIN,+5V,,,"/>
+<approved hash="104,2,101.6,142.24,IC10,VOUT,N$26,,,"/>
+<approved hash="104,4,17.78,167.64,IC18,VIN,+5V,,,"/>
+<approved hash="104,4,38.1,167.64,IC18,VOUT,PLL_DIG3,,,"/>
+<approved hash="104,4,17.78,96.52,IC19,VIN,+5V,,,"/>
+<approved hash="104,4,38.1,96.52,IC19,VOUT,DAC_DIG3.2,,,"/>
+<approved hash="104,4,167.64,73.66,IC20P,V+,N$112,,,"/>
+<approved hash="104,4,167.64,58.42,IC20P,V-,GND,,,"/>
+<approved hash="104,5,233.68,78.74,IC29,VIN,+5V,,,"/>
+<approved hash="104,5,213.36,78.74,IC29,VOUT,SETDAC_VCC,,,"/>
+<approved hash="104,6,165.1,134.62,U4,VCC,+3V3,,,"/>
+<approved hash="104,7,220.98,73.66,IC13,VDDA,+3V3,,,"/>
+<approved hash="104,7,220.98,71.12,IC13,VSSA,GND,,,"/>
+<approved hash="104,7,15.24,53.34,IC13PWR,VDD,+3V3,,,"/>
+<approved hash="104,7,17.78,17.78,IC13PWR,VSS,GND,,,"/>
+<approved hash="104,7,20.32,53.34,IC13PWR,VDD,+3V3,,,"/>
+<approved hash="104,7,22.86,17.78,IC13PWR,VSS,GND,,,"/>
+<approved hash="104,7,25.4,53.34,IC13PWR,VDD,+3V3,,,"/>
+<approved hash="104,4,30.48,129.54,TC1,VCC,N$181,,,"/>
+<approved hash="108,4,187.96,99.06,+5V,,,,,"/>
+<approved hash="110,7,137.16,83.82,TX,GND,,,,"/>
+<approved hash="110,7,137.16,83.82,TX,GND,,,,"/>
+<approved hash="110,7,172.72,86.36,SWCLK,TX,,,,"/>
+<approved hash="110,7,172.72,86.36,SWCLK,TX,,,,"/>
+<approved hash="110,7,111.76,129.54,N$184,10MHZ_REF,,,,"/>
+<approved hash="113,1,130.071,89.431,FRAME1,,,,,"/>
+<approved hash="113,1,212.27,139.7,L1,,,,,"/>
+<approved hash="113,1,217.35,139.7,L2,,,,,"/>
+<approved hash="113,2,130.071,89.431,FRAME2,,,,,"/>
+<approved hash="113,3,130.071,89.431,FRAME3,,,,,"/>
+<approved hash="113,4,130.071,89.431,FRAME4,,,,,"/>
+<approved hash="113,4,180.34,85.2703,L56,,,,,"/>
+<approved hash="113,5,130.071,89.431,FRAME5,,,,,"/>
+<approved hash="113,4,30.48,69.6697,L57,,,,,"/>
+<approved hash="113,5,93.98,82.3697,L67,,,,,"/>
+<approved hash="113,3,31.9303,142.24,L68,,,,,"/>
+<approved hash="113,3,224.97,139.7,L69,,,,,"/>
+<approved hash="113,6,130.071,89.431,FRAME6,,,,,"/>
+<approved hash="113,6,73.66,44.1604,JTAG,,,,,"/>
+<approved hash="113,7,130.071,89.431,FRAME7,,,,,"/>
+<approved hash="113,7,185.657,44.6761,SWD,,,,,"/>
+<approved hash="113,7,131.843,87.8561,UART,,,,,"/>
+<approved hash="113,7,182.88,161,SV2,,,,,"/>
+<approved hash="113,8,130.071,89.431,FRAME8,,,,,"/>
+<approved hash="113,8,68.9017,69.85,LED1,,,,,"/>
+<approved hash="113,8,76.5217,69.85,LED2,,,,,"/>
+<approved hash="113,8,84.1417,69.85,LED3,,,,,"/>
+<approved hash="113,8,91.7617,69.85,LED4,,,,,"/>
+<approved hash="113,8,99.3817,69.85,LED5,,,,,"/>
+</errors>
 </schematic>
 </drawing>
 <compatibility>
