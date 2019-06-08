@@ -1,3 +1,9 @@
 Hardware/*.s#*
 Hardware/*.b#*
+Software/FreeRTOS_TAD_logs
+Software/RemoteSystemsTempFiles
+Software/.metadata
+Software/*/.settings
+Software/*/Debug
+Software/*/Release
 
