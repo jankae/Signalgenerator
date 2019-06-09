@@ -23,7 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "app.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -117,6 +117,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  app();
   while (1)
   {
     /* USER CODE END WHILE */
@@ -211,16 +212,9 @@ static void MX_ADC_Init(void)
   }
   /** Configure for the selected ADC regular channel to be converted. 
   */
-  sConfig.Channel = ADC_CHANNEL_0;
-  sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
-  sConfig.SamplingTime = ADC_SAMPLETIME_55CYCLES_5;
-  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure for the selected ADC regular channel to be converted. 
-  */
   sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
+  sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
   if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -425,27 +419,29 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, DET_SCI4_Pin|DB15_3_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, DET_EN_Pin|DB15_3_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOF, DB15_2_Pin|DB15_1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DET_SCI4_GPIO_Port, DET_SCI4_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, EN_DIRECT_Pin|EN_INTREF_Pin|ADF_CE_Pin|FPGA_CS_Pin 
-                          |SYNTH_CE_Pin|ADF_LE_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOF, DB15_2_Pin|DB15_1_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, MIX_EN_Pin|OFFSET_CS_Pin|SYNTH_RF_EN_Pin|SYNTH_LE_Pin 
-                          |DBM_CS_Pin|DET_SCI3_Pin|DET_SCI1_Pin|DET_SCI2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, EN_DIRECT_Pin|EN_INTREF_Pin|FPGA_CS_Pin, GPIO_PIN_SET);
 
-  /*Configure GPIO pin : DET_EN_Pin */
-  GPIO_InitStruct.Pin = DET_EN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(DET_EN_GPIO_Port, &GPIO_InitStruct);
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, ADF_CE_Pin|SYNTH_CE_Pin|ADF_LE_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : DET_SCI4_Pin DB15_3_Pin */
-  GPIO_InitStruct.Pin = DET_SCI4_Pin|DB15_3_Pin;
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, MIX_EN_Pin|SYNTH_RF_EN_Pin|SYNTH_LE_Pin|DET_SCI3_Pin 
+                          |DET_SCI1_Pin|DET_SCI2_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, OFFSET_CS_Pin|DBM_CS_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pins : DET_EN_Pin DET_SCI4_Pin DB15_3_Pin */
+  GPIO_InitStruct.Pin = DET_EN_Pin|DET_SCI4_Pin|DB15_3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -467,11 +463,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ADF_MUX_Pin SYNTH_LD_Pin */
-  GPIO_InitStruct.Pin = ADF_MUX_Pin|SYNTH_LD_Pin;
+  /*Configure GPIO pin : ADF_MUX_Pin */
+  GPIO_InitStruct.Pin = ADF_MUX_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(ADF_MUX_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : MIX_EN_Pin OFFSET_CS_Pin SYNTH_RF_EN_Pin SYNTH_LE_Pin 
                            DBM_CS_Pin DET_SCI3_Pin DET_SCI1_Pin DET_SCI2_Pin */
@@ -495,6 +491,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.Alternate = GPIO_AF0_MCO;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SYNTH_LD_Pin */
+  GPIO_InitStruct.Pin = SYNTH_LD_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(SYNTH_LD_GPIO_Port, &GPIO_InitStruct);
 
 }
 
