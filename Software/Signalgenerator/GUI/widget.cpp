@@ -150,7 +150,6 @@ Widget* Widget::IntSelectChild() {
 
 void Widget::select(bool down) {
 	if(this != selectedWidget) {
-		/* de-select currently selected widget */
 		Widget *newSel = nullptr;
 		if(selectable) {
 			newSel = this;
@@ -169,6 +168,7 @@ void Widget::select(bool down) {
 			}
 		}
 		bool refreshDesktop = (selectedWidget == nullptr) ^ (newSel == nullptr);
+		/* de-select currently selected widget */
 		if (selectedWidget) {
 			selectedWidget->selected = false;
 			selectedWidget->requestRedraw();

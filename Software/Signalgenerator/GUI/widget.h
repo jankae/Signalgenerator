@@ -31,8 +31,8 @@ public:
 		Window,
 		Scopescreen,
 		Menu,
-		MenuEntry,
 		MenuBool,
+		MenuBack,
 	};
 
 	Widget();

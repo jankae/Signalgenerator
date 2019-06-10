@@ -461,3 +461,20 @@ void display_SetDefaultArea() {
 	active.minY = 0;
 	active.maxY = DISPLAY_HEIGHT - 1;
 }
+
+void display_AutoCenterString(const char* s, coords_t upperLeft,
+		coords_t lowerRight) {
+	uint16_t lenS = strlen(s);
+	uint16_t lenX = lowerRight.x - upperLeft.x + 1;
+	uint16_t lenY = lowerRight.y - upperLeft.y + 1;
+	font_t font = Font_Big;
+	if (lenX < lenS * Font_Medium.width || lenY < Font_Medium.height) {
+		font = Font_Small;
+	} else if (lenX < lenS * Font_Big.width || lenY < Font_Big.height) {
+		font = Font_Medium;
+	}
+	uint16_t shiftX = (lenX - lenS * font.width) / 2;
+	uint16_t shiftY = (lenY - font.height) / 2;
+	display_SetFont(font);
+	display_String(upperLeft.x + shiftX, upperLeft.y + shiftY, s);
+}

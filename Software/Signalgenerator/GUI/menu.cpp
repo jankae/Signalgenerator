@@ -1,7 +1,8 @@
 #include "menu.hpp"
 
+#include "buttons.h"
 
-Menu::Menu(coords_t size) {
+Menu::Menu(const char *name, coords_t size) {
 	this->size = size;
 	selectable = true;
 	nentries = 0;
@@ -10,6 +11,13 @@ Menu::Menu(coords_t size) {
 	usePages = false;
 	entriesPerPage = size.y / EntrySizeY;
 	redrawChild = true;
+	inSubMenu = false;
+	this->name = new char[strlen(name) + 1];
+	strcpy(this->name, name);
+}
+
+Menu::~Menu() {
+	delete name;
 }
 
 bool Menu::AddEntry(MenuEntry* e) {
@@ -35,9 +43,15 @@ bool Menu::AddEntry(MenuEntry* e) {
 		firstEntry = e;
 	}
 	e->parent = this;
-	e->size.x = EntrySizeX - 2;
-	e->size.y = EntrySizeY - 4;
-	e->setPosition(COORDS(size.x - EntrySizeX + 2, 2));
+	if (e->getType() == Widget::Type::Menu) {
+		// adding a submenu
+		e->size = this->size;
+		e->setPosition(COORDS(0, 0));
+	} else {
+		e->size.x = EntrySizeX - 2;
+		e->size.y = EntrySizeY - 4;
+		e->setPosition(COORDS(size.x - EntrySizeX + 2, 2));
+	}
 	nentries++;
 	entriesPerPage = size.y / EntrySizeY;
 	if (nentries > entriesPerPage) {
@@ -83,6 +97,9 @@ void Menu::draw(coords_t offset) {
 	if (redrawChild) {
 		this->drawChildren(offset);
 		redrawChild = false;
+	}
+	if (inSubMenu) {
+		return;
 	}
 	// get offset of first entry on page
 	uint8_t pageOffset = (uint8_t) (selectedEntry / entriesPerPage)
@@ -146,6 +163,12 @@ void Menu::draw(coords_t offset) {
 }
 
 void Menu::drawChildren(coords_t offset) {
+	if (inSubMenu) {
+		// a submenu is active, draw it instead
+		auto submenu = firstEntry->GetNth(selectedEntry);
+		Widget::draw(submenu, offset);
+		return;
+	}
 	if (firstChild) {
 		Widget::draw(firstChild, offset);
 	}
@@ -157,7 +180,17 @@ void Menu::drawChildren(coords_t offset) {
 		if (i + pageOffset >= nentries) {
 			break;
 		}
-		Widget::draw(entry, COORDS(offset.x, offset.y + i * EntrySizeY));
+		if (entry->getType() == Widget::Type::Menu) {
+			// draw the submenu name
+			auto submenu = static_cast<Menu*>(entry);
+			coords_t upperLeft = COORDS(offset.x + size.x - EntrySizeX + 2,
+					offset.y + i * EntrySizeY + 2);
+			coords_t lowerRight = COORDS(offset.x + size.x,
+					offset.y + (i + 1) * EntrySizeY - 2);
+			display_AutoCenterString(submenu->name, upperLeft, lowerRight);
+		} else {
+			Widget::draw(entry, COORDS(offset.x, offset.y + i * EntrySizeY));
+		}
 		entry = static_cast<MenuEntry*>(entry->next);
 	}
 }
@@ -167,6 +200,11 @@ coords_t Menu::getAvailableArea() {
 }
 
 void Menu::input(GUIEvent_t* ev) {
+	if (inSubMenu) {
+		// pass on event to submenu
+		firstEntry->GetNth(selectedEntry)->input(ev);
+		return;
+	}
 	switch (ev->type) {
 	case EVENT_ENCODER_MOVED: {
 		uint8_t old_page = selectedEntry / entriesPerPage;
@@ -210,14 +248,33 @@ void Menu::input(GUIEvent_t* ev) {
 			uint8_t old_selected = selectedEntry;
 			uint8_t pageOffset = (uint8_t) (selectedEntry / entriesPerPage)
 					* entriesPerPage;
-			selectedEntry = ev->pos.y / EntrySizeY + pageOffset;
-			if (old_selected != selectedEntry) {
+			uint8_t new_selected = ev->pos.y / EntrySizeY + pageOffset;
+			if (new_selected >= nentries) {
+				// touched at a spot where no entry is available
+				ev->type = EVENT_NONE;
+				break;
+			}
+			if (old_selected != new_selected) {
+				selectedEntry = new_selected;
 				this->requestRedraw();
 			}
 			// do not reset ev->type as the touch event will be passed on to the selected entry
 		}
 	}
 		break;
+	case EVENT_BUTTON_CLICKED: {
+		if(ev->button & BUTTON_ESC) {
+			if (parent) {
+				parent->select(false);
+				if (parent->getType() == Widget::Type::Menu) {
+					// leaving this submenu
+					auto parent_menu = static_cast<Menu*>(parent);
+					parent_menu->inSubMenu = false;
+					parent_menu->PageSwitched();
+				}
+			}
+		}
+	}
 	}
 	if (ev->type != EVENT_NONE) {
 		// pass on to selected entry
@@ -229,7 +286,34 @@ void Menu::input(GUIEvent_t* ev) {
 			ev->pos.y -= 2 + (selectedEntry % entriesPerPage) * EntrySizeY;
 			;
 		}
-		Widget::input(firstEntry->GetNth(selectedEntry), ev);
+		auto entry = firstEntry->GetNth(selectedEntry);
+		if (entry->getType() == Widget::Type::Menu) {
+			// the event is for a submenu
+			if (ev->type == EVENT_TOUCH_PRESSED
+					|| (ev->type == EVENT_BUTTON_CLICKED
+							&& (ev->button & BUTTON_ENCODER))) {
+				// entering submenu
+				inSubMenu = true;
+				entry->select();
+				static_cast<Menu*>(entry)->PageSwitched();
+			}
+		} else if (entry->getType() == Widget::Type::MenuBack) {
+			if (ev->type == EVENT_TOUCH_PRESSED
+					|| (ev->type == EVENT_BUTTON_CLICKED
+							&& (ev->button & BUTTON_ENCODER))) {
+				if (parent) {
+					parent->select(false);
+					if (parent->getType() == Widget::Type::Menu) {
+						// leaving this submenu
+						auto parent_menu = static_cast<Menu*>(parent);
+						parent_menu->inSubMenu = false;
+						parent_menu->PageSwitched();
+					}
+				}
+			}
+		} else {
+			Widget::input(entry, ev);
+		}
 	}
 }
 

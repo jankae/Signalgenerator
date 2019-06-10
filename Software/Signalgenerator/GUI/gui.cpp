@@ -12,6 +12,7 @@ TaskHandle_t GUIHandle;
 
 #include "menu.hpp"
 #include "MenuBool.hpp"
+#include "MenuBack.hpp"
 
 static void guiThread(void) {
 	GUIHandle = xTaskGetCurrentTaskHandle();
@@ -24,7 +25,7 @@ static void guiThread(void) {
 
 //	desktop_Draw();
 
-	Menu *test = new Menu(SIZE(DISPLAY_WIDTH, DISPLAY_HEIGHT));
+	Menu *test = new Menu("", SIZE(DISPLAY_WIDTH, DISPLAY_HEIGHT));
 	bool values[8] = { true, false, true, false, true, false, true, false };
 	test->AddEntry(new MenuBool("Entry1", &values[0], nullptr));
 	test->AddEntry(new MenuBool("Entry2", &values[1], nullptr));
@@ -32,8 +33,12 @@ static void guiThread(void) {
 	test->AddEntry(new MenuBool("Entry4", &values[3], nullptr));
 	test->AddEntry(new MenuBool("Entry5", &values[4], nullptr));
 	test->AddEntry(new MenuBool("Entry6", &values[5], nullptr));
-	test->AddEntry(new MenuBool("Entry7", &values[6], nullptr));
-	test->AddEntry(new MenuBool("Entry8", &values[7], nullptr));
+
+	Menu *sub = new Menu("SubMenu", SIZE(DISPLAY_WIDTH, DISPLAY_HEIGHT));
+	sub->AddEntry(new MenuBool("Entry7", &values[6], nullptr));
+	sub->AddEntry(new MenuBool("Entry8", &values[7], nullptr));
+	sub->AddEntry(new MenuBack());
+	test->AddEntry(sub);
 
 	topWidget = test;
 	test->select();

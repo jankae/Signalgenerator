@@ -16,7 +16,6 @@ public:
 	MenuEntry(){};
 	virtual ~MenuEntry(){};
 protected:
-	Widget::Type getType() override { return Widget::Type::MenuEntry; };
 };
 
 
