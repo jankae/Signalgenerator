@@ -7,6 +7,7 @@ MenuBool::MenuBool(const char *name, bool *value, void (*cb)(Widget&)) {
 	strncpy(this->name, name, MaxNameLength);
 	this->name[MaxNameLength] = 0;
 	this->callback = cb;
+	selectable = false;
 }
 
 void MenuBool::draw(coords_t offset) {

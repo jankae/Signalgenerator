@@ -1,4 +1,4 @@
-#include "progressbar.h"
+#include <progressbar.hpp>
 
 ProgressBar::ProgressBar(coords_t size) {
 	this->size = size;

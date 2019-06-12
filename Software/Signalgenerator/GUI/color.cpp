@@ -1,4 +1,4 @@
-#include "color.h"
+#include <color.hpp>
 
 color_t color_Tint(color_t orig, color_t tint, uint8_t factor) {
 	uint8_t r = COLOR_R(orig)

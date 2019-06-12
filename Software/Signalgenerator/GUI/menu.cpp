@@ -6,7 +6,6 @@ Menu::Menu(const char *name, coords_t size) {
 	this->size = size;
 	selectable = true;
 	nentries = 0;
-	firstEntry = nullptr;
 	selectedEntry = 0;
 	usePages = false;
 	entriesPerPage = size.y / EntrySizeY;
@@ -21,9 +20,9 @@ Menu::~Menu() {
 }
 
 bool Menu::AddEntry(MenuEntry* e) {
-	if (firstEntry) {
+	if (firstChild) {
 		/* find end of entry list */
-		Widget *entry = firstEntry;
+		Widget *entry = firstChild;
 		do {
 			if (entry == e) {
 				/* this widget has already been added, this must never happen */
@@ -40,7 +39,7 @@ bool Menu::AddEntry(MenuEntry* e) {
 		entry->next = e;
 	} else {
 		/* this is the first child */
-		firstEntry = e;
+		firstChild = e;
 	}
 	e->parent = this;
 	if (e->getType() == Widget::Type::Menu) {
@@ -48,9 +47,9 @@ bool Menu::AddEntry(MenuEntry* e) {
 		e->size = this->size;
 		e->setPosition(COORDS(0, 0));
 	} else {
-		e->size.x = EntrySizeX - 2;
+		e->size.x = size.x - 2;
 		e->size.y = EntrySizeY - 4;
-		e->setPosition(COORDS(size.x - EntrySizeX + 2, 2));
+		e->setPosition(COORDS(2, 2));
 	}
 	nentries++;
 	entriesPerPage = size.y / EntrySizeY;
@@ -61,29 +60,6 @@ bool Menu::AddEntry(MenuEntry* e) {
 	return true;
 }
 
-bool Menu::AddWidget(Widget* w) {
-	if(firstChild) {
-		/* window already has a widget in it */
-		CRIT_ERROR("Window already has a widget");
-	}
-	coords_t maxSize = getAvailableArea();
-	if(w->getSize().x > maxSize.x || w->getSize().y > maxSize.y) {
-		/* widget doesn't fit in window */
-		/* This potentially allows for a memory leak if the application doesn't check for
-		 * a return code. The widget (which failed to be attached to the window) won't get freed
-		 * when the window is closed.
-		 * Workaround: As an empty window is not useful at all, this will only happen during
-		 * a software error -> display error message */
-		CRIT_ERROR("Widget too big for window");
-	}
-	firstChild = w;
-	redrawChild = 1;
-	w->parent = this;
-	/* set child offset */
-	w->setPosition(COORDS(0, 0));
-	return true;
-}
-
 void Menu::draw(coords_t offset) {
 	if (!nentries) {
 		CRIT_ERROR("Menu needs at least one entry");
@@ -91,8 +67,8 @@ void Menu::draw(coords_t offset) {
 	/* calculate corners */
 	coords_t upperLeft = offset;
 	coords_t lowerRight = upperLeft;
-	lowerRight.x += size.x - 1;
-	lowerRight.y += size.y - 1;
+	lowerRight.x += size.x;
+	lowerRight.y += size.y;
 	// trigger possible child redraw preventively here to allow menu entries to draw over menu screen
 	if (redrawChild) {
 		this->drawChildren(offset);
@@ -104,27 +80,27 @@ void Menu::draw(coords_t offset) {
 	// get offset of first entry on page
 	uint8_t pageOffset = (uint8_t) (selectedEntry / entriesPerPage)
 			* entriesPerPage;
-//	MenuEntry *entry = static_cast<MenuEntry*>(firstEntry->GetNth(pageOffset));
+//	MenuEntry *entry = static_cast<MenuEntry*>(firstChild->GetNth(pageOffset));
 	for (uint8_t i = 0; i < entriesPerPage; i++) {
 		if (i + pageOffset >= nentries) {
 			break;
 		}
-		if (i + pageOffset == selectedEntry) {
+		if (i + pageOffset == selectedEntry && selected) {
 			display_SetForeground(Selected);
 		} else {
 			display_SetForeground(Foreground);
 		}
-		display_HorizontalLine(lowerRight.x - EntrySizeX + 1,
-				upperLeft.y + i * EntrySizeY, EntrySizeX);
-		display_HorizontalLine(lowerRight.x - EntrySizeX + 1,
-				upperLeft.y + i * EntrySizeY + 1, EntrySizeX);
-		display_HorizontalLine(lowerRight.x - EntrySizeX + 1,
-				upperLeft.y + (i + 1) * EntrySizeY - 1, EntrySizeX);
-		display_HorizontalLine(lowerRight.x - EntrySizeX + 1,
-				upperLeft.y + (i + 1) * EntrySizeY - 2, EntrySizeX);
-		display_VerticalLine(lowerRight.x - EntrySizeX,
+		display_HorizontalLine(upperLeft.x + 1, upperLeft.y + i * EntrySizeY,
+				size.x - 1);
+		display_HorizontalLine(upperLeft.x + 1,
+				upperLeft.y + i * EntrySizeY + 1, size.x - 1);
+		display_HorizontalLine(upperLeft.x + 1,
+				upperLeft.y + (i + 1) * EntrySizeY - 1, size.x - 1);
+		display_HorizontalLine(upperLeft.x + 1,
+				upperLeft.y + (i + 1) * EntrySizeY - 2, size.x - 1);
+		display_VerticalLine(upperLeft.x,
 				upperLeft.y + i * EntrySizeY + 1, EntrySizeY - 2);
-		display_VerticalLine(lowerRight.x - EntrySizeX + 1,
+		display_VerticalLine(upperLeft.x + 1,
 				upperLeft.y + i * EntrySizeY + 1, EntrySizeY - 2);
 //		entry->draw(
 //				COORDS(offset.x + entry->position.x + 0,
@@ -136,28 +112,28 @@ void Menu::draw(coords_t offset) {
 		display_SetFont(Font_Big);
 		display_SetForeground(Foreground);
 		display_SetBackground(Background);
-		display_HorizontalLine(lowerRight.x - EntrySizeX + 1,
-				upperLeft.y + entriesPerPage * EntrySizeY, EntrySizeX);
-		display_HorizontalLine(lowerRight.x - EntrySizeX + 1,
-				upperLeft.y + entriesPerPage * EntrySizeY + 1, EntrySizeX);
-		display_HorizontalLine(lowerRight.x - EntrySizeX + 1,
+		display_HorizontalLine(upperLeft.x + 1, upperLeft.y + entriesPerPage * EntrySizeY,
+				size.x - 1);
+		display_HorizontalLine(upperLeft.x + 1,
+				upperLeft.y + entriesPerPage * EntrySizeY + 1, size.x - 1);
+		display_HorizontalLine(upperLeft.x + 1,
 				upperLeft.y + (entriesPerPage + 1) * EntrySizeY - 1,
-				EntrySizeX);
-		display_HorizontalLine(lowerRight.x - EntrySizeX + 1,
+				size.x - 1);
+		display_HorizontalLine(upperLeft.x + 1,
 				upperLeft.y + (entriesPerPage + 1) * EntrySizeY - 2,
-				EntrySizeX);
-		display_VerticalLine(lowerRight.x - EntrySizeX,
+				size.x - 1);
+		display_VerticalLine(upperLeft.x,
 				upperLeft.y + entriesPerPage * EntrySizeY + 1, EntrySizeY - 2);
-		display_VerticalLine(lowerRight.x - EntrySizeX + 1,
+		display_VerticalLine(upperLeft.x + 1,
 				upperLeft.y + entriesPerPage * EntrySizeY + 1, EntrySizeY - 2);
 		char page[4];
 		page[0] = selectedEntry / entriesPerPage + 1 + '0';
 		page[1] = '/';
 		page[2] = (nentries - 1) / entriesPerPage + 1 + '0';
 		page[3] = 0;
-		uint16_t shiftX = (EntrySizeX - strlen(page) * Font_Big.width) / 2;
+		uint16_t shiftX = (size.x - strlen(page) * Font_Big.width) / 2;
 		uint16_t shiftY = (EntrySizeY - Font_Big.height) / 2;
-		display_String(lowerRight.x - EntrySizeX + shiftX,
+		display_String(lowerRight.x - size.x + shiftX,
 				upperLeft.y + entriesPerPage * EntrySizeY + shiftY, page);
 	}
 }
@@ -165,17 +141,14 @@ void Menu::draw(coords_t offset) {
 void Menu::drawChildren(coords_t offset) {
 	if (inSubMenu) {
 		// a submenu is active, draw it instead
-		auto submenu = firstEntry->GetNth(selectedEntry);
+		auto submenu = firstChild->GetNth(selectedEntry);
 		Widget::draw(submenu, offset);
 		return;
-	}
-	if (firstChild) {
-		Widget::draw(firstChild, offset);
 	}
 	// get offset of first entry on page
 	uint8_t pageOffset = (uint8_t) (selectedEntry / entriesPerPage)
 			* entriesPerPage;
-	MenuEntry *entry = static_cast<MenuEntry*>(firstEntry->GetNth(pageOffset));
+	MenuEntry *entry = static_cast<MenuEntry*>(firstChild->GetNth(pageOffset));
 	for (uint8_t i = 0; i < entriesPerPage; i++) {
 		if (i + pageOffset >= nentries) {
 			break;
@@ -183,10 +156,11 @@ void Menu::drawChildren(coords_t offset) {
 		if (entry->getType() == Widget::Type::Menu) {
 			// draw the submenu name
 			auto submenu = static_cast<Menu*>(entry);
-			coords_t upperLeft = COORDS(offset.x + size.x - EntrySizeX + 2,
+			coords_t upperLeft = COORDS(offset.x + size.x - size.x + 2,
 					offset.y + i * EntrySizeY + 2);
 			coords_t lowerRight = COORDS(offset.x + size.x,
 					offset.y + (i + 1) * EntrySizeY - 2);
+			display_SetForeground(Foreground);
 			display_AutoCenterString(submenu->name, upperLeft, lowerRight);
 		} else {
 			Widget::draw(entry, COORDS(offset.x, offset.y + i * EntrySizeY));
@@ -195,14 +169,10 @@ void Menu::drawChildren(coords_t offset) {
 	}
 }
 
-coords_t Menu::getAvailableArea() {
-	return SIZE(size.x - EntrySizeX, size.y);
-}
-
 void Menu::input(GUIEvent_t* ev) {
 	if (inSubMenu) {
 		// pass on event to submenu
-		firstEntry->GetNth(selectedEntry)->input(ev);
+		firstChild->GetNth(selectedEntry)->input(ev);
 		return;
 	}
 	switch (ev->type) {
@@ -258,6 +228,14 @@ void Menu::input(GUIEvent_t* ev) {
 				selectedEntry = new_selected;
 				this->requestRedraw();
 			}
+			auto sel = firstChild->GetNth(selectedEntry);
+			if (sel->selectable && !sel->selected
+					&& sel->getType() != Widget::Type::Menu) {
+				sel->select();
+				ev->type = EVENT_NONE;
+			} else {
+				select();
+			}
 			// do not reset ev->type as the touch event will be passed on to the selected entry
 		}
 	}
@@ -282,11 +260,11 @@ void Menu::input(GUIEvent_t* ev) {
 				|| ev->type == EVENT_TOUCH_HELD
 				|| ev->type == EVENT_TOUCH_RELEASED) {
 			// position based events, update event position
-			ev->pos.x -= size.x - EntrySizeX + 2;
+			ev->pos.x -= 2;
 			ev->pos.y -= 2 + (selectedEntry % entriesPerPage) * EntrySizeY;
 			;
 		}
-		auto entry = firstEntry->GetNth(selectedEntry);
+		auto entry = firstChild->GetNth(selectedEntry);
 		if (entry->getType() == Widget::Type::Menu) {
 			// the event is for a submenu
 			if (ev->type == EVENT_TOUCH_PRESSED
@@ -321,7 +299,7 @@ void Menu::PageSwitched() {
 	this->requestRedrawFull();
 	uint8_t pageOffset = (uint8_t) (selectedEntry / entriesPerPage)
 			* entriesPerPage;
-	MenuEntry *entry = static_cast<MenuEntry*>(firstEntry->GetNth(pageOffset));
+	MenuEntry *entry = static_cast<MenuEntry*>(firstChild->GetNth(pageOffset));
 	for (uint8_t i = 0; i < entriesPerPage; i++) {
 		if (i + pageOffset >= nentries) {
 			break;

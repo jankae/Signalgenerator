@@ -10,6 +10,8 @@ extern "C"
 {
 #endif
 
+#define LOG(...)
+
 void Log_CritError(const char *filename, uint16_t line, const char *fmt, ...);
 
 void prvGetRegistersFromStack(uint32_t *pulFaultStackAddress);

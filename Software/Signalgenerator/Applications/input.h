@@ -2,7 +2,7 @@
 #define INPUT_H_
 
 
-#include "gui.h"
+#include <gui.hpp>
 #include "touch.h"
 
 BaseType_t input_Init();

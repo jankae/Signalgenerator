@@ -1,5 +1,4 @@
-#include "keyboard.h"
-
+#include <keyboard.hpp>
 #include "buttons.h"
 
 #define LAYOUT_X		10

@@ -1,8 +1,8 @@
 #ifndef TOUCH_H_
 #define TOUCH_H_
 
+#include <gui.hpp>
 #include "gpio.h"
-#include "gui.h"
 #include "display.h"
 
 #define TOUCH_RESOLUTION_X		DISPLAY_WIDTH

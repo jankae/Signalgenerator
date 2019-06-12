@@ -8,7 +8,7 @@
 #ifndef MENUENTRY_HPP_
 #define MENUENTRY_HPP_
 
-#include "widget.h"
+#include <widget.hpp>
 #include "display.h"
 
 class MenuEntry : public Widget {

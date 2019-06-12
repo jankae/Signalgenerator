@@ -1,9 +1,9 @@
 #ifndef DISPLAY_H_
 #define DISPLAY_H_
 
+#include <color.hpp>
 #include "stm32f1xx.h"
 #include "font.h"
-#include "color.h"
 #include "common.h"
 
 #define DISPLAY_WIDTH		320

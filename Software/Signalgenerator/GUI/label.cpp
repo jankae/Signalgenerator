@@ -1,4 +1,4 @@
-#include "label.h"
+#include <label.hpp>
 
 Label::Label(uint8_t length, font_t font, Orientation o) {
 	color = Foreground;

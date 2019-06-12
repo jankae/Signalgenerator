@@ -1,7 +1,5 @@
-#include "gui.h"
-
+#include <gui.hpp>
 #include "buttons.h"
-#include "pushpull.h"
 #include "app.h"
 
 QueueHandle_t GUIeventQueue = NULL;
@@ -13,6 +11,8 @@ TaskHandle_t GUIHandle;
 #include "menu.hpp"
 #include "MenuBool.hpp"
 #include "MenuBack.hpp"
+#include "MenuChooser.hpp"
+#include "Dialog/ItemChooserDialog.hpp"
 
 static void guiThread(void) {
 	GUIHandle = xTaskGetCurrentTaskHandle();
@@ -25,24 +25,32 @@ static void guiThread(void) {
 
 //	desktop_Draw();
 
-	Menu *test = new Menu("", SIZE(DISPLAY_WIDTH, DISPLAY_HEIGHT));
+	static const char * const items[] = {
+			"Item1", "Item2", "Item3", nullptr
+	};
+	uint8_t itemval = 0;
+
+	Menu *test = new Menu("", SIZE(70, DISPLAY_HEIGHT));
+	test->setPosition(COORDS(DISPLAY_WIDTH - test->getSize().x, 0));
 	bool values[8] = { true, false, true, false, true, false, true, false };
 	test->AddEntry(new MenuBool("Entry1", &values[0], nullptr));
 	test->AddEntry(new MenuBool("Entry2", &values[1], nullptr));
-	test->AddEntry(new MenuBool("Entry3", &values[2], nullptr));
+	test->AddEntry(new MenuChooser("Entry3", items, &itemval));
 	test->AddEntry(new MenuBool("Entry4", &values[3], nullptr));
 	test->AddEntry(new MenuBool("Entry5", &values[4], nullptr));
 	test->AddEntry(new MenuBool("Entry6", &values[5], nullptr));
 
-	Menu *sub = new Menu("SubMenu", SIZE(DISPLAY_WIDTH, DISPLAY_HEIGHT));
+	Menu *sub = new Menu("SubMenu", test->getSize());
+	test->AddEntry(sub);
 	sub->AddEntry(new MenuBool("Entry7", &values[6], nullptr));
 	sub->AddEntry(new MenuBool("Entry8", &values[7], nullptr));
 	sub->AddEntry(new MenuBack());
-	test->AddEntry(sub);
 
 	topWidget = test;
 	test->select();
 	test->requestRedrawFull();
+
+//	auto chooser = new ItemChooserDialog("Title", items, 0, nullptr, nullptr);
 
 	while (1) {
 		if (xQueueReceive(GUIeventQueue, &event, 20)) {
@@ -59,18 +67,18 @@ static void guiThread(void) {
 						Widget::input(topWidget, &event);
 					} else if (!isPopup) {
 						/* only pass on events to desktop if no popup is present */
-						desktop_Input(&event);
+//						desktop_Input(&event);
 					}
 					break;
 				case EVENT_BUTTON_CLICKED:
 					if(event.button == BUTTON_ONOFF) {
 						/* this is a special case button that is always relayed to the
 						 * App in control of the output stage */
-						if (pushpull_GetControlHandle()) {
-							xTaskNotify(pushpull_GetControlHandle(),
-									SIGNAL_ONOFF_BUTTON,
-									eSetBits);
-						}
+//						if (pushpull_GetControlHandle()) {
+//							xTaskNotify(pushpull_GetControlHandle(),
+//									SIGNAL_ONOFF_BUTTON,
+//									eSetBits);
+//						}
 						break;
 					}
 					/* no break */
@@ -79,17 +87,17 @@ static void guiThread(void) {
 					if (Widget::getSelected()) {
 						Widget::input(Widget::getSelected(), &event);
 					} else {
-						desktop_Input(&event);
+//						desktop_Input(&event);
 					}
 					break;
 				case EVENT_WINDOW_CLOSE:
-					desktop_Draw();
+//					desktop_Draw();
 					break;
 				default:
 					break;
 				}
 			} else {
-				desktop_Input(&event);
+//				desktop_Input(&event);
 			}
 		}
 		if (topWidget) {

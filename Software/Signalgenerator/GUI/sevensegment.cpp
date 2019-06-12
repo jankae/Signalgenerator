@@ -1,4 +1,4 @@
-#include "sevensegment.h"
+#include <sevensegment.hpp>
 
 /* Index			Symbol
  * 0-9				0-9

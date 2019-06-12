@@ -1,4 +1,4 @@
-#include "window.h"
+#include <window.hpp>
 
 extern Widget *topWidget;
 extern bool isPopup;

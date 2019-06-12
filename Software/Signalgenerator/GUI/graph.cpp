@@ -1,7 +1,7 @@
-#include "graph.h"
+#include <graph.hpp>
 
 Graph::Graph(const int32_t *values, uint16_t num, uint16_t height,
-		color_t color, const unit_t *unit) {
+		color_t color, const Unit::unit *unit[]) {
 	this->values = values;
 	this->color = color;
 	size.x = num + 2;
@@ -56,8 +56,8 @@ void Graph::draw(coords_t offset) {
 	/* display min/max data */
 	display_SetFont(Font_Medium);
 	char buf[11];
-	common_StringFromValue(buf, 7, max, unit);
+	Unit::StringFromValue(buf, 7, max, unit);
 	display_String(lowerRight.x - 41, upperLeft.y + 2, buf);
-	common_StringFromValue(buf, 7, min, unit);
+	Unit::StringFromValue(buf, 7, min, unit);
 	display_String(lowerRight.x - 41, lowerRight.y - 8, buf);
 }

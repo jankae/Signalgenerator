@@ -1,23 +1,16 @@
 #include <startup.h>
-#include "pushpull.h"
 
 #include "adc.h"
 #include "fatfs.h"
 #include "file.h"
 #include "input.h"
 
-#include "Supply.h"
-#include "Charger.h"
-#include "Settings.h"
-#include "Simulator.h"
-#include "Characterisation.h"
-#include "Scope.h"
-#include "Info.h"
 #include "display.h"
 #include "buttons.h"
+#include "Unit.hpp"
+#include "calibration.h"
 
 extern uint8_t pushpull_SPI_OK;
-extern uint16_t RawADC[SPI_BLOCK_SIZE];
 
 extern QueueHandle_t GUIeventQueue;
 
@@ -50,25 +43,6 @@ static uint16_t get_3V3Rail(void) {
 	return 4915200UL / result[1];
 }
 
-static uint16_t get_3V3Rail_SPI(void) {
-	/* convert to mV, full scale ADC is around 1.2V -> 1200mV * 4096 = 4915200 */
-	return 4915200UL / RawADC[9];
-}
-
-static uint16_t get_5VRail_SPI(void) {
-	/* convert to mV, full scale ADC is 6.6V */
-	return (uint32_t) RawADC[8] * 6600 / 4096;
-}
-
-static uint16_t get_24VRail_SPI(void) {
-	/* convert to mV, full scale ADC is 36.3V */
-	return (uint32_t) RawADC[7] * 36300 / 4096;
-}
-
-static int16_t get_neg8VRail_SPI(void) {
-	/* convert to mV, full scale ADC is -15.51V */
-	return (int32_t) RawADC[6] * -15510 / 4096;
-}
 
 static void display_TestResult(const char * const name, const char * const result,
 		TestResult_t res) {
@@ -116,13 +90,13 @@ void startup_Hardware(void) {
 	meas = get_3V3Rail();
 	res = TEST_PERCENTDEV(3300, meas);
 	updateResult(&overallRes, res);
-	common_StringFromValue(buffer, 6, meas * 1000, &Unit_Voltage);
+	Unit::StringFromValue(buffer, 6, meas * 1000, Unit::Voltage);
 	display_TestResult("3.3V(1) rail:", buffer, res);
 
 	meas = get_5VRail();
 	res = TEST_PERCENTDEV(5000, meas);
 	updateResult(&overallRes, res);
-	common_StringFromValue(buffer, 6, meas * 1000, &Unit_Voltage);
+	Unit::StringFromValue(buffer, 6, meas * 1000, Unit::Voltage);
 	display_TestResult("5V(1) rail:", buffer, res);
 
 	if(overallRes != TEST_PASSED) {
@@ -137,90 +111,9 @@ void startup_Hardware(void) {
 //		goto error;
 //	}
 
-	/* Check rails on analog board */
-	meas = get_3V3Rail_SPI();
-	res = TEST_PERCENTDEV(3300, meas);
-	updateResult(&overallRes, res);
-	common_StringFromValue(buffer, 6, meas * 1000, &Unit_Voltage);
-	display_TestResult("3.3V(2) rail:", buffer, res);
-
-	meas = get_5VRail_SPI();
-	res = TEST_PERCENTDEV(5000, meas);
-	updateResult(&overallRes, res);
-	common_StringFromValue(buffer, 6, meas * 1000, &Unit_Voltage);
-	display_TestResult("5V(2) rail:", buffer, res);
-
-	meas = get_24VRail_SPI();
-	res = TEST_PERCENTDEV(24000, meas);
-	updateResult(&overallRes, res);
-	common_StringFromValue(buffer, 6, meas * 1000, &Unit_Voltage);
-	display_TestResult("24V rail:", buffer, res);
-
-	meas = get_neg8VRail_SPI();
-	res = TEST_PERCENTDEV(-8000, meas);
-	updateResult(&overallRes, res);
-	common_StringFromValue(buffer, 6, meas * 1000, &Unit_Voltage);
-	display_TestResult("-8V rail:", buffer, res);
-
-	meas = pushpull_GetTemperature();
-	res = TEST_ABSLIMITS(-10, 60, meas);
-	updateResult(&overallRes, res);
-	common_StringFromValue(buffer, 5, meas, &Unit_Temperature);
-	display_TestResult("Temperature:", buffer, res);
-
 	if(overallRes != TEST_PASSED) {
 		goto error;
 	}
-
-	/* Sanity check some output stage behavior */
-	/* Bias current should be close to zero at this point */
-	meas = pushpull_GetBiasCurrent();
-	res = TEST_ABSLIMITS(0, 15000, meas);
-	updateResult(&overallRes, res);
-	common_StringFromValue(buffer, 6, meas, &Unit_Current);
-	display_TestResult("Bias current:", buffer, res);
-
-	/* Output current should be close to zero at this point */
-	meas = pushpull_GetCurrent();
-	res = TEST_ABSLIMITS(-10000, 10000, meas);
-	updateResult(&overallRes, res);
-	common_StringFromValue(buffer, 6, meas, &Unit_Current);
-	display_TestResult("Output current:", buffer, res);
-
-	pushpull_AcquireControl();
-	pushpull_SetDriveCurrent(200);
-	pushpull_SetSinkCurrent(100000);
-	pushpull_SetSourceCurrent(100000);
-	pushpull_SetVoltage(1000000);
-	/* Wait for changes to take effect */
-	HAL_Delay(100);
-
-	/* Output voltage should be close to 1V at this point */
-	meas = pushpull_GetOutputVoltage();
-	/* Allow up to 250mV (Output does not reach GND) */
-	res = TEST_PERCENTDEV(1000000, meas);
-	updateResult(&overallRes, res);
-	common_StringFromValue(buffer, 6, meas, &Unit_Voltage);
-	display_TestResult("Output low:", buffer, res);
-
-	/* Set high output voltage */
-	pushpull_SetVoltage(18000000);
-	/* Wait for changes to take effect */
-	HAL_Delay(100);
-
-	/* Output voltage should be around 18V */
-	meas = pushpull_GetOutputVoltage();
-	res = TEST_PERCENTDEV(18000000, meas);
-	updateResult(&overallRes, res);
-	common_StringFromValue(buffer, 6, meas, &Unit_Voltage);
-	display_TestResult("Output high:", buffer, res);
-
-	pushpull_SetVoltage(0);
-	HAL_Delay(10);
-	pushpull_SetDriveCurrent(0);
-	pushpull_SetSinkCurrent(0);
-	pushpull_SetSourceCurrent(0);
-	pushpull_ReleaseControl();
 
 	if(overallRes != TEST_PASSED) {
 error:
@@ -296,13 +189,6 @@ void startup_Software(void) {
 	}
 
 //	/* Setup Apps */
-	Supply_Init();
-	Charger_Init();
-	Simulator_Init();
-//	Characterisation_Init();
-	Scope_Init();
-	settings_Init();
-	Info_Init();
 
 	/* Start GUI thread */
 	if(gui_Init()) {

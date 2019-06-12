@@ -1,6 +1,5 @@
 #include "app.h"
 
-#include "pushpull.h"
 #include "desktop.h"
 
 /**
@@ -16,7 +15,7 @@ void App_Register(const char *name, const char *descr, void (*start)(void), Imag
 	app.descr = descr;
 	app.start = start;
 	app.icon = icon;
-	desktop_AddApp(app);
+//	desktop_AddApp(app);
 }
 
 /**
@@ -31,9 +30,9 @@ uint8_t App_Handler(uint32_t *signal, uint32_t wait) {
 		/* received a notification */
 		if(*signal & SIGNAL_TERMINATE) {
 			/* Stop control of pushpull stage (will only have an effect if control had been acquired */
-			pushpull_ReleaseControl();
+//			pushpull_ReleaseControl();
 			/* Notify desktop of stopped app (will delete app widgets) */
-			desktop_AppStopped();
+//			desktop_AppStopped();
 			/* Remove this apps task */
 			vTaskDelete(NULL);
 			while (1)

@@ -8,7 +8,7 @@
 #ifndef MENU_HPP_
 #define MENU_HPP_
 
-#include "widget.h"
+#include <widget.hpp>
 #include "display.h"
 #include "menuentry.hpp"
 
@@ -17,8 +17,6 @@ public:
 	Menu(const char *name, coords_t size);
 	~Menu();
 	bool AddEntry(MenuEntry *e);
-	bool AddWidget(Widget *w);
-	coords_t getAvailableArea();
 private:
 	void draw(coords_t offset) override;
 	void input(GUIEvent_t *ev) override;
@@ -28,7 +26,7 @@ private:
 
 	void PageSwitched();
 
-	static constexpr int16_t EntrySizeX = 60;
+//	static constexpr int16_t EntrySizeX = 60;
 	static constexpr int16_t EntrySizeY = 40;
 	static constexpr color_t Foreground = COLOR_FG_DEFAULT;
 	static constexpr color_t Selected = COLOR_SELECTED;
@@ -38,7 +36,6 @@ private:
     uint8_t entriesPerPage;
     bool usePages :1;
     bool inSubMenu :1;
-    MenuEntry *firstEntry;
     char *name;
 };
 

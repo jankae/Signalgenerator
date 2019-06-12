@@ -1,5 +1,4 @@
-#include "checkbox.h"
-
+#include <checkbox.hpp>
 #include "buttons.h"
 
 Checkbox::Checkbox(bool *value, void (*cb)(Widget&), coords_t size) {

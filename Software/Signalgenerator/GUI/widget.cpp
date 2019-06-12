@@ -1,9 +1,7 @@
-#include "widget.h"
-
-#include "color.h"
+#include <color.hpp>
+#include <widget.hpp>
 #include "display.h"
 #include "desktop.h"
-#include "scopescreen.h"
 
 Widget *Widget::selectedWidget = nullptr;
 
@@ -69,7 +67,10 @@ void Widget::draw(Widget *w, coords_t pos) {
 			w->redrawClear = false;
 		}
 		/* draw widget */
+		display_SetActiveArea(pos.x, pos.x + w->size.x - 1, pos.y,
+				pos.y + w->size.y - 1);
 		w->draw(pos);
+		display_SetDefaultArea();
 		/* clear redraw request */
 		w->redraw = false;
 	}
@@ -129,7 +130,7 @@ void Widget::deselect() {
 		selectedWidget->selected = false;
 		selectedWidget->requestRedraw();
 		selectedWidget = nullptr;
-		desktop_Draw();
+//		desktop_Draw();
 	}
 }
 
@@ -179,7 +180,7 @@ void Widget::select(bool down) {
 			newSel->requestRedraw();
 		}
 		if(refreshDesktop) {
-			desktop_Draw();
+//			desktop_Draw();
 		}
 	}
 }
@@ -194,9 +195,6 @@ void Widget::requestRedrawChildren() {
 	Widget *w = firstChild;
 	while (w) {
 		w->redraw = true;
-		if (w->getType() == Widget::Type::Scopescreen) {
-			((Scopescreen*) (w))->firstDraw = true;
-		}
 		/* recursively request redraw of their children */
 		if (w->firstChild) {
 			/* widget got children itself */

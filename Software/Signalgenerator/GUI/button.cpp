@@ -1,14 +1,15 @@
-#include "button.h"
+#include <button.hpp>
 #include "buttons.h"
 
-Button::Button(const char *name, font_t font, void (*cb)(Widget&),
-		uint16_t minWidth) {
+Button::Button(const char *name, font_t font, Callback cb, void *ptr,
+		coords_t minSize) {
 	/* set name and callback */
 	uint16_t namelength = strlen(name);
 	this->name = new char[namelength + 1];
 	memcpy(this->name, name, namelength + 1);
 
-	callback = cb;
+	this->cb = cb;
+	this->ptr = ptr;
 	this->font = font;
 	pressed = false;
 
@@ -16,11 +17,16 @@ Button::Button(const char *name, font_t font, void (*cb)(Widget&),
 	size.y = font.height + 6;
 	size.x = font.width * namelength + 5;
 
-	if (minWidth > size.x)
-		size.x = minWidth;
+	if (minSize.x > size.x) {
+		size.x = minSize.x;
+	}
+	if (minSize.y > size.y) {
+		size.y = minSize.y;
+	}
+
 
 	/* calculate font start position */
-	fontStart.y = 3;
+	fontStart.y = (size.y - font.height) / 2;
 	fontStart.x = (size.x - font.width * namelength - 1) / 2;
 }
 
@@ -102,14 +108,14 @@ void Button::input(GUIEvent_t *ev) {
 		if (pressed) {
 			pressed = false;
 			requestRedraw();
-			if (callback)
-				callback(*this);
+			if (cb)
+				cb(ptr, this);
 		}
 		break;
 	case EVENT_BUTTON_CLICKED:
 		if (ev->button & (BUTTON_UNIT1 | BUTTON_ENCODER)) {
-			if (callback)
-				callback(*this);
+			if (cb)
+				cb(ptr, this);
 		}
 		break;
 	default:

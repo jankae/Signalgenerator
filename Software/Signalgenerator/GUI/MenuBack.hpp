@@ -12,7 +12,10 @@
 
 class MenuBack : public MenuEntry {
 public:
-	MenuBack(){};
+	MenuBack() {
+		selectable = false;
+	}
+	;
 
 private:
 	void draw(coords_t offset) override;

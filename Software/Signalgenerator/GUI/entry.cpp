@@ -1,9 +1,8 @@
-#include "entry.h"
-
+#include <entry.hpp>
 #include "buttons.h"
 
 Entry::Entry(int32_t *value, const int32_t *max, const int32_t *min,
-		font_t font, uint8_t length, const unit_t *unit, const color_t c) {
+		font_t font, uint8_t length, const Unit::unit *unit[], const color_t c) {
 	/* set member variables */
 	this->value = value;
 	this->max = max;
@@ -77,7 +76,7 @@ void Entry::draw(coords_t offset) {
 	/* display string */
 	if (!editing) {
 		/* construct value string */
-		common_StringFromValue(inputString, length, *value, unit);
+		Unit::StringFromValue(inputString, length, *value, unit);
 		if (selectable) {
 			display_SetForeground(color);
 		} else {
@@ -159,7 +158,7 @@ void Entry::input(GUIEvent_t *ev) {
 			editing = false;
 			/* TODO adjust multiplier to unit */
 			uint32_t multiplier;
-			if (unit == &Unit_Time) {
+			if (unit == Unit::Time) {
 				multiplier = 1000;
 				if (ev->button == BUTTON_UNITm) {
 					multiplier = 1;
@@ -182,7 +181,7 @@ void Entry::input(GUIEvent_t *ev) {
     case EVENT_ENCODER_MOVED:
     	if(!editing) {
 			int32_t newval = *value += ev->movement
-					* common_LeastDigitValueFromString(inputString, unit);
+					* Unit::LeastDigitValueFromString(inputString, unit);
 			*value = constrainValue(newval);
 			if(changeCallback) {
 				changeCallback(*this);

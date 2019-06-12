@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 #include <limits.h>
+#include <widget.hpp>
 #include "FreeRTOS.h"
-#include "widget.h"
 
 /* Stop this app */
 #define SIGNAL_TERMINATE		0x80000000

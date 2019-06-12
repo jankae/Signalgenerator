@@ -1,6 +1,7 @@
-#include "dialog.h"
-
+#include <dialog.hpp>
 #include "logging.h"
+
+#include "widget.hpp"
 
 extern SemaphoreHandle_t fileAccess;
 extern TaskHandle_t GUIHandle;
@@ -35,9 +36,9 @@ struct {
 	};
 } dialog;
 
-static void MessageBoxButton(Widget &w) {
+static void MessageBoxButton(void*, Widget *w) {
 	dialog.msgbox.res = Result::ERR;
-	Button *b = (Button*) &w;
+	Button *b = (Button*) w;
 	/* find which button has been pressed */
 	if(!strcmp(b->getName(), "OK")) {
 		dialog.msgbox.res = Result::OK;
@@ -88,15 +89,18 @@ Result MessageBox(const char *title, font_t font, const char *msg,
 	c->attach(text, COORDS(1, 2));
 	switch (type) {
 	case MsgBox::OK: {
-		Button *bOK = new Button("OK", Font_Big, MessageBoxButton, 65);
+		Button *bOK = new Button("OK", Font_Big, MessageBoxButton, nullptr,
+				COORDS(65, 0));
 		c->attach(bOK, COORDS((c->getSize().x - bOK->getSize().x) / 2,
 						c->getSize().y - bOK->getSize().y - 1));
 		bOK->select();
 	}
 	break;
 	case MsgBox::ABORT_OK: {
-		Button *bOK = new Button("OK", Font_Big, MessageBoxButton, 65);
-		Button *bAbort = new Button("ABORT", Font_Big, MessageBoxButton, 65);
+		Button *bOK = new Button("OK", Font_Big, MessageBoxButton, nullptr,
+				COORDS(65, 0));
+		Button *bAbort = new Button("ABORT", Font_Big, MessageBoxButton,
+				nullptr, COORDS(65, 0));
 		c->attach(bAbort,
 				COORDS(c->getSize().x / 2 - bAbort->getSize().x - 1,
 						c->getSize().y - bAbort->getSize().y - 1));
@@ -218,10 +222,10 @@ Result FileChooser(const char *title, char *result,
 	Window *w = new Window(title, Font_Big, COORDS(280, 200));
 	Container *c = new Container(w->getAvailableArea());
 
-	Button *bAbort = new Button("ABORT", Font_Big, [](Widget &w) {
+	Button *bAbort = new Button("ABORT", Font_Big, [](void*, Widget *w) {
 		dialog.fileChooser.OKclicked = 0;
 		xSemaphoreGive(dialog.fileChooser.dialogDone);
-	}, 80);
+	}, nullptr, COORDS(80, 0));
 
 	uint8_t selectedFile = 0;
 	if (foundFiles) {
@@ -229,10 +233,10 @@ Result FileChooser(const char *title, char *result,
 				&selectedFile, Font_Big,
 				(c->getSize().y - 30) / Font_Big.height, c->getSize().x);
 		c->attach(i, COORDS(0, 0));
-		Button *bOK = new Button("OK", Font_Big, [](Widget &w) {
+		Button *bOK = new Button("OK", Font_Big, [](void*, Widget *w) {
 			dialog.fileChooser.OKclicked = 1;
 			xSemaphoreGive(dialog.fileChooser.dialogDone);
-		}, 80);
+		}, nullptr, COORDS(80, 0));
 		c->attach(bOK,
 				COORDS(c->getSize().x - bOK->getSize().x - 5,
 						c->getSize().y - bOK->getSize().y - 5));
@@ -328,14 +332,14 @@ Result StringInput(const char *title, char *result, uint8_t maxLength) {
 			c->getSize().x / Font_Big.width, Font_Big, Label::Orientation::CENTER);
 
 	/* Create buttons */
-	Button *bOK = new Button("OK", Font_Big, [](Widget &w) {
+	Button *bOK = new Button("OK", Font_Big, [](void*, Widget *w) {
 		dialog.StringInput.OKclicked = 1;
 		xSemaphoreGive(dialog.StringInput.dialogDone);
-	}, 80);
-	Button *bAbort = new Button("ABORT", Font_Big, [](Widget &w) {
+	}, nullptr, COORDS(80, 0));
+	Button *bAbort = new Button("ABORT", Font_Big, [](void*, Widget *w) {
 		dialog.StringInput.OKclicked = 0;
 		xSemaphoreGive(dialog.StringInput.dialogDone);
-	}, 80);
+	}, nullptr, COORDS(80, 0));
 
 	c->attach(dialog.StringInput.lString, COORDS(0, 8));
 	c->attach(k, COORDS(0, 30));
@@ -362,7 +366,7 @@ Result StringInput(const char *title, char *result, uint8_t maxLength) {
 	}
 }
 
-Result UnitInput(const char *title, int32_t *result, uint8_t maxLength, const unit_t *unit) {
+Result UnitInput(const char *title, int32_t *result, uint8_t maxLength, const Unit::unit *unit[]) {
 	if(xTaskGetCurrentTaskHandle() == GUIHandle) {
 		/* This dialog must never be called by the GUI thread (Deadlock) */
 		CRIT_ERROR("Dialog started from GUI thread.");
@@ -390,9 +394,9 @@ Result UnitInput(const char *title, int32_t *result, uint8_t maxLength, const un
 	Entry *e = new Entry(result, NULL, NULL, Font_Big, maxLength, unit);
 
 	/* Create buttons */
-	Button *bOK = new Button("OK", Font_Big, [](Widget &w) {
+	Button *bOK = new Button("OK", Font_Big, [](void*, Widget *w) {
 		xSemaphoreGive(dialog.UnitInput.dialogDone);
-	}, 80);
+	}, nullptr, COORDS(80, 0));
 
 
 	c->attach(e, COORDS((c->getSize().x - e->getSize().x) / 2, 5));
