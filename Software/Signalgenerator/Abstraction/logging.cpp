@@ -8,6 +8,7 @@ void Log_CritError(const char *filename, uint16_t line, const char *fmt, ...) {
 //	pushpull_AcquireControl();
 //	pushpull_SetDefault();
 
+	display_SetDefaultArea();
 	display_SetForeground(COLOR_RED);
 	display_SetBackground(COLOR_BLACK);
 	display_Clear();

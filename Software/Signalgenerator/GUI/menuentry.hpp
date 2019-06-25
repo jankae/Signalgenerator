@@ -13,7 +13,7 @@
 
 class MenuEntry : public Widget {
 public:
-	MenuEntry(){};
+	MenuEntry(){selectable = false;};
 	virtual ~MenuEntry(){};
 protected:
 };

@@ -2,13 +2,12 @@
 
 #include "adc.h"
 #include "fatfs.h"
-#include "file.h"
+#include "file.hpp"
 #include "input.h"
 
 #include "display.h"
 #include "buttons.h"
 #include "Unit.hpp"
-#include "calibration.h"
 
 extern uint8_t pushpull_SPI_OK;
 
@@ -143,7 +142,7 @@ void startup_Software(void) {
 	/* Start sampling of frontpanel controls */
 	buttons_Init();
 
-	switch(file_Init()) {
+	switch(File::Init()) {
 	case -1:
 		display_TestResult("SD card:", "INT ERR", TEST_FAILED);
 		error = 1;
@@ -170,21 +169,6 @@ void startup_Software(void) {
 		display_TestResult("Touch calib:", "LOADED", TEST_PASSED);
 	} else {
 		display_TestResult("Touch calib:", "MISSING", TEST_WARNING);
-		warning = 1;
-	}
-
-	/* Load output calibration */
-	if(cal_Load()) {
-		display_TestResult("Output calib:", "LOADED", TEST_PASSED);
-	} else {
-		display_TestResult("Output calib:", "MISSING", TEST_WARNING);
-		warning = 1;
-	}
-
-	if(cal_Valid()) {
-		display_TestResult("Calibration:", "OK", TEST_PASSED);
-	} else {
-		display_TestResult("Calibration:", "DUBIOUS", TEST_WARNING);
 		warning = 1;
 	}
 

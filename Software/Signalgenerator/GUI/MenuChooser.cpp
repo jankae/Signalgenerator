@@ -61,9 +61,6 @@ void MenuChooser::draw(coords_t offset) {
 }
 
 void MenuChooser::input(GUIEvent_t* ev) {
-	uint8_t numItems;
-	for (numItems = 0; this->items[numItems]; numItems++);
-
 	switch(ev->type) {
 	case EVENT_BUTTON_CLICKED:
 		if (!(ev->button & BUTTON_ENCODER)) {
@@ -74,9 +71,9 @@ void MenuChooser::input(GUIEvent_t* ev) {
 		new ItemChooserDialog("Select setting", items, *value,
 				pmf_cast<void (*)(void*, bool, uint8_t), MenuChooser,
 						&MenuChooser::ChooserCallback>::cfn, this);
-		ev->type = EVENT_NONE;
 		break;
 	}
+	ev->type = EVENT_NONE;
 }
 
 void MenuChooser::ChooserCallback(bool updated, uint8_t newval) {

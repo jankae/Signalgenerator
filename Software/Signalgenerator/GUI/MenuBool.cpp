@@ -42,7 +42,7 @@ void MenuBool::input(GUIEvent_t *ev) {
 		requestRedrawFull();
 		if (callback)
 			callback(*this);
-		ev->type = EVENT_NONE;
 		break;
 	}
+	ev->type = EVENT_NONE;
 }

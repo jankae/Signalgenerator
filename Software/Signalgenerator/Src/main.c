@@ -107,7 +107,6 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   touch_Init();
-  cal_Init();
   HAL_TIM_Base_Start_IT(&htim3);
   HAL_Delay(100);
   display_Init();

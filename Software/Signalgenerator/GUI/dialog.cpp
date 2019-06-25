@@ -1,9 +1,7 @@
-#include <dialog.hpp>
-#include "logging.h"
+#include "dialog.hpp"
 
-#include "widget.hpp"
+#include "file.hpp"
 
-extern SemaphoreHandle_t fileAccess;
 extern TaskHandle_t GUIHandle;
 
 namespace Dialog {
@@ -23,9 +21,11 @@ struct {
 			uint8_t OKclicked;
 		} fileChooser;
 		struct {
-			SemaphoreHandle_t dialogDone;
-			uint8_t OKclicked;
+			Callback cb;
+			void *ptr;
+			Window *w;
 			char *string;
+			char *destString;
 			Label *lString;
 			uint8_t pos;
 			uint8_t maxLength;
@@ -67,7 +67,7 @@ Result MessageBox(const char *title, font_t font, const char *msg,
 
 	if(block && xTaskGetCurrentTaskHandle() == GUIHandle) {
 		/* This dialog must never be called by the GUI thread (Deadlock) */
-		CRIT_ERROR("Dialog started from GUI thread.");
+		LOG(Log_GUI, LevelCrit, "Dialog started from GUI thread.");
 	}
 
 	if (block) {
@@ -89,25 +89,22 @@ Result MessageBox(const char *title, font_t font, const char *msg,
 	c->attach(text, COORDS(1, 2));
 	switch (type) {
 	case MsgBox::OK: {
-		Button *bOK = new Button("OK", Font_Big, MessageBoxButton, nullptr,
-				COORDS(65, 0));
+		Button *bOK = new Button("OK", Font_Big, MessageBoxButton, nullptr, COORDS(65, 0));
 		c->attach(bOK, COORDS((c->getSize().x - bOK->getSize().x) / 2,
 						c->getSize().y - bOK->getSize().y - 1));
-		bOK->select();
+//		bOK->select();
 	}
 	break;
 	case MsgBox::ABORT_OK: {
-		Button *bOK = new Button("OK", Font_Big, MessageBoxButton, nullptr,
-				COORDS(65, 0));
-		Button *bAbort = new Button("ABORT", Font_Big, MessageBoxButton,
-				nullptr, COORDS(65, 0));
+		Button *bOK = new Button("OK", Font_Big, MessageBoxButton, nullptr, COORDS(65, 0));
+		Button *bAbort = new Button("ABORT", Font_Big, MessageBoxButton, nullptr, COORDS(65, 0));
 		c->attach(bAbort,
 				COORDS(c->getSize().x / 2 - bAbort->getSize().x - 1,
 						c->getSize().y - bAbort->getSize().y - 1));
 		c->attach(bOK,
 				COORDS(c->getSize().x / 2 + 1,
 						c->getSize().y - bOK->getSize().y - 1));
-		bAbort->select();
+//		bAbort->select();
 	}
 		break;
 	}
@@ -132,7 +129,7 @@ Result FileChooser(const char *title, char *result,
 		const char *dir, const char *filetype) {
 	if(xTaskGetCurrentTaskHandle() == GUIHandle) {
 		/* This dialog must never be called by the GUI thread (Deadlock) */
-		CRIT_ERROR("Dialog started from GUI thread.");
+		LOG(Log_GUI, LevelCrit, "Dialog started from GUI thread.");
 	}
 
 	/* check pointers */
@@ -240,13 +237,13 @@ Result FileChooser(const char *title, char *result,
 		c->attach(bOK,
 				COORDS(c->getSize().x - bOK->getSize().x - 5,
 						c->getSize().y - bOK->getSize().y - 5));
-		i->select();
+//		i->select();
 	} else {
 		/* got no files */
 		Label *lNoFiles = new Label("No files available", Font_Big);
 		c->attach(lNoFiles,
 				COORDS((c->getSize().x - lNoFiles->getSize().x) / 2, 40));
-		bAbort->select();
+//		bAbort->select();
 	}
 
 
@@ -297,48 +294,49 @@ static void stringInputChar(char c) {
 	}
 }
 
-Result StringInput(const char *title, char *result, uint8_t maxLength) {
-	if(xTaskGetCurrentTaskHandle() == GUIHandle) {
-		/* This dialog must never be called by the GUI thread (Deadlock) */
-		CRIT_ERROR("Dialog started from GUI thread.");
-	}
-
+bool StringInput(const char *title, char *result, uint8_t maxLength,
+		Callback cb, void *ptr) {
 	/* check pointers */
 	if (!title || !result) {
-		return Result::ERR;
+		return false;
 	}
 
 	memset(&dialog, 0, sizeof(dialog));
 
-	dialog.StringInput.dialogDone = xSemaphoreCreateBinary();
-	if(!dialog.StringInput.dialogDone) {
-		/* failed to create semaphore */
-		return Result::ERR;
-	}
-
-	dialog.StringInput.string = result;
+	dialog.StringInput.cb = cb;
+	dialog.StringInput.ptr = ptr;
+	dialog.StringInput.string = new char[maxLength + 1];
+	strncpy(dialog.StringInput.string, result, maxLength);
+	dialog.StringInput.destString = result;
 	dialog.StringInput.maxLength = maxLength;
-	dialog.StringInput.pos = 0;
+	dialog.StringInput.pos = strlen(dialog.StringInput.string);
 
 	memset(result, 0, maxLength);
 
 	/* Create window */
-	Window *w = new Window(title, Font_Big, COORDS(313, 233));
-	Container *c = new Container(w->getAvailableArea());
+	dialog.StringInput.w = new Window(title, Font_Big, COORDS(313, 233));
+	Container *c = new Container(dialog.StringInput.w->getAvailableArea());
 
 	Keyboard *k = new Keyboard(stringInputChar);
 
 	dialog.StringInput.lString = new Label(
 			c->getSize().x / Font_Big.width, Font_Big, Label::Orientation::CENTER);
 
+	dialog.StringInput.lString->setText(dialog.StringInput.string);
+
 	/* Create buttons */
 	Button *bOK = new Button("OK", Font_Big, [](void*, Widget *w) {
-		dialog.StringInput.OKclicked = 1;
-		xSemaphoreGive(dialog.StringInput.dialogDone);
+		strcpy(dialog.StringInput.destString, dialog.StringInput.string);
+		if(dialog.StringInput.cb) {
+			dialog.StringInput.cb(dialog.StringInput.ptr, Result::OK);
+		}
+		delete dialog.StringInput.w;
 	}, nullptr, COORDS(80, 0));
 	Button *bAbort = new Button("ABORT", Font_Big, [](void*, Widget *w) {
-		dialog.StringInput.OKclicked = 0;
-		xSemaphoreGive(dialog.StringInput.dialogDone);
+		if(dialog.StringInput.cb) {
+			dialog.StringInput.cb(dialog.StringInput.ptr, Result::ABORT);
+		}
+		delete dialog.StringInput.w;
 	}, nullptr, COORDS(80, 0));
 
 	c->attach(dialog.StringInput.lString, COORDS(0, 8));
@@ -349,27 +347,45 @@ Result StringInput(const char *title, char *result, uint8_t maxLength) {
 	c->attach(bAbort,
 			COORDS(5, c->getSize().y - bAbort->getSize().y - 5));
 
-	k->select();
-	w->setMainWidget(c);
+//	k->select();
+	dialog.StringInput.w->setMainWidget(c);
 
-	/* Wait for button to be clicked */
-	xSemaphoreTake(dialog.StringInput.dialogDone, portMAX_DELAY);
-	vPortFree(dialog.StringInput.dialogDone);
-
-	/* delete window */
-	delete w;
-
-	if(dialog.StringInput.OKclicked) {
-		return Result::OK;
-	} else {
-		return Result::ABORT;
-	}
+	return true;
 }
+
+
+Result StringInputBlock(const char* title, char* result, uint8_t maxLength) {
+	if(xTaskGetCurrentTaskHandle() == GUIHandle) {
+		/* This dialog must never be called by the GUI thread (Deadlock) */
+		LOG(Log_GUI, LevelCrit, "Dialog started from GUI thread.");
+	}
+
+	using DataStruct = struct {
+		SemaphoreHandle_t semphr;
+		Result res;
+	};
+	DataStruct data;
+
+	data.semphr = xSemaphoreCreateBinary();
+	if(!StringInput(title, result, maxLength, [](void *ptr, Result r) {
+			DataStruct *d = (DataStruct*) ptr;
+			d->res = r;
+			xSemaphoreGive(d->semphr);
+		}, &data)) {
+		return Result::ERR;
+	}
+
+	xSemaphoreTake(data.semphr, portMAX_DELAY);
+	vSemaphoreDelete(data.semphr);
+
+	return data.res;
+}
+
 
 Result UnitInput(const char *title, int32_t *result, uint8_t maxLength, const Unit::unit *unit[]) {
 	if(xTaskGetCurrentTaskHandle() == GUIHandle) {
 		/* This dialog must never be called by the GUI thread (Deadlock) */
-		CRIT_ERROR("Dialog started from GUI thread.");
+		LOG(Log_GUI, LevelCrit, "Dialog started from GUI thread.");
 	}
 
 	/* check pointers */
@@ -391,7 +407,7 @@ Result UnitInput(const char *title, int32_t *result, uint8_t maxLength, const Un
 	Window *w = new Window(title, Font_Big, COORDS(313, 233));
 	Container *c = new Container(w->getAvailableArea());
 
-	Entry *e = new Entry(result, NULL, NULL, Font_Big, maxLength, unit);
+	Entry *e = new Entry(result, nullptr, nullptr, Font_Big, maxLength, unit);
 
 	/* Create buttons */
 	Button *bOK = new Button("OK", Font_Big, [](void*, Widget *w) {
@@ -404,7 +420,7 @@ Result UnitInput(const char *title, int32_t *result, uint8_t maxLength, const Un
 			COORDS((c->getSize().x - bOK->getSize().x) / 2,
 					c->getSize().y - bOK->getSize().y - 5));
 
-	e->select();
+//	e->select();
 	w->setMainWidget(c);
 
 	/* Wait for button to be clicked */

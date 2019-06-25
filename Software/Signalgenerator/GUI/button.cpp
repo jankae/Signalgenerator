@@ -97,6 +97,9 @@ void Button::draw(coords_t offset) {
 }
 
 void Button::input(GUIEvent_t *ev) {
+	if (!selectable) {
+		return;
+	}
     switch(ev->type) {
     case EVENT_TOUCH_PRESSED:
 		if (!pressed) {

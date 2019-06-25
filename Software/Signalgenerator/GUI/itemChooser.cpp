@@ -128,23 +128,23 @@ void ItemChooser::input(GUIEvent_t *ev) {
 		ev->type = EVENT_NONE;
 	}
 		break;
-//	case EVENT_BUTTON_CLICKED:
-//		if (ev->button == BUTTON_UP && *value > 0) {
-//			(*value)--;
-//			if (changeCallback) {
-//				changeCallback(*this);
-//			}
-//			requestRedrawFull();
-//			ev->type = EVENT_NONE;
-//		} else if (ev->button == BUTTON_DOWN && *value < numItems - 1) {
-//			(*value)++;
-//			if (changeCallback) {
-//				changeCallback(*this);
-//			}
-//			requestRedrawFull();
-//			ev->type = EVENT_NONE;
-//		}
-//		break;
+	case EVENT_BUTTON_CLICKED:
+		if (ev->button == BUTTON_UP && *value > 0) {
+			(*value)--;
+			if (cb) {
+				cb(ptr, this);
+			}
+			requestRedrawFull();
+			ev->type = EVENT_NONE;
+		} else if (ev->button == BUTTON_DOWN && *value < numItems - 1) {
+			(*value)++;
+			if (cb) {
+				cb(ptr, this);
+			}
+			requestRedrawFull();
+			ev->type = EVENT_NONE;
+		}
+		break;
 	case EVENT_TOUCH_PRESSED:
 		if (selected) {
 			/* only react to touch if already selected. This allows

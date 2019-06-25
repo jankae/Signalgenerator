@@ -2,7 +2,7 @@
 
 #include "semphr.h"
 #include "fatfs.h"
-#include "file.h"
+#include "file.hpp"
 
 #define CS_LOW()			(GPIOB->BSRR = GPIO_PIN_7<<16u)
 #define CS_HIGH()			(GPIOB->BSRR = GPIO_PIN_7)
@@ -38,11 +38,11 @@ int32_t offsetX = 0, offsetY = 0;
 float scaleX = (float) TOUCH_RESOLUTION_X / 4096;
 float scaleY = (float) TOUCH_RESOLUTION_Y / 4096;
 
-const fileEntry_t touchCal[4] = {
-		{"xfactor", &scaleX, PTR_FLOAT},
-		{"xoffset", &offsetX, PTR_INT32},
-		{"yfactor", &scaleY, PTR_FLOAT},
-		{"yoffset", &offsetY, PTR_INT32},
+const File::Entry touchCal[4] = {
+		{"xfactor", &scaleX, File::PointerType::FLOAT},
+		{"xoffset", &offsetX, File::PointerType::INT32},
+		{"yfactor", &scaleY, File::PointerType::FLOAT},
+		{"yoffset", &offsetY, File::PointerType::INT32},
 };
 
 extern SPI_HandleTypeDef hspi3;
@@ -135,23 +135,23 @@ int8_t touch_GetCoordinates(coords_t *c) {
 }
 
 static uint8_t touch_SaveCalibration(void) {
-	if (file_open("TOUCH.CAL", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
+	if (File::Open("TOUCH.CAL", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
 		return 0;
 	}
-	file_WriteParameters(touchCal, 4);
-	file_close();
+	File::WriteParameters(touchCal, 4);
+	File::Close();
 	return 1;
 }
 
 uint8_t touch_LoadCalibration(void) {
-	if (file_open("TOUCH.CAL", FA_OPEN_EXISTING | FA_READ) != FR_OK) {
+	if (File::Open("TOUCH.CAL", FA_OPEN_EXISTING | FA_READ) != FR_OK) {
 		return 0;
 	}
-	if (file_ReadParameters(touchCal, 4) == FILE_OK) {
-		file_close();
+	if (File::ReadParameters(touchCal, 4) == File::ParameterResult::OK) {
+		File::Close();
 		return 1;
 	} else {
-		file_close();
+		File::Close();
 		return 0;
 	}
 }

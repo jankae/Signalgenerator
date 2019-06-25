@@ -177,27 +177,11 @@ void Menu::input(GUIEvent_t* ev) {
 	}
 	switch (ev->type) {
 	case EVENT_ENCODER_MOVED: {
-		uint8_t old_page = selectedEntry / entriesPerPage;
-		if (ev->movement > 0) {
-			if (selectedEntry < nentries - 1) {
-				selectedEntry++;
-			} else {
-				selectedEntry = 0;
-			}
+		if(ev->movement > 0) {
+			moveDown();
 		} else {
-			if (selectedEntry > 0) {
-				selectedEntry--;
-			} else {
-				selectedEntry = nentries - 1;
-			}
+			moveUp();
 		}
-		uint8_t new_page = selectedEntry / entriesPerPage;
-		if (new_page == old_page) {
-			this->requestRedraw();
-		} else {
-			PageSwitched();
-		}
-
 		ev->type = EVENT_NONE;
 	}
 		break;
@@ -241,7 +225,7 @@ void Menu::input(GUIEvent_t* ev) {
 	}
 		break;
 	case EVENT_BUTTON_CLICKED: {
-		if(ev->button & BUTTON_ESC) {
+		if (ev->button & BUTTON_ESC) {
 			if (parent) {
 				parent->select(false);
 				if (parent->getType() == Widget::Type::Menu) {
@@ -251,6 +235,13 @@ void Menu::input(GUIEvent_t* ev) {
 					parent_menu->PageSwitched();
 				}
 			}
+			ev->type = EVENT_NONE;
+		} else if (ev->button & BUTTON_UP) {
+			moveUp();
+			ev->type = EVENT_NONE;
+		} else if (ev->button & BUTTON_DOWN) {
+			moveDown();
+			ev->type = EVENT_NONE;
 		}
 	}
 	}
@@ -274,6 +265,7 @@ void Menu::input(GUIEvent_t* ev) {
 				inSubMenu = true;
 				entry->select();
 				static_cast<Menu*>(entry)->PageSwitched();
+				ev->type = EVENT_NONE;
 			}
 		} else if (entry->getType() == Widget::Type::MenuBack) {
 			if (ev->type == EVENT_TOUCH_PRESSED
@@ -288,6 +280,7 @@ void Menu::input(GUIEvent_t* ev) {
 						parent_menu->PageSwitched();
 					}
 				}
+				ev->type = EVENT_NONE;
 			}
 		} else {
 			Widget::input(entry, ev);
@@ -308,4 +301,34 @@ void Menu::PageSwitched() {
 		entry = static_cast<MenuEntry*>(entry->next);
 	}
 
+}
+
+void Menu::moveUp() {
+	uint8_t old_page = selectedEntry / entriesPerPage;
+	if (selectedEntry > 0) {
+		selectedEntry--;
+	} else {
+		selectedEntry = nentries - 1;
+	}
+	uint8_t new_page = selectedEntry / entriesPerPage;
+	if (new_page == old_page) {
+		this->requestRedraw();
+	} else {
+		PageSwitched();
+	}
+}
+
+void Menu::moveDown() {
+	uint8_t old_page = selectedEntry / entriesPerPage;
+	if (selectedEntry < nentries - 1) {
+		selectedEntry++;
+	} else {
+		selectedEntry = 0;
+	}
+	uint8_t new_page = selectedEntry / entriesPerPage;
+	if (new_page == old_page) {
+		this->requestRedraw();
+	} else {
+		PageSwitched();
+	}
 }

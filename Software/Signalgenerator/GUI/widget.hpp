@@ -35,6 +35,7 @@ public:
 		MenuBack,
 		MenuChooser,
 		EventCatcher,
+		MenuValue,
 	};
 
 	Widget();
@@ -62,9 +63,14 @@ public:
 			requestRedrawFull();
 		} else if(!s && selectable) {
 			selectable = false;
+			if (selected) {
+				deselect();
+			}
 			requestRedrawFull();
 		}
 	}
+
+	bool IsSelectable() { return selectable; };
 
 	void widget_SetVisible(bool v) {
 		if(visible != v) {

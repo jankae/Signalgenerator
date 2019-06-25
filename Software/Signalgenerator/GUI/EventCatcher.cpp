@@ -10,6 +10,7 @@ EventCatcher::EventCatcher(Widget *child, FilterLambda filt, Callback cb,
 	this->filt = filt;
 	this->cb = cb;
 	this->ptr = ptr;
+	redrawChild = true;
 }
 
 EventCatcher::~EventCatcher() {

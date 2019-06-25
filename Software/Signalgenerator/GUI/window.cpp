@@ -20,12 +20,16 @@ Window::Window(const char *title, font_t font, coords_t size) {
 	topWidget = this;
 	lastPopup = isPopup;
 	isPopup = true;
+	lastSelected = selectedWidget;
 }
 Window::~Window() {
 	/* restore last top widget */
 	Widget::deselect();
 	topWidget = lastTopWidget;
 	isPopup = lastPopup;
+	if (lastSelected) {
+		lastSelected->select();
+	}
 	/* request full redraw of new top widget */
 	topWidget->requestRedrawFull();
 	// TODO this is extremely ugly

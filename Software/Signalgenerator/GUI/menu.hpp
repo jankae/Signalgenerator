@@ -25,6 +25,8 @@ private:
 	Widget::Type getType() override { return Widget::Type::Menu; };
 
 	void PageSwitched();
+	void moveUp();
+	void moveDown();
 
 //	static constexpr int16_t EntrySizeX = 60;
 	static constexpr int16_t EntrySizeY = 40;

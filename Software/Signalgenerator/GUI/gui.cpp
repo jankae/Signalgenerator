@@ -12,6 +12,7 @@ TaskHandle_t GUIHandle;
 #include "MenuBool.hpp"
 #include "MenuBack.hpp"
 #include "MenuChooser.hpp"
+#include "MenuValue.hpp"
 #include "Dialog/ItemChooserDialog.hpp"
 
 static void guiThread(void) {
@@ -29,6 +30,7 @@ static void guiThread(void) {
 			"Item1", "Item2", "Item3", nullptr
 	};
 	uint8_t itemval = 0;
+	int32_t val = 1000000;
 
 	Menu *test = new Menu("", SIZE(70, DISPLAY_HEIGHT));
 	test->setPosition(COORDS(DISPLAY_WIDTH - test->getSize().x, 0));
@@ -36,7 +38,7 @@ static void guiThread(void) {
 	test->AddEntry(new MenuBool("Entry1", &values[0], nullptr));
 	test->AddEntry(new MenuBool("Entry2", &values[1], nullptr));
 	test->AddEntry(new MenuChooser("Entry3", items, &itemval));
-	test->AddEntry(new MenuBool("Entry4", &values[3], nullptr));
+	test->AddEntry(new MenuValue("Entry4", &val, Unit::Voltage));
 	test->AddEntry(new MenuBool("Entry5", &values[4], nullptr));
 	test->AddEntry(new MenuBool("Entry6", &values[5], nullptr));
 

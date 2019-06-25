@@ -38,6 +38,7 @@ private:
     char *title;
     font_t font;
     Widget *lastTopWidget;
+    Widget *lastSelected;
     bool lastPopup;
 };
 
