@@ -1,9 +1,9 @@
 #ifndef PROGRESSBAR_HPP_
 #define PROGRESSBAR_HPP_
 
+#include <common.hpp>
 #include <widget.hpp>
 #include "display.h"
-#include "common.h"
 
 class ProgressBar : public Widget {
 public:

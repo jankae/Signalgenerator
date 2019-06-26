@@ -10,8 +10,8 @@ public:
 	enum class Orientation {
 		LEFT, CENTER, RIGHT
 	};
-	Label(uint8_t length, font_t font, Orientation o);
-	Label(const char *text, font_t font);
+	Label(uint8_t length, font_t font, Orientation o, color_t c = Foreground);
+	Label(const char *text, font_t font, color_t c = Foreground);
 	~Label();
 
 	void setText(const char *text);

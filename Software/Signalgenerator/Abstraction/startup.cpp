@@ -8,6 +8,7 @@
 #include "display.h"
 #include "buttons.h"
 #include "Unit.hpp"
+#include "Generator.hpp"
 
 extern uint8_t pushpull_SPI_OK;
 
@@ -200,11 +201,13 @@ void startup_Software(void) {
 		HAL_Delay(1000);
 	}
 
-	if(warning) {
+	if (warning) {
 		/* keep showing screen until there is some user input */
 		GUIEvent_t event;
 		while (xQueuePeek(GUIeventQueue, &event, 0) == pdFALSE) {
 		}
 	}
+
+	Generator::Init();
 }
 

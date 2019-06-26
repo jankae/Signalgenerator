@@ -1,7 +1,6 @@
 #include <color.hpp>
 #include <widget.hpp>
 #include "display.h"
-#include "desktop.h"
 
 Widget *Widget::selectedWidget = nullptr;
 
@@ -66,11 +65,13 @@ void Widget::draw(Widget *w, coords_t pos) {
 			/* clear flag */
 			w->redrawClear = false;
 		}
-		/* draw widget */
-		display_SetActiveArea(pos.x, pos.x + w->size.x - 1, pos.y,
-				pos.y + w->size.y - 1);
-		w->draw(pos);
-		display_SetDefaultArea();
+		if(w->visible) {
+			/* draw widget */
+			display_SetActiveArea(pos.x, pos.x + w->size.x - 1, pos.y,
+					pos.y + w->size.y - 1);
+			w->draw(pos);
+			display_SetDefaultArea();
+		}
 		/* clear redraw request */
 		w->redraw = false;
 	}
@@ -130,7 +131,6 @@ void Widget::deselect() {
 		selectedWidget->selected = false;
 		selectedWidget->requestRedraw();
 		selectedWidget = nullptr;
-//		desktop_Draw();
 	}
 }
 
@@ -168,7 +168,6 @@ void Widget::select(bool down) {
 				}
 			}
 		}
-		bool refreshDesktop = (selectedWidget == nullptr) ^ (newSel == nullptr);
 		/* de-select currently selected widget */
 		if (selectedWidget) {
 			selectedWidget->selected = false;
@@ -178,9 +177,6 @@ void Widget::select(bool down) {
 			selectedWidget = newSel;
 			newSel->selected = true;
 			newSel->requestRedraw();
-		}
-		if(refreshDesktop) {
-//			desktop_Draw();
 		}
 	}
 }

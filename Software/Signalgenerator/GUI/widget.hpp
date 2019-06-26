@@ -1,11 +1,11 @@
 #ifndef GUI_WIDGET_H_
 #define GUI_WIDGET_H_
 
+#include <common.hpp>
 #include <events.hpp>
 #include <string.h>
 #include <stdint.h>
 
-#include "common.h"
 #include "logging.h"
 
 class Widget {
@@ -36,6 +36,7 @@ public:
 		MenuChooser,
 		EventCatcher,
 		MenuValue,
+		MenuAction,
 	};
 
 	Widget();
@@ -72,7 +73,7 @@ public:
 
 	bool IsSelectable() { return selectable; };
 
-	void widget_SetVisible(bool v) {
+	void SetVisible(bool v) {
 		if(visible != v) {
 			visible = v;
 			requestRedrawFull();

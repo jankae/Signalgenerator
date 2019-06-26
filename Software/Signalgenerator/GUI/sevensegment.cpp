@@ -40,10 +40,10 @@ SevenSegment::SevenSegment(int32_t *value, uint8_t sLength, uint8_t sWidth,
 	this->color = color;
 	this->selectable = false;
 
-	uint16_t height = sWidth + 2 * sLength;
+	uint16_t height = sWidth + 2 * sLength + 4;
 	uint16_t digitWidth = sWidth + sLength;
 	size.y = height;
-	size.x = digitWidth * length + sWidth * (length - 1);
+	size.x = digitWidth * length + sWidth * (length - 1) + 2;
 }
 
 void SevenSegment::draw_Digit(int16_t x, int16_t y, uint8_t digit) {

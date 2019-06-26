@@ -8,10 +8,10 @@
 #ifndef EVENTCATCHER_HPP_
 #define EVENTCATCHER_HPP_
 
+#include <common.hpp>
 #include <widget.hpp>
 #include "display.h"
 #include "font.h"
-#include "common.h"
 
 class EventCatcher : public Widget {
 public:

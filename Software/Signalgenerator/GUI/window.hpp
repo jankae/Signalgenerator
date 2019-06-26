@@ -8,11 +8,11 @@
 #ifndef WINDOW_HPP_
 #define WINDOW_HPP_
 
+#include <common.hpp>
 #include <gui.hpp>
 #include <widget.hpp>
 #include "display.h"
 #include "font.h"
-#include "common.h"
 
 class Window : public Widget {
 public:

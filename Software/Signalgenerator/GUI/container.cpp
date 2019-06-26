@@ -292,7 +292,7 @@ void Container::drawChildren(coords_t offset) {
 
     /* draw its children */
     for (; child; child = child->next) {
-         if (child->visible && !child->selected) {
+         if (!child->selected) {
             /* check if child is fully in viewing field */
             if (child->position.x >= canvasOffset.x
                     && child->position.y >= canvasOffset.y

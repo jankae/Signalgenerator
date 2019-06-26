@@ -2,9 +2,9 @@
 #define DISPLAY_H_
 
 #include <color.hpp>
+#include <common.hpp>
 #include "stm32f1xx.h"
 #include "font.h"
-#include "common.h"
 
 #define DISPLAY_WIDTH		320
 #define DISPLAY_HEIGHT		240

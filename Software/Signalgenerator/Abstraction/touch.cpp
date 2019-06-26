@@ -96,11 +96,7 @@ static void touch_SampleADC(uint16_t *rawX, uint16_t *rawY, uint16_t samples) {
 	*rawY = Y / samples;
 }
 
-int8_t touch_GetCoordinates(coords_t *c) {
-	if(calibrating) {
-		/* don't report coordinates while calibrating */
-		return 0;
-	}
+static int8_t getRaw(coords_t *c) {
 	if (PENIRQ()) {
 		uint16_t rawY, rawX;
 		/* screen is being touched */
@@ -117,21 +113,24 @@ int8_t touch_GetCoordinates(coords_t *c) {
 			/* touch has been released during measurement */
 			return 0;
 		}
-		/* convert to screen resolution */
-		c->x = rawX * scaleX + offsetX;
-		c->y = rawY * scaleY + offsetY;
-		if(c->x < 0)
-			c->x = 0;
-		else if(c->x >= TOUCH_RESOLUTION_X)
-			c->x = TOUCH_RESOLUTION_X - 1;
-		if(c->y < 0)
-			c->y = 0;
-		else if(c->y >= TOUCH_RESOLUTION_Y)
-			c->y = TOUCH_RESOLUTION_Y - 1;
+		c->x = rawX;
+		c->y = rawY;
 		return 1;
 	} else {
 		return 0;
 	}
+}
+
+int8_t touch_GetCoordinates(coords_t *c) {
+	if(calibrating) {
+		/* don't report coordinates while calibrating */
+		return 0;
+	}
+	int8_t ret = getRaw(c);
+	/* convert to screen resolution */
+	c->x = constrain_int16_t(c->x * scaleX + offsetX, 0, DISPLAY_WIDTH - 1);
+	c->y = constrain_int16_t(c->y * scaleY + offsetY, 0, DISPLAY_HEIGHT - 1);
+	return ret;
 }
 
 static uint8_t touch_SaveCalibration(void) {
@@ -156,70 +155,148 @@ uint8_t touch_LoadCalibration(void) {
 	}
 }
 
-void touch_Calibrate(void) {
-	if(!xSemaphoreTake(xMutexSPI3, 500)) {
-		/* SPI is busy */
-		return;
-	}
-	calibrating = 1;
-	uint8_t done = 0;
-	/* display first calibration cross */
-	display_SetBackground(COLOR_WHITE);
-	display_SetForeground(COLOR_BLACK);
+static coords_t GetCalibrationPoint(bool top, coords_t cross) {
+	constexpr uint16_t barHeight = 20;
+	int16_t y = top ? 0 : DISPLAY_HEIGHT - Font_Big.height - barHeight - 1;
+	display_SetForeground(COLOR_WHITE);
+	display_SetBackground(COLOR_BLACK);
 	display_Clear();
-	display_Line(0, 0, 40, 40);
-	display_Line(40, 0, 0, 40);
-	coords_t p1;
+	display_Line(cross.x - 10, cross.y - 10, cross.x + 10, cross.y + 10);
+	display_Line(cross.x - 10, cross.y + 10, cross.x + 10, cross.y - 10);
+	display_SetFont(Font_Big);
+	display_String(0, y, "Press and hold X");
+	display_Rectangle(0, y + Font_Big.height, DISPLAY_WIDTH - 1, y + Font_Big.height + barHeight);
+	uint16_t bar = 1;
+	uint16_t samples = 0;
+	int32_t sumX = 0, sumY = 0;
+	coords_t c;
 	do {
-		/* wait for touch to be pressed */
-		while (!PENIRQ())
-			;
-		/* get raw data */
-		touch_SampleADC((uint16_t*) &p1.x, (uint16_t*) &p1.y, 1000);
-		if (p1.x <= 1000 && p1.y <= 1000)
-			done = 1;
-	} while (!done);
-	while (PENIRQ())
+		if(getRaw(&c)) {
+			bar++;
+			if(bar >= 50) {
+				sumX += c.x;
+				sumY += c.y;
+				samples++;
+			}
+			display_SetForeground(COLOR_GREEN);
+			display_VerticalLine(bar, y + Font_Big.height + 1, barHeight - 2);
+		} else {
+			bar = 1;
+			samples = 0;
+			sumX = sumY = 0;
+			display_SetForeground(COLOR_BLACK);
+			display_RectangleFull(1, y + Font_Big.height + 1, DISPLAY_WIDTH - 2,
+					y + Font_Big.height + barHeight - 1);
+		}
+	} while (bar < DISPLAY_WIDTH - 2);
+	// wait for touch to be released
+	while (getRaw(&c))
 		;
-	/* display second calibration cross */
-	display_Clear();
-	display_Line(DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1, DISPLAY_WIDTH - 41,
-	DISPLAY_HEIGHT - 41);
-	display_Line(DISPLAY_WIDTH - 41, DISPLAY_HEIGHT - 1, DISPLAY_WIDTH - 1,
-	DISPLAY_HEIGHT - 41);
-	coords_t p2;
-	done = 0;
-	do {
-		/* wait for touch to be pressed */
-		while (!PENIRQ())
-			;
-		/* get raw data */
-		touch_SampleADC((uint16_t*) &p2.x, (uint16_t*) &p2.y, 1000);
-		if (p2.x >= 3000 && p2.y >= 3000)
-			done = 1;
-	} while (!done);
+	coords_t ret;
+	ret.x = sumX / samples;
+	ret.y = sumY / samples;
+	return ret;
+}
 
-	/* calculate new calibration values */
-	/* calculate scale */
-	scaleX = (float) (DISPLAY_WIDTH - 40) / (p2.x - p1.x);
-	scaleY = (float) (DISPLAY_HEIGHT - 40) / (p2.y - p1.y);
-	/* calculate offset */
-	offsetX = 20 - p1.x * scaleX;
-	offsetY = 20 - p1.y * scaleY;
-
-	while(PENIRQ());
-
-	/* Release SPI resource */
-	xSemaphoreGive(xMutexSPI3);
-
-	/* Try to write calibration data to file */
-	if(touch_SaveCalibration()) {
-		printf("Wrote touch calibration file\n");
-	} else {
-		printf("Failed to create touch calibration file\n");
+static bool SaveCalibration(void) {
+	if (File::Open("TOUCH.CAL", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
+		LOG(Log_Input, LevelError, "Failed to create calibration file");
+		return false;
 	}
-
-	calibrating = 0;
+	File::WriteParameters(touchCal, 4);
+	File::Close();
+	LOG(Log_Input, LevelInfo, "Created calibration file");
+	return true;
 }
 
 
+void touch_Calibrate() {
+	coords_t Set1 = { .x = 20, .y = 20 };
+	coords_t Set2 = { .x = DISPLAY_WIDTH - 20, .y = DISPLAY_HEIGHT - 20 };
+	coords_t Meas1 = GetCalibrationPoint(false, Set1);
+	coords_t Meas2 = GetCalibrationPoint(true, Set2);
+
+	scaleX = (float) (Set2.x - Set1.x) / (Meas2.x - Meas1.x);
+	scaleY = (float) (Set2.y - Set1.y) / (Meas2.y - Meas1.y);
+	/* calculate offset */
+	offsetX = Set1.x - Meas1.x * scaleX;
+	offsetY = Set1.y - Meas1.y * scaleY;
+
+	GUIEvent_t ev;
+	ev.type = EVENT_WINDOW_CLOSE;
+	gui_SendEvent(&ev);
+
+	if(!SaveCalibration()) {
+		Dialog::MessageBox("ERROR", Font_Big,
+				"Failed to save\ntouch calibration", Dialog::MsgBox::OK, nullptr,
+				false);
+	}
+}
+
+//void touch_Calibrate(void) {
+//	if(!xSemaphoreTake(xMutexSPI3, 500)) {
+//		/* SPI is busy */
+//		return;
+//	}
+//	calibrating = 1;
+//	uint8_t done = 0;
+//	/* display first calibration cross */
+//	display_SetBackground(COLOR_WHITE);
+//	display_SetForeground(COLOR_BLACK);
+//	display_Clear();
+//	display_Line(0, 0, 40, 40);
+//	display_Line(40, 0, 0, 40);
+//	coords_t p1;
+//	do {
+//		/* wait for touch to be pressed */
+//		while (!PENIRQ())
+//			;
+//		/* get raw data */
+//		touch_SampleADC((uint16_t*) &p1.x, (uint16_t*) &p1.y, 1000);
+//		if (p1.x <= 1000 && p1.y <= 1000)
+//			done = 1;
+//	} while (!done);
+//	while (PENIRQ())
+//		;
+//	/* display second calibration cross */
+//	display_Clear();
+//	display_Line(DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1, DISPLAY_WIDTH - 41,
+//	DISPLAY_HEIGHT - 41);
+//	display_Line(DISPLAY_WIDTH - 41, DISPLAY_HEIGHT - 1, DISPLAY_WIDTH - 1,
+//	DISPLAY_HEIGHT - 41);
+//	coords_t p2;
+//	done = 0;
+//	do {
+//		/* wait for touch to be pressed */
+//		while (!PENIRQ())
+//			;
+//		/* get raw data */
+//		touch_SampleADC((uint16_t*) &p2.x, (uint16_t*) &p2.y, 1000);
+//		if (p2.x >= 3000 && p2.y >= 3000)
+//			done = 1;
+//	} while (!done);
+//
+//	/* calculate new calibration values */
+//	/* calculate scale */
+//	scaleX = (float) (DISPLAY_WIDTH - 40) / (p2.x - p1.x);
+//	scaleY = (float) (DISPLAY_HEIGHT - 40) / (p2.y - p1.y);
+//	/* calculate offset */
+//	offsetX = 20 - p1.x * scaleX;
+//	offsetY = 20 - p1.y * scaleY;
+//
+//	while(PENIRQ());
+//
+//	/* Release SPI resource */
+//	xSemaphoreGive(xMutexSPI3);
+//
+//	/* Try to write calibration data to file */
+//	if(touch_SaveCalibration()) {
+//		printf("Wrote touch calibration file\n");
+//	} else {
+//		printf("Failed to create touch calibration file\n");
+//	}
+//
+//	calibrating = 0;
+//}
+//
+//

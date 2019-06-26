@@ -1,5 +1,4 @@
-#include "common.h"
-
+#include <common.hpp>
 #include <ctype.h>
 
 //static const unitElement_t uA = { "uA", 1 };
@@ -69,6 +68,13 @@ int32_t common_Map(int32_t value, int32_t scaleFromLow, int32_t scaleFromHigh,
 	result = ((int64_t) value * rangeTo) / rangeFrom;
 	result += scaleToLow;
 	return result;
+}
+
+const coords_t operator+(coords_t const& lhs, coords_t const& rhs) {
+	coords_t ret = lhs;
+	ret.x += rhs.x;
+	ret.y += rhs.y;
+	return ret;
 }
 
 //uint32_t common_LeastDigitValueFromString(const char *s,

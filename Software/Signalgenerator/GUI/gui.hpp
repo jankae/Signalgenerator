@@ -15,12 +15,20 @@
 #include <sevensegment.hpp>
 #include <textfield.hpp>
 #include <window.hpp>
+#include "menu.hpp"
+#include "MenuBack.hpp"
+#include "MenuBool.hpp"
+#include "MenuChooser.hpp"
+#include "MenuValue.hpp"
+#include "MenuAction.hpp"
 #include "FreeRTOS.h"
 #include "queue.h"
-#include "desktop.h"
 
 uint8_t gui_Init(void);
 
 void gui_SendEvent(GUIEvent_t *ev);
+
+void gui_SetTopWidget(Widget *w);
+Widget* gui_GetTopWidget();
 
 #endif

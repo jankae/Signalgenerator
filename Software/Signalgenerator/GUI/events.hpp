@@ -1,8 +1,8 @@
 #ifndef GUI_EVENTS_H_
 #define GUI_EVENTS_H_
 
+#include <common.hpp>
 #include <widget.hpp>
-#include "common.h"
 
 typedef enum  {GUI_OK, GUI_ERROR, GUI_UNABLE} GUIResult_t;
 

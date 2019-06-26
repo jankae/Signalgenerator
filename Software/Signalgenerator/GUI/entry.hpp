@@ -1,10 +1,10 @@
 #ifndef GUI_ENTRY_H_
 #define GUI_ENTRY_H_
 
+#include <common.hpp>
 #include <widget.hpp>
 #include "display.h"
 #include "font.h"
-#include "common.h"
 #include "Unit.hpp"
 
 class Entry : public Widget {

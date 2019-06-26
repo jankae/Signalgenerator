@@ -1,10 +1,11 @@
 #include <gui.hpp>
 #include "buttons.h"
-#include "app.h"
 
 QueueHandle_t GUIeventQueue = NULL;
 Widget *topWidget;
 bool isPopup;
+
+static Widget *newTopWidget = nullptr;
 
 TaskHandle_t GUIHandle;
 
@@ -21,41 +22,12 @@ static void guiThread(void) {
 	topWidget = NULL;
 	GUIEvent_t event;
 
-	display_SetBackground(COLOR_BLACK);
-	display_Clear();
-
-//	desktop_Draw();
-
-	static const char * const items[] = {
-			"Item1", "Item2", "Item3", nullptr
-	};
-	uint8_t itemval = 0;
-	int32_t val = 1000000;
-
-	Menu *test = new Menu("", SIZE(70, DISPLAY_HEIGHT));
-	test->setPosition(COORDS(DISPLAY_WIDTH - test->getSize().x, 0));
-	bool values[8] = { true, false, true, false, true, false, true, false };
-	test->AddEntry(new MenuBool("Entry1", &values[0], nullptr));
-	test->AddEntry(new MenuBool("Entry2", &values[1], nullptr));
-	test->AddEntry(new MenuChooser("Entry3", items, &itemval));
-	test->AddEntry(new MenuValue("Entry4", &val, Unit::Voltage));
-	test->AddEntry(new MenuBool("Entry5", &values[4], nullptr));
-	test->AddEntry(new MenuBool("Entry6", &values[5], nullptr));
-
-	Menu *sub = new Menu("SubMenu", test->getSize());
-	test->AddEntry(sub);
-	sub->AddEntry(new MenuBool("Entry7", &values[6], nullptr));
-	sub->AddEntry(new MenuBool("Entry8", &values[7], nullptr));
-	sub->AddEntry(new MenuBack());
-
-	topWidget = test;
-	test->select();
-	test->requestRedrawFull();
-
-//	auto chooser = new ItemChooserDialog("Title", items, 0, nullptr, nullptr);
-
 	while (1) {
 		if (xQueueReceive(GUIeventQueue, &event, 20)) {
+			if(newTopWidget && !isPopup) {
+				topWidget = newTopWidget;
+				newTopWidget = nullptr;
+			}
 			if (topWidget) {
 				switch (event.type) {
 				case EVENT_TOUCH_PRESSED:
@@ -93,13 +65,10 @@ static void guiThread(void) {
 					}
 					break;
 				case EVENT_WINDOW_CLOSE:
-//					desktop_Draw();
 					break;
 				default:
 					break;
 				}
-			} else {
-//				desktop_Input(&event);
 			}
 		}
 		if (topWidget) {
@@ -131,4 +100,12 @@ void gui_SendEvent(GUIEvent_t *ev) {
 	BaseType_t yield;
 	xQueueSendFromISR(GUIeventQueue, ev, &yield);
 //	portYIELD_FROM_ISR(yield);
+}
+
+void gui_SetTopWidget(Widget* w) {
+	newTopWidget = w;
+}
+
+Widget* gui_GetTopWidget() {
+	return topWidget;
 }

@@ -49,6 +49,12 @@ static const Unit::unit uN = {"uN", 1};
 static const Unit::unit mN =  {"mN", 1000};
 static const Unit::unit N = {"N", 1000000};
 
+static const Unit::unit kHz = {"kHz", 1000};
+static const Unit::unit MHz =  {"MHz", 1000000};
+static const Unit::unit GHz = {"GHZ", 1000000000};
+
+static const Unit::unit dbms = {"dbm", 100};
+
 static const Unit::unit none = {"", 1};
 
 const Unit::unit *Unit::Current[] = { &uA, &mA, &A, nullptr };
@@ -66,6 +72,8 @@ const Unit::unit *Unit::Weight[] = { &mg, &g, &kg, nullptr };
 const Unit::unit *Unit::Force[] = { &uN, &mN, &N, nullptr };
 const Unit::unit *Unit::None[] = {&none, nullptr };
 const Unit::unit *Unit::Hex[] = {nullptr };
+const Unit::unit *Unit::Frequency[] = { &kHz, &MHz, &GHz, nullptr };
+const Unit::unit *Unit::dbm[] = {&dbms, nullptr };
 
 const int32_t Unit::null = 0;
 const int32_t Unit::maxPercent = 100000000;

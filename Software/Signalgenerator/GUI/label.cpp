@@ -1,7 +1,7 @@
 #include <label.hpp>
 
-Label::Label(uint8_t length, font_t font, Orientation o) {
-	color = Foreground;
+Label::Label(uint8_t length, font_t font, Orientation o, color_t c) {
+	color = c;
 	this->font = font;
 	this->orient = o;
 	text = nullptr;
@@ -12,8 +12,8 @@ Label::Label(uint8_t length, font_t font, Orientation o) {
 	fontStartX = 0;
 }
 
-Label::Label(const char *text, font_t font) {
-	color = Foreground;
+Label::Label(const char *text, font_t font, color_t c) {
+	color = c;
 	this->font = font;
 	this->orient = orient;
 	this->text = nullptr;
