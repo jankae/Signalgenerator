@@ -22,17 +22,21 @@ static MAX2871 Synthesizer = MAX2871(&hspi1, SYNTH_CE_GPIO_Port, SYNTH_CE_Pin,
 SYNTH_LD_Pin);
 
 extern ADC_HandleTypeDef hadc;
-constexpr uint16_t samplelength = 256;
-uint16_t ADC_Samples[samplelength];
+static constexpr uint16_t samplelength = 256;
+static uint16_t ADC_Samples[samplelength];
 
 RF::Status status;
 
-void RF::Init() {
+static Protocol::RFToFront *spi_status;
+
+void RF::Init(Protocol::RFToFront *s) {
+	spi_status = s;
 	status.enabled = false;
 	status.unlevel = false;
 	status.lo_unlocked = false;
 	status.synth_unlocked = false;
 	status.used_att = Attenuation::DB45;
+	InternalReference(false);
 	HAL_ADC_Start_DMA(&hadc, (uint32_t*) ADC_Samples, samplelength);
 	PowerDAC.Shutdown(MCP48X2::Channel::A);
 	PowerDAC.Shutdown(MCP48X2::Channel::B);
@@ -49,24 +53,36 @@ void RF::SetAttenuator(Attenuation a) {
 		DB15_2_GPIO_Port->BSRR = DB15_2_Pin << 16;
 		DB15_3_GPIO_Port->BSRR = DB15_3_Pin << 16;
 		LOG(Log_RF, LevelDebug, "Output attenuation 0db");
+		spi_status->Status.n15dbm1 = 0;
+		spi_status->Status.n15dbm2 = 0;
+		spi_status->Status.n15dbm3 = 0;
 		break;
 	case RF::Attenuation::DB15:
 		DB15_1_GPIO_Port->BSRR = DB15_1_Pin << 16;
 		DB15_2_GPIO_Port->BSRR = DB15_2_Pin << 16;
 		DB15_3_GPIO_Port->BSRR = DB15_3_Pin;
 		LOG(Log_RF, LevelDebug, "Output attenuation 15db");
+		spi_status->Status.n15dbm1 = 0;
+		spi_status->Status.n15dbm2 = 0;
+		spi_status->Status.n15dbm3 = 1;
 		break;
 	case RF::Attenuation::DB30:
 		DB15_1_GPIO_Port->BSRR = DB15_1_Pin << 16;
 		DB15_2_GPIO_Port->BSRR = DB15_2_Pin;
 		DB15_3_GPIO_Port->BSRR = DB15_3_Pin;
 		LOG(Log_RF, LevelDebug, "Output attenuation 30db");
+		spi_status->Status.n15dbm1 = 0;
+		spi_status->Status.n15dbm2 = 1;
+		spi_status->Status.n15dbm3 = 1;
 		break;
 	case RF::Attenuation::DB45:
 		DB15_1_GPIO_Port->BSRR = DB15_1_Pin;
 		DB15_2_GPIO_Port->BSRR = DB15_2_Pin;
 		DB15_3_GPIO_Port->BSRR = DB15_3_Pin;
 		LOG(Log_RF, LevelDebug, "Output attenuation 45db");
+		spi_status->Status.n15dbm1 = 1;
+		spi_status->Status.n15dbm2 = 1;
+		spi_status->Status.n15dbm3 = 1;
 		break;
 	}
 	status.used_att = a;
@@ -80,10 +96,12 @@ void RF::SetHeterodynePath(bool use) {
 		HeterodyneLO.Update();
 		EN_DIRECT_GPIO_Port->BSRR = EN_DIRECT_Pin << 16;
 		LOG(Log_RF, LevelDebug, "Heterodyne path enabled");
+		spi_status->Status.HeterodynePLLON = 1;
 	} else {
 		HeterodyneLO.ChipEnable(false);
 		EN_DIRECT_GPIO_Port->BSRR = EN_DIRECT_Pin;
 		LOG(Log_RF, LevelDebug, "Heterodyne path disabled");
+		spi_status->Status.HeterodynePLLON = 0;
 	}
 }
 
@@ -93,7 +111,9 @@ void RF::Configure(uint64_t f, int16_t cdbm) {
 		SetHeterodynePath(false);
 		Synthesizer.RFEnable(false);
 		Synthesizer.ChipEnable(false);
+		spi_status->Status.MainPLLON = 0;
 		FPGA::SetGPIO(FPGA::GPIO::MOD_DISABLE);
+		spi_status->Status.IQModEnabled = 0;
 		FPGA::UpdateGPIO();
 		SetAttenuator(Attenuation::DB45);
 		DetectorEnable(false);
@@ -144,7 +164,9 @@ void RF::Configure(uint64_t f, int16_t cdbm) {
 	// turn on RF path
 	Synthesizer.Update();
 	FPGA::ResetGPIO(FPGA::GPIO::MOD_DISABLE);
+	spi_status->Status.IQModEnabled = 1;
 	Synthesizer.RFEnable(true);
+	spi_status->Status.MainPLLON = 1;
 	status.enabled = true;
 	LOG(Log_RF, LevelInfo, "Output enabled");
 }
@@ -194,6 +216,7 @@ void RF::SetLPF(LPF l) {
 		break;
 	}
 	UpdateGPIO();
+	spi_status->Status.Filter = (uint16_t) l;
 }
 
 static void NewADCSamples(uint16_t *data, uint16_t len) {
@@ -225,6 +248,7 @@ static void NewADCSamples(uint16_t *data, uint16_t len) {
 	if (sum < low_threshold) {
 		// RF output level is too low
 		status.unlevel = true;
+		spi_status->Status.AmplitudeUnlevel = 0;
 		// adjust attenuator if possible
 		if (HAL_GetTick() - last_adjust >= adjust_delay) {
 			switch (status.used_att) {
@@ -245,6 +269,7 @@ static void NewADCSamples(uint16_t *data, uint16_t len) {
 	} else if (sum > high_threshold) {
 		// RF output level is too high
 		status.unlevel = true;
+		spi_status->Status.AmplitudeUnlevel = 1;
 		// adjust attenuator if possible
 		if (HAL_GetTick() - last_adjust >= adjust_delay) {
 			switch (status.used_att) {
@@ -269,6 +294,8 @@ static void NewADCSamples(uint16_t *data, uint16_t len) {
 	// also check lock status in ADC interrupt
 	status.synth_unlocked = !Synthesizer.Locked();
 	status.lo_unlocked = !HeterodyneLO.Locked();
+	spi_status->Status.MainPLLUnlocked = status.synth_unlocked ? 1 : 0;
+	spi_status->Status.HeterodynePLLUnlock = status.lo_unlocked ? 1 : 0;
 }
 
 extern "C" {
@@ -278,4 +305,14 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc) {
 	NewADCSamples(&ADC_Samples[0], samplelength / 2);
 }
+}
+
+void RF::InternalReference(bool enabled) {
+	if (enabled) {
+		EN_INTREF_GPIO_Port->BSRR = EN_INTREF_Pin << 16;
+		spi_status->Status.IntRefON = 1;
+	} else {
+		EN_INTREF_GPIO_Port->BSRR = EN_INTREF_Pin;
+		spi_status->Status.IntRefON = 0;
+	}
 }

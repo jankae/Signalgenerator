@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "SPIProtocol.hpp"
 
 namespace RF {
 
@@ -26,11 +27,12 @@ using Status = struct {
 	Attenuation used_att;
 };
 
-void Init();
+void Init(Protocol::RFToFront *s);
 void Configure(uint64_t f, int16_t mdbm);
 void SetAttenuator(Attenuation a);
 void SetHeterodynePath(bool use);
 void DetectorEnable(bool en);
 void SetLPF(LPF l);
+void InternalReference(bool enabled);
 
 }

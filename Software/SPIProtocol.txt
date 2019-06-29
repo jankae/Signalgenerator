@@ -1,0 +1,33 @@
+Frontpanel to RF board:
+0-7: Frequency in Hz, uint64_t. 0 if output disabled.
+8-9: Amplitude in 1/100 dbm, int16_t.
+10-11: Status bits, uint16_t.
+        0x0001: Use internal reference
+        0xFFFE: reserved
+12-31: reserved
+
+RF board to Frontpanel:
+0-1: Status bits, uint16_t.
+        0x0001: Internal reference on
+        0x0002: Main PLL on
+        0x0004: Unlock main PLL
+        0x0008: Heterodyne PLL on
+        0x0010: Unlock heterodyne PLL
+        0x0020: I/Q Modulator enabled
+        0x01C0: Selected Filter:
+            000: 340MHz
+            001: 500MHz
+            010: 750MHz
+            011: 1.1GHz
+            100: 1.7GHz
+            101: 2.5GHz
+            110-111: reserved
+        0x0200: 1st 15dbm attenuator enabled
+        0x0400: 2nd 15dbm attenuator enabled
+        0x0800: 3rd 15dbm attenuator enabled
+        0x1000: Amplitude unlevel
+        0xE000: reserved
+2-3: reserved
+4-7: 0xAE795C0D, magic constant to check communication
+8-31: reserved
+        
