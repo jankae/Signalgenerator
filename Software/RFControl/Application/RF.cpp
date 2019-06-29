@@ -1,12 +1,12 @@
 #include "RF.hpp"
 
-#include "mcp48x2.hpp"
-#include "max2871.hpp"
-#include "adf4360.hpp"
-#include "delay.hpp"
-#include "fpga.hpp"
+#include "Drivers/mcp48x2.hpp"
+#include "Drivers/max2871.hpp"
+#include "Drivers/adf4360.hpp"
+#include "Drivers/delay.hpp"
+#include "Drivers/fpga.hpp"
 #include <cmath>
-#include "log.h"
+#include "System/log.h"
 
 #define Log_RF		(LevelAll)
 
@@ -44,6 +44,16 @@ void RF::Init(Protocol::RFToFront *s) {
 	Synthesizer.Init();
 	Configure(0, 0);
 	LOG(Log_RF, LevelInfo, "Initialized");
+
+	/* BEGIN TESTS */
+//	InternalReference(true);
+//	HeterodyneLO.ChipEnable(true);
+//	HeterodyneLO.Init();
+//	HeterodyneLO.SetFrequency(1000000000);
+//	HeterodyneLO.Update();
+//	Configure(300000000, 0);
+	while(1);
+	/* END TESTS */
 }
 
 void RF::SetAttenuator(Attenuation a) {
@@ -162,6 +172,8 @@ void RF::Configure(uint64_t f, int16_t cdbm) {
 			abs(cdbm) % 100);
 
 	// turn on RF path
+	Synthesizer.Update();
+	Delay::ms(20);
 	Synthesizer.Update();
 	FPGA::ResetGPIO(FPGA::GPIO::MOD_DISABLE);
 	spi_status->Status.IQModEnabled = 1;

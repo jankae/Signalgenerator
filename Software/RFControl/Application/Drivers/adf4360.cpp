@@ -1,7 +1,7 @@
 #include "adf4360.hpp"
 
 #include "delay.hpp"
-#include "log.h"
+#include "../System/log.h"
 
 #define Log_ADF4369		(LevelAll)
 
@@ -9,7 +9,7 @@ bool ADF4360::Init() {
 	LR = LN = LControl = 0;
 
 	// set a 1MHz PFD frequency (assuming 10MHz reference)
-	LR = (9 << 2);
+	LR = (10 << 2);
 	// lock detect precision 5 cycles
 	LR |= (1UL << 18);
 
@@ -22,6 +22,8 @@ bool ADF4360::Init() {
 
 	// select 16/17 as P prescaler
 	LControl |= (1UL << 22);
+
+	LControl |= (1UL << 8);
 
 	// divide output by 2
 	LN |= (1UL << 22);
@@ -54,9 +56,9 @@ bool ADF4360::SetFrequency(uint32_t f) {
 				f_vco);
 		return false;
 	}
-	uint16_t B = (f_vco / 1000000ULL) / 16;
+	uint32_t B = (f_vco / 1000000ULL) / 16;
 	uint32_t rem_f = f_vco - (B * 16 * 1000000ULL);
-	uint8_t A = rem_f / 1000000;
+	uint32_t A = rem_f / 1000000;
 	LOG(Log_ADF4369, LevelDebug, "Selected counters: A=%u, B=%u", A, B);
 	if (B < 3 || B > 8191 || A > 31 || A > B) {
 		LOG(Log_ADF4369, LevelError, "Invalid A/B values, aborting");

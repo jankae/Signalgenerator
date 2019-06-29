@@ -1,7 +1,7 @@
 #include "max2871.hpp"
 
 #include "delay.hpp"
-#include "log.h"
+#include "../System/log.h"
 #include <cmath>
 
 #define Log_MAX2871 (LevelAll)
@@ -14,7 +14,7 @@ bool MAX2871::Init() {
 	ChipEnable(false);
 	RFEnable(false);
 
-	SetReference(10000000, true, 1, false);
+	SetReference(10000000, false, 5, false);
 
 	// non-inverting loop filter
 	regs[2] |= (1UL << 6);
@@ -23,6 +23,8 @@ bool MAX2871::Init() {
 
 	// enable output A (still controlled via RF_EN pin)
 	regs[4] |= (1UL << 5);
+
+	regs[4] |= (1UL << 23);
 
 	// enable double buffering for register 4
 	regs[2] |= (1UL << 13);
@@ -33,7 +35,7 @@ bool MAX2871::Init() {
 	SetPower(Power::n1dbm);
 	SetMode(Mode::LowNoise);
 	SetCPMode(CPMode::CP20);
-	SetCPCurrent(1);
+	SetCPCurrent(2);
 	SetFrequency(1000000000);
 
 	Update();
@@ -180,6 +182,8 @@ void MAX2871::Write(uint8_t reg, uint32_t val) {
 	LE->BSRR = LEpin;
 	Delay::us(1);
 	LE->BSRR = LEpin << 16;
+	LOG(Log_MAX2871, LevelDebug, "Wrote 0x%08x to register %d", val, reg);
+	Delay::ms(10);
 }
 
 bool MAX2871::SetReference(uint32_t f_ref, bool doubler, uint16_t r,

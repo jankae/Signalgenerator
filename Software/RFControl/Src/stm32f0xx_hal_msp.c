@@ -123,8 +123,6 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
       Error_Handler();
     }
 
-    __HAL_DMA1_REMAP(HAL_DMA1_CH1_ADC);
-
     __HAL_LINKDMA(hadc,DMA_Handle,hdma_adc);
 
   /* USER CODE BEGIN ADC1_MspInit 1 */
@@ -235,8 +233,6 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
       Error_Handler();
     }
 
-    __HAL_DMA1_REMAP(HAL_DMA1_CH4_SPI2_RX);
-
     __HAL_LINKDMA(hspi,hdmarx,hdma_spi2_rx);
 
     /* SPI2_TX Init */
@@ -252,8 +248,6 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
     {
       Error_Handler();
     }
-
-    __HAL_DMA1_REMAP(HAL_DMA1_CH5_SPI2_TX);
 
     __HAL_LINKDMA(hspi,hdmatx,hdma_spi2_tx);
 

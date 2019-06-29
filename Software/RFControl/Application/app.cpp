@@ -4,6 +4,7 @@
 #include "SPIProtocol.hpp"
 #include <string.h>
 #include "stm32f0xx_hal.h"
+#include "System/log.h"
 
 static Protocol::RFToFront send;
 static Protocol::FrontToRF recv;
@@ -14,12 +15,14 @@ static volatile bool new_data = false;
 extern SPI_HandleTypeDef hspi2;
 
 void app(void) {
+	log_init();
 	send.MagicConstant = Protocol::MagicConstant;
 	Protocol::FrontToRF spi_current;
 	memset(&spi_current, 0, sizeof(spi_current));
 	RF::Init(&send);
 	HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*) &send, (uint8_t*) &recv,
 			sizeof(send));
+
 	while (1) {
 		while (!new_data)
 			;
