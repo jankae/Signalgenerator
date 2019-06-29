@@ -18828,14 +18828,14 @@ Source: www.kingbright.com</description>
 <part name="IC2" library="rf" deviceset="MAX2871" device="" package3d_urn="urn:adsk.eagle:package:11260353/1"/>
 <part name="GND1" library="supply1" deviceset="GND" device=""/>
 <part name="GND2" library="supply1" deviceset="GND" device=""/>
-<part name="R1" library="resistor" deviceset="R-EU_" device="R0603" value="250"/>
-<part name="R2" library="resistor" deviceset="R-EU_" device="R0603" value="0"/>
-<part name="R3" library="resistor" deviceset="R-EU_" device="R0603" value="120"/>
+<part name="R1" library="resistor" deviceset="R-EU_" device="R0603" value="330"/>
+<part name="R2" library="resistor" deviceset="R-EU_" device="R0603" value="270"/>
+<part name="R3" library="resistor" deviceset="R-EU_" device="R0603" value="1k"/>
 <part name="C1" library="rcl" deviceset="C-EU" device="C0603" value="1u"/>
 <part name="C2" library="rcl" deviceset="C-EU" device="C0603" value="1u"/>
 <part name="C3" library="rcl" deviceset="C-EU" device="C0603" value="1u"/>
-<part name="C4" library="rcl" deviceset="C-EU" device="C0603" value="12n"/>
-<part name="C5" library="rcl" deviceset="C-EU" device="C0603" value="820p"/>
+<part name="C4" library="rcl" deviceset="C-EU" device="C0603" value="10n"/>
+<part name="C5" library="rcl" deviceset="C-EU" device="C0603" value="10n"/>
 <part name="C6" library="rcl" deviceset="C-EU" device="C0603" value="100n"/>
 <part name="GND3" library="supply1" deviceset="GND" device=""/>
 <part name="GND4" library="supply1" deviceset="GND" device=""/>
@@ -19123,13 +19123,13 @@ Source: www.kingbright.com</description>
 <part name="IC15" library="rf" deviceset="ADF4360" device="" package3d_urn="urn:adsk.eagle:package:11371336/1"/>
 <part name="IC16" library="rf" deviceset="HMC284" device=""/>
 <part name="IC17" library="rf" deviceset="HMC284" device=""/>
-<part name="R27" library="resistor" deviceset="R-EU_" device="R0603" value="250"/>
-<part name="R29" library="resistor" deviceset="R-EU_" device="R0603" value="120"/>
+<part name="R27" library="resistor" deviceset="R-EU_" device="R0603" value="15k"/>
+<part name="R29" library="resistor" deviceset="R-EU_" device="R0603" value="6k8"/>
 <part name="C101" library="rcl" deviceset="C-EU" device="C0603" value="10n"/>
-<part name="C102" library="rcl" deviceset="C-EU" device="C0603" value="820p"/>
-<part name="C103" library="rcl" deviceset="C-EU" device="C0603" value="100n"/>
+<part name="C102" library="rcl" deviceset="C-EU" device="C0603" value="10n"/>
+<part name="C103" library="rcl" deviceset="C-EU" device="C0603" value="330p"/>
 <part name="R30" library="resistor" deviceset="R-EU_" device="R0603" value="4k7"/>
-<part name="C104" library="rcl" deviceset="C-EU" device="C0603" value="820p"/>
+<part name="C104" library="rcl" deviceset="C-EU" device="C0603" value="220p"/>
 <part name="C105" library="rcl" deviceset="C-EU" device="C0603" value="10u"/>
 <part name="L50" library="rf" deviceset="INDUCTOR" device="0603" value="100n"/>
 <part name="L51" library="rf" deviceset="INDUCTOR" device="0603" value="100n"/>
@@ -19371,8 +19371,8 @@ Source: www.kingbright.com</description>
 <part name="C163" library="rcl" deviceset="C-EU" device="C0603" value="100n"/>
 <part name="C164" library="rcl" deviceset="C-EU" device="C1206" value="22u"/>
 <part name="C165" library="rcl" deviceset="C-EU" device="C1206" value="22u"/>
-<part name="R15" library="resistor" deviceset="R-EU_" device="R0603" value="73k2"/>
-<part name="R66" library="resistor" deviceset="R-EU_" device="R0603" value="22k1"/>
+<part name="R15" library="resistor" deviceset="R-EU_" device="R0603" value="15k"/>
+<part name="R66" library="resistor" deviceset="R-EU_" device="R0603" value="11k"/>
 <part name="GND179" library="supply1" deviceset="GND" device=""/>
 <part name="GND180" library="supply1" deviceset="GND" device=""/>
 <part name="GND181" library="supply1" deviceset="GND" device=""/>
