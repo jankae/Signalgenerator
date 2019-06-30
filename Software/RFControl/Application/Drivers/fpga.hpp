@@ -26,5 +26,6 @@ inline GPIO operator|(GPIO a, GPIO b) {
 void SetGPIO(GPIO g);
 void ResetGPIO(GPIO g);
 void UpdateGPIO();
+void SetDAC(uint16_t i, uint16_t q);
 
 }

@@ -63,10 +63,13 @@ void Generator::Init() {
 		Protocol::RFToFront recv;
 		memset(&send, 0, sizeof(send));
 		memset(&recv, 0, sizeof(recv));
-		if(RFon) {
+		send.Status.UseIntRef = IntRef ? 1 : 0;
+		if (RFon) {
 			send.frequency = frequency;
 			send.dbm = dbm;
-			send.Status.UseIntRef = IntRef ? 1 : 0;
+		} else {
+			send.frequency = 0;
+			send.dbm = 0;
 		}
 		SPI1_CS_RF_GPIO_Port->BSRR = SPI1_CS_RF_Pin << 16;
 		HAL_SPI_TransmitReceive(&hspi1, (uint8_t*) &send, (uint8_t*) &recv,

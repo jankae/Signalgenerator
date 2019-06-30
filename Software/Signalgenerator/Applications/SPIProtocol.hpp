@@ -11,7 +11,7 @@ using FrontToRF = struct fronttorf {
 		uint16_t UseIntRef :1;
 		uint16_t reserved :15;
 	} Status;
-	uint8_t reserved[22];
+	uint8_t reserved[20];
 } __attribute__((packed, aligned(8)));
 
 static constexpr uint32_t MagicConstant = 0xAE795C0D;

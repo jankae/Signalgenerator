@@ -22,7 +22,7 @@ void MCP48X2::Shutdown(Channel c) {
 
 void MCP48X2::Write(uint16_t cmd) {
 	uint8_t data[2];
-	data[0] = cmd >> 16;
+	data[0] = cmd >> 8;
 	data[1] = cmd & 0xFF;
 	CS->BSRR = CSpin << 16;
 	HAL_SPI_Transmit(hspi, data, 2, 20);

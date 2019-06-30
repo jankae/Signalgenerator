@@ -182,8 +182,6 @@ void MAX2871::Write(uint8_t reg, uint32_t val) {
 	LE->BSRR = LEpin;
 	Delay::us(1);
 	LE->BSRR = LEpin << 16;
-	LOG(Log_MAX2871, LevelDebug, "Wrote 0x%08x to register %d", val, reg);
-	Delay::ms(10);
 }
 
 bool MAX2871::SetReference(uint32_t f_ref, bool doubler, uint16_t r,

@@ -37,7 +37,8 @@ void RF::Init(Protocol::RFToFront *s) {
 	status.synth_unlocked = false;
 	status.used_att = Attenuation::DB45;
 	InternalReference(false);
-	HAL_ADC_Start_DMA(&hadc, (uint32_t*) ADC_Samples, samplelength);
+//	HAL_ADC_Start_DMA(&hadc, (uint32_t*) ADC_Samples, samplelength);
+	FPGA::SetDAC(0x0FFF, 0x0800);
 	PowerDAC.Shutdown(MCP48X2::Channel::A);
 	PowerDAC.Shutdown(MCP48X2::Channel::B);
 	HeterodyneLO.Init();
@@ -46,13 +47,36 @@ void RF::Init(Protocol::RFToFront *s) {
 	LOG(Log_RF, LevelInfo, "Initialized");
 
 	/* BEGIN TESTS */
+//	HAL_Delay(2000);
 //	InternalReference(true);
 //	HeterodyneLO.ChipEnable(true);
 //	HeterodyneLO.Init();
 //	HeterodyneLO.SetFrequency(1000000000);
 //	HeterodyneLO.Update();
-//	Configure(300000000, 0);
-	while(1);
+//	Configure(500000000, -1000);
+//	SetAttenuator(Attenuation::DB30);
+//	DetectorEnable(true);
+//	PowerDAC.Set(MCP48X2::Channel::A, 900, true);
+//	DetectorEnable(true);
+//	SetAttenuator(Attenuation::DB0);
+//	SetHeterodynePath(false);
+
+//	while(1) {
+//		FPGA::SetGPIO(FPGA::GPIO::LED1);
+//		FPGA::SetGPIO(FPGA::GPIO::LED2);
+//		FPGA::SetGPIO(FPGA::GPIO::LED3);
+//		FPGA::SetGPIO(FPGA::GPIO::LED4);
+//		FPGA::SetGPIO(FPGA::GPIO::LED5);
+//		FPGA::UpdateGPIO();
+//		HAL_Delay(1000);
+//		FPGA::ResetGPIO(FPGA::GPIO::LED1);
+//		FPGA::ResetGPIO(FPGA::GPIO::LED2);
+//		FPGA::ResetGPIO(FPGA::GPIO::LED3);
+//		FPGA::ResetGPIO(FPGA::GPIO::LED4);
+//		FPGA::ResetGPIO(FPGA::GPIO::LED5);
+//		FPGA::UpdateGPIO();
+//		HAL_Delay(1000);
+//	}
 	/* END TESTS */
 }
 
@@ -138,16 +162,24 @@ void RF::Configure(uint64_t f, int16_t cdbm) {
 	}
 	Synthesizer.ChipEnable(true);
 	Synthesizer.SetFrequency(f);
+	/* Measured LPF corner frequencies (all quite low, probably due to extra layout capacitances)
+	 * 340: 270
+	 * 500: 410
+	 * 750: 570
+	 * 1G1: 850
+	 * 1G7: 1140
+	 * 2G5: 2100
+	 */
 	LPF lpf = LPF::LP2G5;
-	if (f < 340000000) {
+	if (f < 270000000) {
 		lpf = LPF::LP340M;
-	} else if (f < 500000000) {
+	} else if (f < 410000000) {
 		lpf = LPF::LP500M;
-	} else if (f < 750000000) {
+	} else if (f < 570000000) {
 		lpf = LPF::LP750M;
-	} else if (f < 1100000000) {
+	} else if (f < 850000000) {
 		lpf = LPF::LP1G1;
-	} else if (f < 1700000000) {
+	} else if (f < 1100000000) {
 		lpf = LPF::LP1G7;
 	}
 	SetLPF(lpf);
@@ -157,8 +189,8 @@ void RF::Configure(uint64_t f, int16_t cdbm) {
 	int32_t cdbm_det = cdbm - 900;
 
 	// calculate voltage at detector output
-	constexpr float slope = 33.7f; // in mV/dbm
-	constexpr float intercept = -69.2; // dbm at 0V output
+	constexpr float slope = 16.85f; // in mV/dbm
+	constexpr float intercept = -67.5; // dbm at 0V output
 	constexpr int16_t cdbm_offset = intercept * 100;
 	constexpr uint32_t gain = slope * 10;
 	uint32_t voltage = ((cdbm_det - cdbm_offset) * gain) / 1000;
@@ -168,6 +200,7 @@ void RF::Configure(uint64_t f, int16_t cdbm) {
 		voltage = 4095;
 	}
 	PowerDAC.Set(MCP48X2::Channel::A, voltage, true);
+	DetectorEnable(true);
 	LOG(Log_RF, LevelDebug, "Requested output level of %d.%02udbm", cdbm / 100,
 			abs(cdbm) % 100);
 
@@ -176,6 +209,7 @@ void RF::Configure(uint64_t f, int16_t cdbm) {
 	Delay::ms(20);
 	Synthesizer.Update();
 	FPGA::ResetGPIO(FPGA::GPIO::MOD_DISABLE);
+	FPGA::UpdateGPIO();
 	spi_status->Status.IQModEnabled = 1;
 	Synthesizer.RFEnable(true);
 	spi_status->Status.MainPLLON = 1;
@@ -260,7 +294,7 @@ static void NewADCSamples(uint16_t *data, uint16_t len) {
 	if (sum < low_threshold) {
 		// RF output level is too low
 		status.unlevel = true;
-		spi_status->Status.AmplitudeUnlevel = 0;
+		spi_status->Status.AmplitudeUnlevel = 1;
 		// adjust attenuator if possible
 		if (HAL_GetTick() - last_adjust >= adjust_delay) {
 			switch (status.used_att) {
@@ -301,6 +335,7 @@ static void NewADCSamples(uint16_t *data, uint16_t len) {
 		}
 	} else {
 		status.unlevel = false;
+		spi_status->Status.AmplitudeUnlevel = 0;
 	}
 
 	// also check lock status in ADC interrupt
