@@ -7,10 +7,14 @@
 #include "System/log.h"
 
 static Protocol::RFToFront send;
+static Protocol::FrontToRF spi_new, recv;
 
 static volatile bool new_data = false;
 
 extern SPI_HandleTypeDef hspi2;
+
+static_assert(sizeof(Protocol::RFToFront) == 32);
+static_assert(sizeof(Protocol::FrontToRF) == 32);
 
 void app(void) {
 	log_init();
@@ -20,36 +24,34 @@ void app(void) {
 	HAL_Delay(3000);
 	RF::Init(&send);
 
+	HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*) &send, (uint8_t*) &recv,
+			sizeof(spi_new));
+
 	while (1) {
-		Protocol::FrontToRF spi_new;
-		if (HAL_SPI_TransmitReceive(&hspi2, (uint8_t*) &send, (uint8_t*) &spi_new,
-				sizeof(spi_new), 1000) == HAL_OK) {
-			LOG(Log_System, LevelInfo,
-					"SPI data, freq: %lu, dbm: %u, intref: 0x%02x",
-					(uint32_t) spi_new.frequency, spi_new.dbm, (uint8_t) spi_new.Status.UseIntRef);
-//			while (!new_data)
-//				;
-//			new_data = false;
-			if (spi_new.frequency != spi_current.frequency
-					|| spi_new.dbm != spi_current.dbm) {
-				RF::Configure(spi_new.frequency, spi_new.dbm);
-			}
-			if (spi_new.Status.UseIntRef != spi_current.Status.UseIntRef) {
-				RF::InternalReference(spi_new.Status.UseIntRef);
-			}
-			spi_current = spi_new;
-		} else {
-			LOG(Log_System, LevelInfo, "SPI timeout");
+		while (!new_data)
+			;
+		new_data = false;
+		HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*) &send, (uint8_t*) &recv,
+					sizeof(spi_new));
+		LOG(Log_System, LevelInfo,
+				"SPI data, freq: %lu, dbm: %u, intref: 0x%02x",
+				(uint32_t ) spi_new.frequency, spi_new.dbm,
+				(uint8_t ) spi_new.Status.UseIntRef);
+		if (spi_new.frequency != spi_current.frequency
+				|| spi_new.dbm != spi_current.dbm) {
+			RF::Configure(spi_new.frequency, spi_new.dbm);
 		}
-		HAL_Delay(10);
-		HAL_SPI_Abort(&hspi2);
+		if (spi_new.Status.UseIntRef != spi_current.Status.UseIntRef) {
+			RF::InternalReference(spi_new.Status.UseIntRef);
+		}
+		spi_current = spi_new;
 	}
 }
 
-//void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
-//	if (hspi == &hspi2) {
-//		// got new data from frontpanel
-//		spi_new = recv;
-//		new_data = true;
-//	}
-//}
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
+	if (hspi == &hspi2) {
+		// got new data from frontpanel
+		spi_new = recv;
+		new_data = true;
+	}
+}

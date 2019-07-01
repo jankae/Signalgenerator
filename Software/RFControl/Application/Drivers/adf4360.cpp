@@ -17,8 +17,8 @@ bool ADF4360::Init() {
 	SetPower(Power::n6dbm);
 	SetCurrent(4);
 
-	// set MUX pin to open drain lock detect
-	LControl |= (7 << 5);
+	// set MUX pin to digital lock detect
+	LControl |= (1 << 5);
 
 	// select 16/17 as P prescaler
 	LControl |= (1UL << 22);
@@ -43,7 +43,7 @@ void ADF4360::ChipEnable(bool on) {
 }
 
 bool ADF4360::Locked() {
-	return !(MUX->IDR & MUXpin);
+	return MUX->IDR & MUXpin;
 }
 
 bool ADF4360::SetFrequency(uint32_t f) {

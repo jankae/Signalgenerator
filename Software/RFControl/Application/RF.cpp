@@ -25,7 +25,7 @@ extern ADC_HandleTypeDef hadc;
 static constexpr uint16_t samplelength = 256;
 static uint16_t ADC_Samples[samplelength];
 
-RF::Status status;
+static RF::Status status;
 
 static Protocol::RFToFront *spi_status;
 
@@ -37,7 +37,7 @@ void RF::Init(Protocol::RFToFront *s) {
 	status.synth_unlocked = false;
 	status.used_att = Attenuation::DB45;
 	InternalReference(false);
-//	HAL_ADC_Start_DMA(&hadc, (uint32_t*) ADC_Samples, samplelength);
+	HAL_ADC_Start_DMA(&hadc, (uint32_t*) ADC_Samples, samplelength);
 	FPGA::SetDAC(0x0FFF, 0x0800);
 	PowerDAC.Shutdown(MCP48X2::Channel::A);
 	PowerDAC.Shutdown(MCP48X2::Channel::B);
@@ -124,15 +124,23 @@ void RF::SetAttenuator(Attenuation a) {
 
 void RF::SetHeterodynePath(bool use) {
 	if(use) {
+		// Set PLL to generate 1GHz tone
 		HeterodyneLO.ChipEnable(true);
 		HeterodyneLO.Init();
 		HeterodyneLO.SetFrequency(1000000000);
 		HeterodyneLO.Update();
+		// enable mixer
+		MIX_EN_GPIO_Port->BSRR = MIX_EN_Pin;
+		// set switches to heterodyne path
 		EN_DIRECT_GPIO_Port->BSRR = EN_DIRECT_Pin << 16;
 		LOG(Log_RF, LevelDebug, "Heterodyne path enabled");
 		spi_status->Status.HeterodynePLLON = 1;
 	} else {
+		// disable PLL
 		HeterodyneLO.ChipEnable(false);
+		// disable mixer
+		MIX_EN_GPIO_Port->BSRR = MIX_EN_Pin << 16;
+		// set switches to direct path
 		EN_DIRECT_GPIO_Port->BSRR = EN_DIRECT_Pin;
 		LOG(Log_RF, LevelDebug, "Heterodyne path disabled");
 		spi_status->Status.HeterodynePLLON = 0;
@@ -152,11 +160,14 @@ void RF::Configure(uint64_t f, int16_t cdbm) {
 		SetAttenuator(Attenuation::DB45);
 		DetectorEnable(false);
 		LOG(Log_RF, LevelInfo, "Output disabled");
+		spi_status->Status.AmplitudeUnlevel = 0;
+		spi_status->Status.MainPLLUnlocked = 0;
+		spi_status->Status.HeterodynePLLUnlock = 0;
 		return;
 	}
 	if (f < 250000000) {
 		SetHeterodynePath(true);
-		f = 1000000000 - f;
+		f = 1000000000 + f;
 	} else {
 		SetHeterodynePath(false);
 	}
@@ -289,7 +300,7 @@ static void NewADCSamples(uint16_t *data, uint16_t len) {
 	constexpr uint16_t high_threshold = voltage_max / ADC_reference * ADC_max;
 
 	static uint32_t last_adjust = HAL_GetTick();
-	constexpr uint32_t adjust_delay = 100;
+	constexpr uint32_t adjust_delay = 10;
 
 	if (sum < low_threshold) {
 		// RF output level is too low
@@ -309,8 +320,8 @@ static void NewADCSamples(uint16_t *data, uint16_t len) {
 				break;
 			default:
 				break;
-				last_adjust = HAL_GetTick();
 			}
+			last_adjust = HAL_GetTick();
 		}
 	} else if (sum > high_threshold) {
 		// RF output level is too high
@@ -339,7 +350,7 @@ static void NewADCSamples(uint16_t *data, uint16_t len) {
 	}
 
 	// also check lock status in ADC interrupt
-	status.synth_unlocked = !Synthesizer.Locked();
+	status.synth_unlocked = false; //!Synthesizer.Locked(); // locks but pin doesn't go high
 	status.lo_unlocked = !HeterodyneLO.Locked();
 	spi_status->Status.MainPLLUnlocked = status.synth_unlocked ? 1 : 0;
 	spi_status->Status.HeterodynePLLUnlock = status.lo_unlocked ? 1 : 0;

@@ -35,7 +35,7 @@ bool MAX2871::Init() {
 	SetPower(Power::n1dbm);
 	SetMode(Mode::LowNoise);
 	SetCPMode(CPMode::CP20);
-	SetCPCurrent(2);
+	SetCPCurrent(8);
 	SetFrequency(1000000000);
 
 	Update();

@@ -12,6 +12,9 @@ static Label *lCom, *lUnlock, *lUnlevel;
 
 extern SPI_HandleTypeDef hspi1;
 
+static_assert(sizeof(Protocol::RFToFront) == 32);
+static_assert(sizeof(Protocol::FrontToRF) == 32);
+
 void Generator::Init() {
 	Container *c = new Container(SIZE(DISPLAY_WIDTH, DISPLAY_HEIGHT));
 
