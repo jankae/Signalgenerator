@@ -4618,15 +4618,15 @@ design rules under a new name.</description>
 <attribute name="NAME" x="21.935" y="59.635" size="0.8128" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="19.095" y="59.135" size="1.27" layer="27" rot="R270"/>
 </element>
-<element name="C153" library="rcl" package="C0603" value="1u" x="13" y="51" smashed="yes" rot="R270">
+<element name="C153" library="rcl" package="C0603" value="DNP" x="13" y="51" smashed="yes" rot="R270">
 <attribute name="NAME" x="12.265" y="49.265" size="0.8128" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="11.095" y="51.635" size="1.27" layer="27" rot="R270"/>
 </element>
-<element name="C154" library="rcl" package="C0603" value="1u" x="13" y="58.5" smashed="yes" rot="R90">
+<element name="C154" library="rcl" package="C0603" value="DNP" x="13" y="58.5" smashed="yes" rot="R90">
 <attribute name="NAME" x="12.265" y="58.365" size="0.8128" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="14.905" y="57.865" size="1.27" layer="27" rot="R90"/>
 </element>
-<element name="C155" library="rcl" package="C0603" value="1u" x="20" y="50.3" smashed="yes">
+<element name="C155" library="rcl" package="C0603" value="DNP" x="20" y="50.3" smashed="yes">
 <attribute name="NAME" x="20.165" y="51.135" size="0.8128" layer="25" font="vector"/>
 <attribute name="VALUE" x="19.365" y="48.395" size="1.27" layer="27"/>
 </element>
@@ -5596,7 +5596,7 @@ design rules under a new name.</description>
 <attribute name="NAME" x="22.465" y="48.165" size="0.8128" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="19.365" y="46.695" size="1.27" layer="27"/>
 </element>
-<element name="R60" library="resistor" package="R0603" value="DNP" x="16.97" y="48.61" smashed="yes">
+<element name="R60" library="resistor" package="R0603" value="1u" x="16.97" y="48.61" smashed="yes">
 <attribute name="NAME" x="17.435" y="47.045" size="0.8128" layer="25" font="vector"/>
 <attribute name="VALUE" x="16.335" y="46.705" size="1.27" layer="27"/>
 </element>
