@@ -217,8 +217,6 @@ void RF::Configure(uint64_t f, int16_t cdbm) {
 
 	// turn on RF path
 	Synthesizer.Update();
-	Delay::ms(20);
-	Synthesizer.Update();
 	FPGA::ResetGPIO(FPGA::GPIO::MOD_DISABLE);
 	FPGA::UpdateGPIO();
 	spi_status->Status.IQModEnabled = 1;
@@ -350,7 +348,7 @@ static void NewADCSamples(uint16_t *data, uint16_t len) {
 	}
 
 	// also check lock status in ADC interrupt
-	status.synth_unlocked = false; //!Synthesizer.Locked(); // locks but pin doesn't go high
+	status.synth_unlocked = !Synthesizer.Locked();
 	status.lo_unlocked = !HeterodyneLO.Locked();
 	spi_status->Status.MainPLLUnlocked = status.synth_unlocked ? 1 : 0;
 	spi_status->Status.HeterodynePLLUnlock = status.lo_unlocked ? 1 : 0;

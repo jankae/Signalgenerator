@@ -24,7 +24,11 @@ bool MAX2871::Init() {
 	// enable output A (still controlled via RF_EN pin)
 	regs[4] |= (1UL << 5);
 
+	// fundamental VCO feedback
 	regs[4] |= (1UL << 23);
+
+	// reserved, set to 0x03
+	regs[4] |= (0x3UL << 29);
 
 	// enable double buffering for register 4
 	regs[2] |= (1UL << 13);
@@ -33,13 +37,12 @@ bool MAX2871::Init() {
 	regs[5] |= (1UL << 24);
 
 	SetPower(Power::n1dbm);
-	SetMode(Mode::LowNoise);
-	SetCPMode(CPMode::CP20);
-	SetCPCurrent(8);
+	SetMode(Mode::LowSpur1);
+	// for all other CP modes the PLL reports unlock condition (output signal appears to be locked)
+	SetCPMode(CPMode::Disabled);
+	SetCPCurrent(0);
 	SetFrequency(1000000000);
 
-	Update();
-	Delay::ms(20);
 	Update();
 
 	return true;
@@ -133,11 +136,12 @@ bool MAX2871::SetFrequency(uint64_t f) {
 	}
 	uint32_t rem_f = f_vco - N * f_PFD;
 	LOG(Log_MAX2871, LevelDebug, "Remaining fractional frequency: %lu", rem_f);
-	LOG(Log_MAX2871, LevelDebug, "Looking for best fractional match", rem_f);
+	LOG(Log_MAX2871, LevelDebug, "Looking for best fractional match");
 	uint32_t best_deviation = UINT32_MAX;
-	uint16_t best_M = 2, best_F = 0;
-	for (uint16_t M = 2; M < 4096; M++) {
-		for (uint16_t F = 0; F < M; F++) {
+	uint16_t best_M = 4095, best_F = 0;
+	for (uint16_t M = 4095; M >= 2; M--) {
+		uint16_t guess_F = rem_f * M / f_PFD;
+		for (uint16_t F = guess_F; F <= guess_F + 1; F++) {
 			uint32_t f = (f_PFD * F) / M;
 			uint32_t deviation = abs(f - rem_f);
 			if (deviation < best_deviation) {
@@ -155,7 +159,7 @@ bool MAX2871::SetFrequency(uint64_t f) {
 	}
 	LOG(Log_MAX2871, LevelDebug, "Best match is F=%u/M=%u, deviation of %luHz",
 			best_F, best_M, best_deviation);
-	uint64_t f_set = (uint64_t) N * f_PFD + (f_PFD * best_F) * f_PFD / best_M;
+	uint64_t f_set = (uint64_t) N * f_PFD + (f_PFD * best_F) / best_M;
 	f_set /= (1UL << div);
 
 	// write values to registers
@@ -246,7 +250,13 @@ bool MAX2871::SetReference(uint32_t f_ref, bool doubler, uint16_t r,
 }
 
 void MAX2871::Update() {
-	for(int8_t i=5;i>=0;i--) {
-		Write(i, regs[i]);
+	for(int8_t i=0;i<2;i++) {
+		Write(5, regs[5]);
+		Delay::ms(20);
+		Write(4, regs[4]);
+		Write(3, regs[3]);
+		Write(2, regs[2]);
+		Write(1, regs[1]);
+		Write(0, regs[0]);
 	}
 }

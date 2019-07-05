@@ -21,43 +21,9 @@ void MenuChooser::draw(coords_t offset) {
 	display_SetBackground(Background);
 	display_AutoCenterString(name, COORDS(offset.x, offset.y + 2),
 			COORDS(offset.x + size.x, offset.y + 20));
-	display_SetFont(*fontItems);
-	int16_t yItemString = offset.y + size.y - fontItems->height - 2;
-	display_String(offset.x, yItemString, items[*value]);
-//	if (selected) {
-//		// draw all available choices to the left
-//		/* find number of items and longest item */
-//		uint8_t maxItemLength = 0;
-//		uint8_t numItems;
-//		for (numItems = 0; this->items[numItems]; numItems++) {
-//			uint8_t length = strlen(this->items[numItems]);
-//			if (length > maxItemLength)
-//				maxItemLength = length;
-//		}
-//
-//		// calculate size of required box
-//		coords_t box_size = COORDS(maxItemLength * fontItems->width + 1,
-//				numItems * fontItems->height + 1);
-//		coords_t top_right = COORDS(offset.x - 4, yItemString - 1);
-//		int16_t display_margin = DISPLAY_HEIGHT - 1 - top_right.y + box_size.y;
-//		if (display_margin < 0) {
-//			// box would extend below the display, move upwards
-//			top_right.y += display_margin;
-//		}
-//		display_Rectangle(top_right.x - box_size.x, top_right.y, top_right.x,
-//				top_right.y + box_size.y);
-//		display_SetFont(*fontItems);
-//		for (numItems = 0; this->items[numItems]; numItems++) {
-//			if(numItems == *value) {
-//				display_SetBackground(COLOR_SELECTED);
-//			} else {
-//				display_SetBackground(Background);
-//			}
-//			display_String(top_right.x - box_size.x + 1,
-//					top_right.y + numItems * fontItems->height + 1,
-//					items[numItems]);
-//		}
-//	}
+	display_AutoCenterString(items[*value],
+			COORDS(offset.x, offset.y + size.y / 2),
+			COORDS(offset.x + size.x, offset.y + size.y));
 }
 
 void MenuChooser::input(GUIEvent_t* ev) {

@@ -22,6 +22,16 @@ void Generator::Init() {
 	mainmenu->AddEntry(new MenuBool("Output", &RFon, nullptr));
 	mainmenu->AddEntry(new MenuValue("Frequency", &frequency, Unit::Frequency));
 	mainmenu->AddEntry(new MenuValue("Amplitude", &dbm, Unit::dbm));
+
+	bool ModEnabled = false;
+	mainmenu->AddEntry(new MenuBool("Modulation", &ModEnabled, nullptr));
+
+	const char *modNames[] = {
+			"AM", "FM", "FM SSB", nullptr
+	};
+	uint8_t ModType = 1;
+	mainmenu->AddEntry(new MenuChooser("Mod Type", modNames, &ModType));
+
 	bool IntRef = true;
 	mainmenu->AddEntry(new MenuBool("IntRef", &IntRef, nullptr));
 
@@ -74,6 +84,15 @@ void Generator::Init() {
 			send.frequency = 0;
 			send.dbm = 0;
 		}
+		if (ModEnabled) {
+			send.modulation_registers[2] |= 0x100;
+		}
+		send.modulation_registers[2] |= ModType;
+		// TODO replace fixed value
+		constexpr uint32_t modFreq = 1000000;
+		uint32_t mod_reg = ((uint64_t) modFreq) * (1ULL<<32) / 100000000ULL;
+		send.modulation_registers[0] = (mod_reg & 0xFFFF);
+		send.modulation_registers[1] = (mod_reg >> 16);
 		SPI1_CS_RF_GPIO_Port->BSRR = SPI1_CS_RF_Pin << 16;
 		HAL_SPI_TransmitReceive(&hspi1, (uint8_t*) &send, (uint8_t*) &recv,
 				sizeof(send), 1000);

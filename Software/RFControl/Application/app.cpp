@@ -5,6 +5,7 @@
 #include <string.h>
 #include "stm32f0xx_hal.h"
 #include "System/log.h"
+#include "Drivers/fpga.hpp"
 
 static Protocol::RFToFront send;
 static Protocol::FrontToRF spi_new, recv;
@@ -33,16 +34,30 @@ void app(void) {
 		new_data = false;
 		HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*) &send, (uint8_t*) &recv,
 					sizeof(spi_new));
-		LOG(Log_System, LevelInfo,
-				"SPI data, freq: %lu, dbm: %u, intref: 0x%02x",
-				(uint32_t ) spi_new.frequency, spi_new.dbm,
-				(uint8_t ) spi_new.Status.UseIntRef);
+//		LOG(Log_System, LevelInfo,
+//				"SPI data, freq: %lu, dbm: %u, intref: 0x%02x",
+//				(uint32_t ) spi_new.frequency, spi_new.dbm,
+//				(uint8_t ) spi_new.Status.UseIntRef);
 		if (spi_new.frequency != spi_current.frequency
 				|| spi_new.dbm != spi_current.dbm) {
 			RF::Configure(spi_new.frequency, spi_new.dbm);
 		}
 		if (spi_new.Status.UseIntRef != spi_current.Status.UseIntRef) {
 			RF::InternalReference(spi_new.Status.UseIntRef);
+		}
+//		LOG(Log_System, LevelInfo,
+//				"SPI data, Mod0: 0x%04x, Mod1: 0x%04x, Mod2: 0x%04x",
+//				spi_new.modulation_registers[0],
+//				spi_new.modulation_registers[1],
+//				spi_new.modulation_registers[2]);
+		if (memcmp(spi_new.modulation_registers,
+				spi_current.modulation_registers,
+				sizeof(spi_new.modulation_registers))) {
+			// Update registers on FPGA
+			for (uint8_t i = 0; i < 8; i++) {
+				FPGA::WriteReg((FPGA::Reg) (i + (int) FPGA::Reg::MOD_DATA_L),
+						spi_new.modulation_registers[i]);
+			}
 		}
 		spi_current = spi_new;
 	}
