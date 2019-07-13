@@ -30,10 +30,11 @@ enum class SourceType : uint8_t {
 	RampDown = 4,
 	Triangle = 5,
 	Square = 6,
+	PRBS = 7,
 };
 static SourceType modSourceType = SourceType::Disabled;
 static const char *modSrcTypeNames[] = { "Disabled", "Fixed", "Sine", "Ramp up",
-		"Ramp down", "Triangle", "Square", nullptr };
+		"Ramp down", "Triangle", "Square", "PRBS", nullptr };
 static int32_t modSourceFreq = 0;
 static int32_t modSourceValue = 0;
 
@@ -103,6 +104,7 @@ static void ModulationChanged(void*, Widget*) {
 		case SourceType::Sine:
 		case SourceType::Square:
 		case SourceType::Triangle:
+		case SourceType::PRBS:
 			eSrcValue->SetVisible(false);
 			eSrcFreq->SetVisible(true);
 			break;

@@ -58,7 +58,9 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define SPI1_CS_RF_Pin GPIO_PIN_4
+#define SPI1_CS_FPGA_Pin GPIO_PIN_2
+#define SPI1_CS_FPGA_GPIO_Port GPIOA
+#define SPI1_CS_RF_Pin GPIO_PIN_3
 #define SPI1_CS_RF_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
 
