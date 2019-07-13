@@ -1,5 +1,6 @@
 Hardware/*.s#*
 Hardware/*.b#*
+Hardware/drawing.dwb
 Software/FreeRTOS_TAD_logs
 Software/RemoteSystemsTempFiles
 Software/.metadata
