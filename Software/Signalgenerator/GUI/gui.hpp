@@ -23,6 +23,7 @@
 #include "MenuAction.hpp"
 #include "FreeRTOS.h"
 #include "queue.h"
+#include "EventCatcher.hpp"
 
 uint8_t gui_Init(void);
 

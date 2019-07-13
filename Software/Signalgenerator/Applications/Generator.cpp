@@ -2,10 +2,40 @@
 #include "gui.hpp"
 #include "touch.h"
 #include "SPIProtocol.hpp"
+#include "Calibration.hpp"
 
-bool RFon = false;
-int32_t frequency = 1000000000;
-int32_t dbm = 0;
+// main carrier settings
+static bool RFon = false;
+static int32_t frequency = 1000000000;
+static int32_t dbm = 0;
+
+// modulation settings
+enum class ModulationType : uint8_t {
+	AM = 0,
+	FM = 1,
+	FM_USB = 2,
+	FM_LSB = 3,
+};
+static ModulationType modType = ModulationType::AM;
+static const char *modTypeNames[] { "AM", "FM", "FM USB", "FM LSB", nullptr};
+static int32_t FMDeviation = 75000;
+static int32_t AMDepth = 100000000;
+
+// modulation source settings
+enum class SourceType : uint8_t {
+	Disabled = 0,
+	FixedValue = 1,
+	Sine = 2,
+	RampUp = 3,
+	RampDown = 4,
+	Triangle = 5,
+	Square = 6,
+};
+static SourceType modSourceType = SourceType::Disabled;
+static const char *modSrcTypeNames[] = { "Disabled", "Fixed", "Sine", "Ramp up",
+		"Ramp down", "Triangle", "Square", nullptr };
+static int32_t modSourceFreq = 0;
+static int32_t modSourceValue = 0;
 
 static Label *lRFon;
 static Label *lCom, *lUnlock, *lUnlevel;
@@ -15,6 +45,72 @@ extern SPI_HandleTypeDef hspi1;
 static_assert(sizeof(Protocol::RFToFront) == 32);
 static_assert(sizeof(Protocol::FrontToRF) == 32);
 
+static bool ModEnabled = false;
+
+static Label *lModulation;
+static Label *lFMDeviation;
+static Label *lAMDepth;
+static Entry *eFMDeviation;
+static Entry *eAMDepth;
+
+static Label *lSource;
+static ItemChooser *cSource;
+static Entry *eSrcValue;
+static Entry *eSrcFreq;
+
+static void ModulationChanged(void*, Widget*) {
+	if (!ModEnabled) {
+		lModulation->setText("CW");
+		lFMDeviation->SetVisible(false);
+		lAMDepth->SetVisible(false);
+		eFMDeviation->SetVisible(false);
+		eAMDepth->SetVisible(false);
+		cSource->SetVisible(false);
+		lSource->SetVisible(false);
+		eSrcValue->SetVisible(false);
+		eSrcFreq->SetVisible(false);
+	} else {
+		lModulation->setText(modTypeNames[(uint8_t) modType]);
+		cSource->SetVisible(true);
+		lSource->SetVisible(true);
+		switch(modType) {
+		case ModulationType::AM:
+			lAMDepth->SetVisible(true);
+			eAMDepth->SetVisible(true);
+			lFMDeviation->SetVisible(false);
+			eFMDeviation->SetVisible(false);
+			break;
+		case ModulationType::FM:
+		case ModulationType::FM_LSB:
+		case ModulationType::FM_USB:
+			lAMDepth->SetVisible(false);
+			eAMDepth->SetVisible(false);
+			lFMDeviation->SetVisible(true);
+			eFMDeviation->SetVisible(true);
+			break;
+		}
+		switch(modSourceType) {
+		case SourceType::Disabled:
+			eSrcValue->SetVisible(false);
+			eSrcFreq->SetVisible(false);
+			break;
+		case SourceType::FixedValue:
+			eSrcValue->SetVisible(true);
+			eSrcFreq->SetVisible(false);
+			break;
+		case SourceType::RampDown:
+		case SourceType::RampUp:
+		case SourceType::Sine:
+		case SourceType::Square:
+		case SourceType::Triangle:
+			eSrcValue->SetVisible(false);
+			eSrcFreq->SetVisible(true);
+			break;
+		}
+
+	}
+}
+
 void Generator::Init() {
 	Container *c = new Container(SIZE(DISPLAY_WIDTH, DISPLAY_HEIGHT));
 
@@ -22,15 +118,18 @@ void Generator::Init() {
 	mainmenu->AddEntry(new MenuBool("Output", &RFon, nullptr));
 	mainmenu->AddEntry(new MenuValue("Frequency", &frequency, Unit::Frequency));
 	mainmenu->AddEntry(new MenuValue("Amplitude", &dbm, Unit::dbm));
+	mainmenu->AddEntry(new MenuBool("Modulation", &ModEnabled, ModulationChanged));
 
-	bool ModEnabled = false;
-	mainmenu->AddEntry(new MenuBool("Modulation", &ModEnabled, nullptr));
+	mainmenu->AddEntry(
+			new MenuChooser("Mod Type", modTypeNames, (uint8_t*)&modType, ModulationChanged));
 
-	const char *modNames[] = {
-			"AM", "FM", "FM SSB", nullptr
-	};
-	uint8_t ModType = 1;
-	mainmenu->AddEntry(new MenuChooser("Mod Type", modNames, &ModType));
+//	Menu *Source = new Menu("ModSrc", mainmenu->getSize());
+//	Source->AddEntry(new MenuChooser("ModSrc", modSrcTypeNames, (uint8_t*) &modSourceType, nullptr, nullptr));
+//	Source->AddEntry(new MenuValue("Frequency", &modSourceFreq, Unit::Frequency, nullptr, nullptr));
+//	Source->AddEntry(new MenuValue("Value", &modSourceValue, Unit::None, nullptr, nullptr));
+//	Source->AddEntry(new MenuBack());
+//
+//	mainmenu->AddEntry(Source);
 
 	bool IntRef = true;
 	mainmenu->AddEntry(new MenuBool("IntRef", &IntRef, nullptr));
@@ -41,11 +140,19 @@ void Generator::Init() {
 		touch_Calibrate();
 		gui_GetTopWidget()->requestRedrawFull();
 	}, nullptr));
+
+	bool calibrate_dbm = false;
+	system->AddEntry(new MenuAction("Cal dbm", [](void* ptr, Widget *w) {
+		bool *calibrate = (bool*) ptr;
+		*calibrate = true;
+	}, &calibrate_dbm));
+
 	system->AddEntry(new MenuBack());
 
 	mainmenu->select();
 	c->attach(mainmenu, COORDS(DISPLAY_WIDTH - mainmenu->getSize().x, 0));
 
+	// create and attach frequency and amplitude display
 	auto sFreq = new SevenSegment(&frequency, 12, 3, 11, 6, COLOR_BLUE);
 	c->attach(sFreq, COORDS(0,5));
 	c->attach(new Label("MHz", Font_Big, COLOR_BLUE), COORDS(200, 20));
@@ -56,8 +163,9 @@ void Generator::Init() {
 
 	lRFon = new Label("RF ON", Font_Big, COLOR_DARKGREEN);
 	lRFon->SetVisible(RFon);
-	c->attach(lRFon, COORDS(30, 50));
+	c->attach(lRFon, COORDS(30, 44));
 
+	// create and attach error labels
 	lUnlock = new Label("UNLOCK", Font_Big, COLOR_RED);
 	c->attach(lUnlock, COORDS(5, 220));
 
@@ -67,11 +175,43 @@ void Generator::Init() {
 	lCom = new Label("COMMUNICATION ERROR", Font_Big, COLOR_RED);
 	c->attach(lCom, COORDS(5, 200));
 
+	// create and attach modulation widgets
+	lModulation = new Label(6, Font_Big, Label::Orientation::CENTER, COLOR_DARKGREEN);
+	c->attach(lModulation, COORDS(24, 61));
+
+	lFMDeviation = new Label("Deviation:", Font_Big);
+	c->attach(lFMDeviation, COORDS(10, 90));
+	// maximum deviation depends on internal FPGA bus widths
+	eFMDeviation = new Entry(&FMDeviation, 6248378, 0, Font_Big, 8, Unit::Frequency);
+	c->attach(eFMDeviation, COORDS(150, 90));
+	lAMDepth = new Label("Depth:", Font_Big);
+	c->attach(lAMDepth, COORDS(10, 90));
+	eAMDepth = new Entry(&AMDepth, Unit::maxPercent, 0, Font_Big, 8, Unit::Percent);
+	c->attach(eAMDepth, COORDS(150, 90));
+
+	// create and attach modulation source widgets
+	lSource = new Label("Modulation source:", Font_Big);
+	c->attach(lSource, COORDS(10, 115));
+	cSource = new ItemChooser(modSrcTypeNames, (uint8_t*) &modSourceType, Font_Big, 1, 80);
+	cSource->setCallback(ModulationChanged, nullptr);
+	c->attach(cSource, COORDS(10, 130));
+	eSrcValue = new Entry(&modSourceValue, 4095, 0, Font_Big, 8, Unit::None);
+	c->attach(eSrcValue, COORDS(150, 130));
+	eSrcFreq = new Entry(&modSourceFreq, 48000, 0, Font_Big, 8, Unit::Frequency);
+	c->attach(eSrcFreq, COORDS(150, 130));
+
+	ModulationChanged(nullptr, nullptr);
+
 	c->requestRedrawFull();
 	gui_SetTopWidget(c);
 
 	while(1) {
 		vTaskDelay(100);
+		if (calibrate_dbm) {
+			Calibration::Run();
+			calibrate_dbm = false;
+			continue;
+		}
 		Protocol::FrontToRF send;
 		Protocol::RFToFront recv;
 		memset(&send, 0, sizeof(send));
@@ -79,20 +219,55 @@ void Generator::Init() {
 		send.Status.UseIntRef = IntRef ? 1 : 0;
 		if (RFon) {
 			send.frequency = frequency;
-			send.dbm = dbm;
+			send.dbm = Calibration::Correct(frequency, dbm);
 		} else {
 			send.frequency = 0;
 			send.dbm = 0;
 		}
 		if (ModEnabled) {
-			send.modulation_registers[2] |= 0x100;
+			if(modSourceType == SourceType::FixedValue) {
+				send.modulation_registers[0] = modSourceValue;
+			} else {
+				// calculate phase increment for requested frequency
+				static constexpr uint32_t FPGA_clock = 100000000;
+				send.modulation_registers[0] = ((uint64_t) modSourceFreq)
+						* (1ULL << 27) / FPGA_clock;
+			}
+			send.modulation_registers[3] |= (((uint8_t) modSourceType) << 8);
+
+			// set modulation type
+			uint8_t type = 0x00;
+			switch(modType) {
+			case ModulationType::AM:
+				type = 0x08;
+				break;
+			case ModulationType::FM:
+				type = 0x04;
+				break;
+			case ModulationType::FM_USB:
+				type = 0x06;
+				break;
+			case ModulationType::FM_LSB:
+				type = 0x05;
+				break;
+			}
+			send.modulation_registers[3] |= type;
+			// calculate modulation settings
+			uint16_t setting1 = 0x0000;
+			switch(modType) {
+			case ModulationType::AM:
+				// 0: 0% depth, 65535: 100% depth
+				setting1 = common_Map(AMDepth, 0, Unit::maxPercent, 0, UINT16_MAX);
+				break;
+			case ModulationType::FM:
+			case ModulationType::FM_USB:
+			case ModulationType::FM_LSB:
+				// 0: 0 deviation, 65535: 6248378Hz deviation
+				setting1 = common_Map(FMDeviation, 0, 6248378, 0, UINT16_MAX);
+				break;
+			}
+			send.modulation_registers[1] = setting1;
 		}
-		send.modulation_registers[2] |= ModType;
-		// TODO replace fixed value
-		constexpr uint32_t modFreq = 1000000;
-		uint32_t mod_reg = ((uint64_t) modFreq) * (1ULL<<32) / 100000000ULL;
-		send.modulation_registers[0] = (mod_reg & 0xFFFF);
-		send.modulation_registers[1] = (mod_reg >> 16);
 		SPI1_CS_RF_GPIO_Port->BSRR = SPI1_CS_RF_Pin << 16;
 		HAL_SPI_TransmitReceive(&hspi1, (uint8_t*) &send, (uint8_t*) &recv,
 				sizeof(send), 1000);

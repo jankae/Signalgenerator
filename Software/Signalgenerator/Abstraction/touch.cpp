@@ -3,6 +3,7 @@
 #include "semphr.h"
 #include "fatfs.h"
 #include "file.hpp"
+#include "Persistence.hpp"
 
 #define CS_LOW()			(GPIOB->BSRR = GPIO_PIN_7<<16u)
 #define CS_HIGH()			(GPIOB->BSRR = GPIO_PIN_7)
@@ -34,22 +35,32 @@
 
 static uint8_t calibrating = 0;
 
-int32_t offsetX = 0, offsetY = 0;
-float scaleX = (float) TOUCH_RESOLUTION_X / 4096;
-float scaleY = (float) TOUCH_RESOLUTION_Y / 4096;
-
-const File::Entry touchCal[4] = {
-		{"xfactor", &scaleX, File::PointerType::FLOAT},
-		{"xoffset", &offsetX, File::PointerType::INT32},
-		{"yfactor", &scaleY, File::PointerType::FLOAT},
-		{"yoffset", &offsetY, File::PointerType::INT32},
+using TouchCal = struct {
+	int32_t offsetX, offsetY;
+	float scaleX;
+	float scaleY;
 };
+
+static constexpr TouchCal DefaultCal = { .offsetX = 0, .offsetY = 0, .scaleX =
+		(float) TOUCH_RESOLUTION_X / 4096, .scaleY = (float) TOUCH_RESOLUTION_Y
+		/ 4096 };
+
+static TouchCal Cal;
+
+//const File::Entry touchCal[4] = {
+//		{"xfactor", &scaleX, File::PointerType::FLOAT},
+//		{"xoffset", &offsetX, File::PointerType::INT32},
+//		{"yfactor", &scaleY, File::PointerType::FLOAT},
+//		{"yoffset", &offsetY, File::PointerType::INT32},
+//};
 
 extern SPI_HandleTypeDef hspi3;
 extern SemaphoreHandle_t xMutexSPI3;
 
 void touch_Init(void) {
 	CS_HIGH();
+	Cal = DefaultCal;
+	Persistence::Add(&Cal, sizeof(Cal));
 }
 
 static uint16_t ADS7843_Read(uint8_t control) {
@@ -128,32 +139,32 @@ int8_t touch_GetCoordinates(coords_t *c) {
 	}
 	int8_t ret = getRaw(c);
 	/* convert to screen resolution */
-	c->x = constrain_int16_t(c->x * scaleX + offsetX, 0, DISPLAY_WIDTH - 1);
-	c->y = constrain_int16_t(c->y * scaleY + offsetY, 0, DISPLAY_HEIGHT - 1);
+	c->x = constrain_int16_t(c->x * Cal.scaleX + Cal.offsetX, 0, DISPLAY_WIDTH - 1);
+	c->y = constrain_int16_t(c->y * Cal.scaleY + Cal.offsetY, 0, DISPLAY_HEIGHT - 1);
 	return ret;
 }
 
-static uint8_t touch_SaveCalibration(void) {
-	if (File::Open("TOUCH.CAL", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
-		return 0;
-	}
-	File::WriteParameters(touchCal, 4);
-	File::Close();
-	return 1;
-}
+//static uint8_t touch_SaveCalibration(void) {
+//	if (File::Open("TOUCH.CAL", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
+//		return 0;
+//	}
+//	File::WriteParameters(touchCal, 4);
+//	File::Close();
+//	return 1;
+//}
 
-uint8_t touch_LoadCalibration(void) {
-	if (File::Open("TOUCH.CAL", FA_OPEN_EXISTING | FA_READ) != FR_OK) {
-		return 0;
-	}
-	if (File::ReadParameters(touchCal, 4) == File::ParameterResult::OK) {
-		File::Close();
-		return 1;
-	} else {
-		File::Close();
-		return 0;
-	}
-}
+//uint8_t touch_LoadCalibration(void) {
+//	if (File::Open("TOUCH.CAL", FA_OPEN_EXISTING | FA_READ) != FR_OK) {
+//		return 0;
+//	}
+//	if (File::ReadParameters(touchCal, 4) == File::ParameterResult::OK) {
+//		File::Close();
+//		return 1;
+//	} else {
+//		File::Close();
+//		return 0;
+//	}
+//}
 
 static coords_t GetCalibrationPoint(bool top, coords_t cross) {
 	constexpr uint16_t barHeight = 20;
@@ -198,16 +209,16 @@ static coords_t GetCalibrationPoint(bool top, coords_t cross) {
 	return ret;
 }
 
-static bool SaveCalibration(void) {
-	if (File::Open("TOUCH.CAL", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
-		LOG(Log_Input, LevelError, "Failed to create calibration file");
-		return false;
-	}
-	File::WriteParameters(touchCal, 4);
-	File::Close();
-	LOG(Log_Input, LevelInfo, "Created calibration file");
-	return true;
-}
+//static bool SaveCalibration(void) {
+//	if (File::Open("TOUCH.CAL", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
+//		LOG(Log_Input, LevelError, "Failed to create calibration file");
+//		return false;
+//	}
+//	File::WriteParameters(touchCal, 4);
+//	File::Close();
+//	LOG(Log_Input, LevelInfo, "Created calibration file");
+//	return true;
+//}
 
 
 void touch_Calibrate() {
@@ -216,17 +227,17 @@ void touch_Calibrate() {
 	coords_t Meas1 = GetCalibrationPoint(false, Set1);
 	coords_t Meas2 = GetCalibrationPoint(true, Set2);
 
-	scaleX = (float) (Set2.x - Set1.x) / (Meas2.x - Meas1.x);
-	scaleY = (float) (Set2.y - Set1.y) / (Meas2.y - Meas1.y);
+	Cal.scaleX = (float) (Set2.x - Set1.x) / (Meas2.x - Meas1.x);
+	Cal.scaleY = (float) (Set2.y - Set1.y) / (Meas2.y - Meas1.y);
 	/* calculate offset */
-	offsetX = Set1.x - Meas1.x * scaleX;
-	offsetY = Set1.y - Meas1.y * scaleY;
+	Cal.offsetX = Set1.x - Meas1.x * Cal.scaleX;
+	Cal.offsetY = Set1.y - Meas1.y * Cal.scaleY;
 
 	GUIEvent_t ev;
 	ev.type = EVENT_WINDOW_CLOSE;
 	gui_SendEvent(&ev);
 
-	if(!SaveCalibration()) {
+	if(!Persistence::Save()) {
 		Dialog::MessageBox("ERROR", Font_Big,
 				"Failed to save\ntouch calibration", Dialog::MsgBox::OK, nullptr,
 				false);

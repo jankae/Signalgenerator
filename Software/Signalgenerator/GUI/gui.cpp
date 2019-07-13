@@ -24,10 +24,6 @@ static void guiThread(void) {
 
 	while (1) {
 		if (xQueueReceive(GUIeventQueue, &event, 20)) {
-			if(newTopWidget && !isPopup) {
-				topWidget = newTopWidget;
-				newTopWidget = nullptr;
-			}
 			if (topWidget) {
 				switch (event.type) {
 				case EVENT_TOUCH_PRESSED:
@@ -70,6 +66,10 @@ static void guiThread(void) {
 					break;
 				}
 			}
+		}
+		if (newTopWidget && !isPopup) {
+			topWidget = newTopWidget;
+			newTopWidget = nullptr;
 		}
 		if (topWidget) {
 			Widget::draw(topWidget, COORDS(0, 0));

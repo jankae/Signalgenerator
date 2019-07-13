@@ -8,7 +8,7 @@
 
 class Button : public Widget {
 public:
-	Button(const char *name, font_t font, Callback cb, void *ptr,
+	Button(const char *name, font_t font, Callback cb = nullptr, void *ptr = nullptr,
 			coords_t minSize = COORDS(0, 0));
 	~Button();
 

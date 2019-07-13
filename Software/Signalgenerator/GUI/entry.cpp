@@ -1,16 +1,41 @@
-#include <entry.hpp>
-#include "buttons.h"
+#include "entry.hpp"
 
-Entry::Entry(int32_t *value, const int32_t *max, const int32_t *min,
-		font_t font, uint8_t length, const Unit::unit *unit[], const color_t c) {
+#include "Dialog/ValueInput.hpp"
+#include "cast.hpp"
+
+Entry::Entry(int32_t *value, const int32_t *max, const int32_t *min, font_t font,
+		uint8_t length, const Unit::unit *unit[], const color_t c) {
 	/* set member variables */
 	this->value = value;
+	limitPtr = true;
+	this->maxptr = max;
+	this->minptr = min;
+	this->font = font;
+	this->unit = unit;
+	this->length = length;
+    cb = nullptr;
+    cbptr = nullptr;
+    editing = false;
+    dotSet = false;
+    editPos = 0;
+	size.y = font.height + 3;
+	size.x = font.width * length + 3;
+	inputString = new char[length + 1];
+	color = c;
+}
+
+Entry::Entry(int32_t* value, int32_t max, int32_t min, font_t font,
+		uint8_t length, const Unit::unit* unit[], const color_t c) {
+	/* set member variables */
+	this->value = value;
+	limitPtr = false;
 	this->max = max;
 	this->min = min;
 	this->font = font;
 	this->unit = unit;
 	this->length = length;
-    changeCallback = NULL;
+    cb = nullptr;
+    cbptr = nullptr;
     editing = false;
     dotSet = false;
     editPos = 0;
@@ -27,12 +52,18 @@ Entry::~Entry() {
 }
 
 int32_t Entry::constrainValue(int32_t val) {
-    if (max && val > *max) {
-        return *max;
-    } else if (min && val < *min) {
-        return *min;
-    }
-    return val;
+	int32_t high = max;
+	int32_t low = min;
+	if (limitPtr) {
+		high = maxptr ? *maxptr : INT32_MAX;
+		low = minptr ? *minptr : INT32_MIN;
+	}
+	if (val > high) {
+		return high;
+	} else if (val < low) {
+		return low;
+	}
+	return val;
 }
 
 int32_t Entry::InputStringValue(uint32_t multiplier) {
@@ -66,11 +97,11 @@ void Entry::draw(coords_t offset) {
 	coords_t lowerRight = upperLeft;
 	lowerRight.x += size.x - 1;
 	lowerRight.y += size.y - 1;
-	if (selected) {
-		display_SetForeground(COLOR_SELECTED);
-	} else {
+//	if (selected) {
+//		display_SetForeground(COLOR_SELECTED);
+//	} else {
 		display_SetForeground(Border);
-	}
+//	}
 	display_Rectangle(upperLeft.x, upperLeft.y, lowerRight.x, lowerRight.y);
 
 	/* display string */
@@ -94,104 +125,30 @@ void Entry::draw(coords_t offset) {
 	display_String(upperLeft.x + 1, upperLeft.y + 2, inputString);
 
 }
-void Entry::input(GUIEvent_t *ev) {
-    switch(ev->type) {
-    case EVENT_BUTTON_CLICKED:
-		if (BUTTON_IS_INPUT(ev->button)) {
-			ev->type = EVENT_NONE;
-			requestRedraw();
-			if (!editing) {
-				/* Start editing */
-				editing = true;
-				editPos = 0;
-				dotSet = false;
-				memset(inputString, ' ', length);
-				inputString[length] = 0;
-			}
-			/* Add button input to inputString */
-			if (ev->button == BUTTON_DOT) {
-				if (editPos < length && !dotSet) {
-					/* add dot */
-					inputString[editPos++] = '.';
-					dotSet = true;
-				}
-			} else if (ev->button == BUTTON_SIGN) {
-				/* toggle sign */
-				if(inputString[0] == '-') {
-					/* remove sign */
-					memmove(inputString, &inputString[1], editPos - 1);
-					editPos--;
-					inputString[editPos] = ' ';
-				} else if(editPos < length) {
-					/* add sign */
-					memmove(&inputString[1], &inputString[0], editPos);
-					inputString[0] = '-';
-					editPos++;
-				}
-			} else {
-				/* must be a number input */
-				if(editPos < length) {
-					inputString[editPos++] = '0' + BUTTON_TODIGIT(ev->button);
-				}
-			}
-		} else if (ev->button == BUTTON_DEL && editing) {
-			/* delete one char from input string */
-			if (editPos <= 1) {
-				/* string will be empty after deletion -> abort editing */
-				editing = false;
-			} else {
-				editPos--;
-				if (inputString[editPos] == '.') {
-					/* deleted dot */
-					dotSet = false;
-				}
-				inputString[editPos] = ' ';
-			}
-			requestRedraw();
-			ev->type = EVENT_NONE;
-		} else if (ev->button == BUTTON_ESC && editing) {
-			editing = false;
-			requestRedraw();
-			ev->type = EVENT_NONE;
-		} else if ((ev->button & (BUTTON_UNIT1 | BUTTON_ENCODER | BUTTON_UNITm))
-				&& editing) {
-			editing = false;
-			/* TODO adjust multiplier to unit */
-			uint32_t multiplier;
-			if (unit == Unit::Time) {
-				multiplier = 1000;
-				if (ev->button == BUTTON_UNITm) {
-					multiplier = 1;
-				}
-			} else {
-				multiplier = 1000000;
-				if (ev->button == BUTTON_UNITm) {
-					multiplier = 1000;
-				}
-			}
-			int32_t newval = InputStringValue(multiplier);
-			*value = constrainValue(newval);
-			if (changeCallback) {
-				changeCallback(*this);
-			}
-			requestRedraw();
-			ev->type = EVENT_NONE;
+
+void Entry::ValueInputCallback(bool updated) {
+	if(updated) {
+		*value = constrainValue(*value);
+		if(cb) {
+			cb(cbptr, this);
 		}
-		break;
-    case EVENT_ENCODER_MOVED:
-    	if(!editing) {
-			int32_t newval = *value += ev->movement
-					* Unit::LeastDigitValueFromString(inputString, unit);
-			*value = constrainValue(newval);
-			if(changeCallback) {
-				changeCallback(*this);
-			}
-			requestRedraw();
-			ev->type = EVENT_NONE;
-    	}
+	}
+}
+
+void Entry::input(GUIEvent_t *ev) {
+	if (!selectable) {
+		return;
+	}
+    switch(ev->type) {
+    case EVENT_TOUCH_RELEASED:
+		new ValueInput("New value?", value, unit,
+				pmf_cast<void (*)(void*, bool), Entry,
+						&Entry::ValueInputCallback>::cfn, this);
+		ev->type = EVENT_NONE;
     	break;
     default:
     	break;
     }
     return;
 }
+

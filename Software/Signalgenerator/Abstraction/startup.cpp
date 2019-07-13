@@ -9,6 +9,8 @@
 #include "buttons.h"
 #include "Unit.hpp"
 #include "Generator.hpp"
+#include "Calibration.hpp"
+#include "Persistence.hpp"
 
 extern uint8_t pushpull_SPI_OK;
 
@@ -142,6 +144,10 @@ void startup_Software(void) {
 
 	/* Start sampling of frontpanel controls */
 	buttons_Init();
+    touch_Init();
+
+    Persistence::Init();
+	Calibration::Init();
 
 	switch(File::Init()) {
 	case -1:
@@ -166,10 +172,10 @@ void startup_Software(void) {
 	}
 
 	/* Load touch calibration */
-	if(touch_LoadCalibration()) {
-		display_TestResult("Touch calib:", "LOADED", TEST_PASSED);
+	if(Persistence::Load()) {
+		display_TestResult("Persistence:", "LOADED", TEST_PASSED);
 	} else {
-		display_TestResult("Touch calib:", "MISSING", TEST_WARNING);
+		display_TestResult("Persistence:", "CRC ERROR", TEST_WARNING);
 		warning = 1;
 	}
 

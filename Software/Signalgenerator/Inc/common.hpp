@@ -20,6 +20,8 @@ typedef struct {
 
 const coords_t operator+(coords_t const& lhs, coords_t const& rhs);
 
+uint32_t common_crc32(uint32_t crc, const void *data, uint32_t len);
+
 //typedef struct {
 //	/* name length up to 3 (plus string terminator) */
 //	char name[4];

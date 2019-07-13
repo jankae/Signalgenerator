@@ -77,6 +77,21 @@ const coords_t operator+(coords_t const& lhs, coords_t const& rhs) {
 	return ret;
 }
 
+#define CRC32_POLYGON 0xEDB88320
+
+uint32_t common_crc32(uint32_t crc, const void *data, uint32_t len) {
+	uint8_t *u8buf = (uint8_t*) data;
+	int k;
+
+	crc = ~crc;
+	while (len--) {
+		crc ^= *u8buf++;
+		for (k = 0; k < 8; k++)
+			crc = crc & 1 ? (crc >> 1) ^ CRC32_POLYGON : crc >> 1;
+	}
+	return ~crc;
+}
+
 //uint32_t common_LeastDigitValueFromString(const char *s,
 //		const unit_t * const unit) {
 //	uint32_t dotdivisor = 0;
