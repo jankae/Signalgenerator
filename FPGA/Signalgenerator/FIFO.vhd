@@ -40,6 +40,7 @@ entity FIFO is
            DOUT : out  STD_LOGIC_VECTOR (Datawidth-1 downto 0);
            WR : in  STD_LOGIC;
            RD : in  STD_LOGIC;
+			  CLEAR : in STD_LOGIC;
            LEVEL : out  STD_LOGIC_VECTOR (Addresswidth-1 downto 0));
 end FIFO;
 
@@ -56,13 +57,18 @@ begin
 	process(CLK)
 	begin
 	if(rising_edge(CLK)) then
-		if (Wr='1' and full='0') then
-			memory(to_integer(wrcnt)) <= unsigned(Din);
-			wrcnt <= wrcnt+1;
-		end if;
-		if (Rd='1' and empty='0') then
-			Dout <= std_logic_vector(memory(to_integer(rdcnt)));
-			rdcnt <= rdcnt+1;
+		if (CLEAR = '1') then
+			wrcnt <= (others => '0');
+			rdcnt <= (others => '0');
+		else
+			if (Wr='1' and full='0') then
+				memory(to_integer(wrcnt)) <= unsigned(Din);
+				wrcnt <= wrcnt+1;
+			end if;
+			if (Rd='1' and empty='0') then
+				Dout <= std_logic_vector(memory(to_integer(rdcnt)));
+				rdcnt <= rdcnt+1;
+			end if;
 		end if;
 	end if;
 	end process;

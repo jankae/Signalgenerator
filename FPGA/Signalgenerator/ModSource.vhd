@@ -97,6 +97,7 @@ architecture Behavioral of ModSource is
 		DOUT : OUT  std_logic_vector(Datawidth-1 downto 0);
 		WR : IN  std_logic;
 		RD : IN  std_logic;
+		CLEAR : IN std_logic;
 		LEVEL : OUT  std_logic_vector(Addresswidth-1 downto 0)
 	);
 	END COMPONENT;
@@ -112,6 +113,7 @@ architecture Behavioral of ModSource is
 	signal spi_in : std_logic_vector(7 downto 0);
 	signal spi_complete : std_logic;
 
+	signal fifo_clear : std_logic;
 	signal fifo_out : std_logic_vector(7 downto 0);
 	signal fifo_read : std_logic;
 	signal fifo_level : std_logic_vector(STREAM_DEPTH-1 downto 0);
@@ -159,10 +161,13 @@ begin
 		DOUT => fifo_out,
 		WR => spi_complete,
 		RD => fifo_read,
+		CLEAR => fifo_clear,
 		LEVEL => fifo_level
 	);
 	
 	spi_in <= fifo_level(STREAM_DEPTH-1 downto STREAM_DEPTH-8);
+	
+	fifo_clear <= '0' when SRCTYPE = "1000" else '1';
 	
 	phase_inc <= "00000000000" & PINC;
 	
