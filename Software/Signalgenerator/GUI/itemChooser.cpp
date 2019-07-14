@@ -60,6 +60,7 @@ void ItemChooser::draw(coords_t offset) {
 	display_SetForeground (Border);
 
 	/* Display items */
+	display_SetFont(font);
 	uint8_t line;
 	for (line = 0; line < lines; line++) {
 		uint8_t index = line + topVisibleEntry;

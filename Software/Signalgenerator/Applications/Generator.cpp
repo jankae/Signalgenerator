@@ -3,6 +3,7 @@
 #include "touch.h"
 #include "SPIProtocol.hpp"
 #include "Calibration.hpp"
+#include "Stream.hpp"
 
 // main carrier settings
 static bool RFon = false;
@@ -31,10 +32,11 @@ enum class SourceType : uint8_t {
 	Triangle = 5,
 	Square = 6,
 	PRBS = 7,
+	Stream = 8,
 };
 static SourceType modSourceType = SourceType::Disabled;
 static const char *modSrcTypeNames[] = { "Disabled", "Fixed", "Sine", "Ramp up",
-		"Ramp down", "Triangle", "Square", "PRBS", nullptr };
+		"Ramp down", "Triangle", "Square", "PRBS", "Stream", nullptr };
 static int32_t modSourceFreq = 0;
 static int32_t modSourceValue = 0;
 
@@ -59,6 +61,11 @@ static ItemChooser *cSource;
 static Entry *eSrcValue;
 static Entry *eSrcFreq;
 
+static Label *lSrcBufSoft;
+static Label *lSrcBufHard;
+static ProgressBar *pSrcBufSoft;
+static ProgressBar *pSrcBufHard;
+
 static void ModulationChanged(void*, Widget*) {
 	if (!ModEnabled) {
 		lModulation->setText("CW");
@@ -70,6 +77,10 @@ static void ModulationChanged(void*, Widget*) {
 		lSource->SetVisible(false);
 		eSrcValue->SetVisible(false);
 		eSrcFreq->SetVisible(false);
+		lSrcBufSoft->SetVisible(false);
+		pSrcBufSoft->SetVisible(false);
+		lSrcBufHard->SetVisible(false);
+		pSrcBufHard->SetVisible(false);
 	} else {
 		lModulation->setText(modTypeNames[(uint8_t) modType]);
 		cSource->SetVisible(true);
@@ -105,15 +116,28 @@ static void ModulationChanged(void*, Widget*) {
 		case SourceType::Square:
 		case SourceType::Triangle:
 		case SourceType::PRBS:
+		case SourceType::Stream:
 			eSrcValue->SetVisible(false);
 			eSrcFreq->SetVisible(true);
 			break;
 		}
-
+		if (modSourceType == SourceType::Stream) {
+			lSrcBufSoft->SetVisible(true);
+			pSrcBufSoft->SetVisible(true);
+			lSrcBufHard->SetVisible(true);
+			pSrcBufHard->SetVisible(true);
+		} else {
+			lSrcBufSoft->SetVisible(false);
+			pSrcBufSoft->SetVisible(false);
+			lSrcBufHard->SetVisible(false);
+			pSrcBufHard->SetVisible(false);
+		}
 	}
 }
 
 void Generator::Init() {
+	Stream::Init();
+
 	Container *c = new Container(SIZE(DISPLAY_WIDTH, DISPLAY_HEIGHT));
 
 	Menu *mainmenu = new Menu("", SIZE(70, DISPLAY_HEIGHT));
@@ -202,13 +226,38 @@ void Generator::Init() {
 	eSrcFreq = new Entry(&modSourceFreq, 48000, 0, Font_Big, 8, Unit::Frequency);
 	c->attach(eSrcFreq, COORDS(150, 130));
 
+	// Buffer indicators for streaming source
+	lSrcBufSoft = new Label("Software buffer:", Font_Medium);
+	c->attach(lSrcBufSoft, COORDS(10, 155));
+	pSrcBufSoft = new ProgressBar(COORDS(110, 20));
+	c->attach(pSrcBufSoft, COORDS(10, 165));
+
+	lSrcBufHard = new Label("Hardware buffer:", Font_Medium);
+	c->attach(lSrcBufHard, COORDS(130, 155));
+	pSrcBufHard = new ProgressBar(COORDS(110, 20));
+	c->attach(pSrcBufHard, COORDS(130, 165));
+
+	// TODO
+	pSrcBufSoft->setState(100);
+
 	ModulationChanged(nullptr, nullptr);
 
 	c->requestRedrawFull();
 	gui_SetTopWidget(c);
 
 	while(1) {
-		vTaskDelay(100);
+		uint32_t start = HAL_GetTick();
+		constexpr uint32_t delay = 100;
+		if (ModEnabled && modSourceType == SourceType::Stream) {
+			uint8_t FPGAfree = Stream::LoadToFPGA(delay);
+			uint8_t fillState = (255 - FPGAfree) * 100 / 255;
+			pSrcBufHard->setState(fillState);
+		}
+		uint32_t now = HAL_GetTick();
+		if (now - start < delay) {
+			vTaskDelay(delay - (now - start));
+		}
+
 		if (calibrate_dbm) {
 			Calibration::Run();
 			calibrate_dbm = false;
