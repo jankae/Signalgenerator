@@ -4,6 +4,7 @@
 #include "SPIProtocol.hpp"
 #include "Calibration.hpp"
 #include "Stream.hpp"
+#include "Persistence.hpp"
 
 // main carrier settings
 static bool RFon = false;
@@ -172,6 +173,23 @@ void Generator::Init() {
 		bool *calibrate = (bool*) ptr;
 		*calibrate = true;
 	}, &calibrate_dbm));
+	bool calibrate_balance = false;
+	system->AddEntry(new MenuAction("Cal balance", [](void* ptr, Widget *w) {
+		bool *calibrate = (bool*) ptr;
+		*calibrate = true;
+	}, &calibrate_balance));
+	system->AddEntry(new MenuAction("Reset Cal", [](void *ptr, Widget *w) {
+		Dialog::MessageBox("Confirm reset", Font_Big,
+				"Really reset\nall calibration\nvalues?",
+				Dialog::MsgBox::ABORT_OK, [](Dialog::Result res) {
+					if(res == Dialog::Result::OK) {
+						Persistence::Init();
+						touch_Init();
+						Calibration::Init();
+						Persistence::Save();
+					}
+				}, false);
+	}, nullptr));
 
 	system->AddEntry(new MenuBack());
 
@@ -259,8 +277,13 @@ void Generator::Init() {
 		}
 
 		if (calibrate_dbm) {
-			Calibration::Run();
+			Calibration::RunAmplitude();
 			calibrate_dbm = false;
+			continue;
+		}
+		if (calibrate_balance) {
+			Calibration::RunBalance();
+			calibrate_balance = false;
 			continue;
 		}
 		Protocol::FrontToRF send;
@@ -270,11 +293,14 @@ void Generator::Init() {
 		send.Status.UseIntRef = IntRef ? 1 : 0;
 		if (RFon) {
 			send.frequency = frequency;
-			send.dbm = Calibration::Correct(frequency, dbm);
+			send.dbm = Calibration::CorrectAmplitude(frequency, dbm);
 		} else {
 			send.frequency = 0;
 			send.dbm = 0;
 		}
+		auto balance = Calibration::CorrectBalance(frequency);
+		send.offset_I = balance.I;
+		send.offset_Q = balance.Q;
 		if (ModEnabled) {
 			if(modSourceType == SourceType::FixedValue) {
 				send.modulation_registers[0] = modSourceValue;

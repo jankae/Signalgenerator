@@ -11,7 +11,8 @@ using FrontToRF = struct fronttorf {
 		uint16_t UseIntRef :1;
 		uint16_t reserved :15;
 	} Status;
-	uint8_t reserved[4];
+	int16_t offset_I;
+	int16_t offset_Q;
 	uint16_t modulation_registers[8];
 } __attribute__((packed, aligned(8)));
 

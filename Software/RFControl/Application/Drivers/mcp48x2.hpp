@@ -16,6 +16,7 @@ public:
 
 	void Set(Channel c, uint16_t value, bool gain);
 	void Shutdown(Channel c);
+	static constexpr uint16_t MaxValue = 4095;
 private:
 	void Write(uint16_t cmd);
 	SPI_HandleTypeDef *hspi;

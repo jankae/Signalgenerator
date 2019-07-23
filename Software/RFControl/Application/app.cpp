@@ -6,6 +6,8 @@
 #include "stm32f0xx_hal.h"
 #include "System/log.h"
 #include "Drivers/fpga.hpp"
+#include "Drivers/mcp48x2.hpp"
+#include "main.h"
 
 static Protocol::RFToFront send;
 static Protocol::FrontToRF spi_new, recv;
@@ -13,6 +15,9 @@ static Protocol::FrontToRF spi_new, recv;
 static volatile bool new_data = false;
 
 extern SPI_HandleTypeDef hspi2;
+extern SPI_HandleTypeDef hspi1;
+
+static MCP48X2 OffsetDAC = MCP48X2(&hspi1, OFFSET_CS_GPIO_Port, OFFSET_CS_Pin);
 
 static_assert(sizeof(Protocol::RFToFront) == 32);
 static_assert(sizeof(Protocol::FrontToRF) == 32);
@@ -20,6 +25,10 @@ static_assert(sizeof(Protocol::FrontToRF) == 32);
 void app(void) {
 	log_init();
 	send.MagicConstant = Protocol::MagicConstant;
+
+	OffsetDAC.Set(MCP48X2::Channel::A, MCP48X2::MaxValue / 2, false);
+	OffsetDAC.Set(MCP48X2::Channel::B, MCP48X2::MaxValue / 2, false);
+
 	Protocol::FrontToRF spi_current;
 	memset(&spi_current, 0, sizeof(spi_current));
 	HAL_Delay(3000);
@@ -44,6 +53,16 @@ void app(void) {
 		}
 		if (spi_new.Status.UseIntRef != spi_current.Status.UseIntRef) {
 			RF::InternalReference(spi_new.Status.UseIntRef);
+		}
+		if (spi_new.offset_I != spi_current.offset_I) {
+			uint16_t value = spi_new.offset_I / (UINT16_MAX / MCP48X2::MaxValue)
+					+ MCP48X2::MaxValue / 2;
+			OffsetDAC.Set(MCP48X2::Channel::A, value, false);
+		}
+		if (spi_new.offset_Q != spi_current.offset_Q) {
+			uint16_t value = spi_new.offset_Q / (UINT16_MAX / MCP48X2::MaxValue)
+					+ MCP48X2::MaxValue / 2;
+			OffsetDAC.Set(MCP48X2::Channel::B, value, false);
 		}
 //		LOG(Log_System, LevelInfo,
 //				"SPI data, Mod0: 0x%04x, Mod1: 0x%04x, Mod2: 0x%04x",

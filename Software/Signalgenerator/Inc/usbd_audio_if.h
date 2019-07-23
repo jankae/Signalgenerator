@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file           : usbd_cdc_if.h
+  * @file           : usbd_audio_if.h
   * @version        : v2.0_Cube
-  * @brief          : Header for usbd_cdc_if.c file.
+  * @brief          : Header for usbd_audio_if.c file.
   ******************************************************************************
   * @attention
   *
@@ -18,89 +18,105 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
-
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __USBD_CDC_IF_H__
-#define __USBD_CDC_IF_H__
+#ifndef __USBD_AUDIO_IF_H__
+#define __USBD_AUDIO_IF_H__
 
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "usbd_cdc.h"
+#include "usbd_audio.h"
 
 /* USER CODE BEGIN INCLUDE */
+
 /* USER CODE END INCLUDE */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
   * @brief For Usb device.
   * @{
   */
-  
-/** @defgroup USBD_CDC_IF USBD_CDC_IF
-  * @brief Usb VCP device module
-  * @{
-  */ 
 
-/** @defgroup USBD_CDC_IF_Exported_Defines USBD_CDC_IF_Exported_Defines
+/** @defgroup USBD_AUDIO_IF USBD_AUDIO_IF
+  * @brief Usb audio interface device module.
+  * @{
+  */
+
+/** @defgroup USBD_AUDIO_IF_Exported_Defines USBD_AUDIO_IF_Exported_Defines
   * @brief Defines.
   * @{
   */
+
 /* USER CODE BEGIN EXPORTED_DEFINES */
+
 /* USER CODE END EXPORTED_DEFINES */
 
 /**
   * @}
   */
 
-/** @defgroup USBD_CDC_IF_Exported_Types USBD_CDC_IF_Exported_Types
+/** @defgroup USBD_AUDIO_IF_Exported_Types USBD_AUDIO_IF_Exported_Types
   * @brief Types.
   * @{
   */
 
 /* USER CODE BEGIN EXPORTED_TYPES */
+
 /* USER CODE END EXPORTED_TYPES */
 
 /**
   * @}
   */
 
-/** @defgroup USBD_CDC_IF_Exported_Macros USBD_CDC_IF_Exported_Macros
+/** @defgroup USBD_AUDIO_IF_Exported_Macros USBD_AUDIO_IF_Exported_Macros
   * @brief Aliases.
   * @{
   */
 
 /* USER CODE BEGIN EXPORTED_MACRO */
+
 /* USER CODE END EXPORTED_MACRO */
 
 /**
   * @}
   */
 
-/** @defgroup USBD_CDC_IF_Exported_Variables USBD_CDC_IF_Exported_Variables
+/** @defgroup USBD_AUDIO_IF_Exported_Variables USBD_AUDIO_IF_Exported_Variables
   * @brief Public variables.
   * @{
   */
 
-/** CDC Interface callback. */
-extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
+/** AUDIO_IF Interface callback. */
+extern USBD_AUDIO_ItfTypeDef USBD_AUDIO_fops_FS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
+
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
   * @}
   */
 
-/** @defgroup USBD_CDC_IF_Exported_FunctionsPrototype USBD_CDC_IF_Exported_FunctionsPrototype
+/** @defgroup USBD_AUDIO_IF_Exported_FunctionsPrototype USBD_AUDIO_IF_Exported_FunctionsPrototype
   * @brief Public functions declaration.
   * @{
   */
 
-uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
+/**
+  * @brief  Manages the DMA full transfer complete event.
+  * @retval None
+  */
+void TransferComplete_CallBack_FS(void);
+
+/**
+  * @brief  Manages the DMA half transfer complete event.
+  * @retval None
+  */
+void HalfTransfer_CallBack_FS(void);
 
 /* USER CODE BEGIN EXPORTED_FUNCTIONS */
+
 /* USER CODE END EXPORTED_FUNCTIONS */
 
 /**
@@ -119,6 +135,6 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 }
 #endif
 
-#endif /* __USBD_CDC_IF_H__ */
+#endif /* __USBD_AUDIO_IF_H__ */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

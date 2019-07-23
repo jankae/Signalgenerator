@@ -137,6 +137,8 @@ void startup_Software(void) {
 	display_Clear();
 	display_String(0, 0, "Booting...");
 
+	Persistence::Init();
+
 	line = 1;
 
 	uint8_t error = 0;
@@ -146,8 +148,7 @@ void startup_Software(void) {
 	buttons_Init();
     touch_Init();
 
-    Persistence::Init();
-	Calibration::Init();
+ 	Calibration::Init();
 
 	switch(File::Init()) {
 	case -1:
