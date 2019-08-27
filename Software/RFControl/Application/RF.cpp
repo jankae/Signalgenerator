@@ -29,6 +29,12 @@ static RF::Status status;
 
 static Protocol::RFToFront *spi_status;
 
+// HMC1021 detector values
+constexpr float slope = 16.85f; // in mV/dbm
+constexpr float intercept = -67.5; // dbm at 0V output
+constexpr int16_t cdbm_offset = intercept * 100;
+constexpr uint32_t gain = slope * 10;
+
 void RF::Init(Protocol::RFToFront *s) {
 	spi_status = s;
 	status.enabled = false;
@@ -37,6 +43,7 @@ void RF::Init(Protocol::RFToFront *s) {
 	status.synth_unlocked = false;
 	status.used_att = Attenuation::DB45;
 	InternalReference(false);
+	HAL_ADCEx_Calibration_Start(&hadc);
 	HAL_ADC_Start_DMA(&hadc, (uint32_t*) ADC_Samples, samplelength);
 	FPGA::SetDAC(0x0FFF, 0x0800);
 	PowerDAC.Shutdown(MCP48X2::Channel::A);
@@ -196,14 +203,11 @@ void RF::Configure(uint64_t f, int16_t cdbm) {
 	SetLPF(lpf);
 	SetAttenuator(Attenuation::DB45);
 
+#ifdef AMP_CTRL_ANALOG
 	// power at detector is 9db below output power
 	int32_t cdbm_det = cdbm - 900;
 
 	// calculate voltage at detector output
-	constexpr float slope = 16.85f; // in mV/dbm
-	constexpr float intercept = -67.5; // dbm at 0V output
-	constexpr int16_t cdbm_offset = intercept * 100;
-	constexpr uint32_t gain = slope * 10;
 	uint32_t voltage = ((cdbm_det - cdbm_offset) * gain) / 1000;
 	if (voltage < 0) {
 		voltage = 0;
@@ -211,6 +215,15 @@ void RF::Configure(uint64_t f, int16_t cdbm) {
 		voltage = 4095;
 	}
 	PowerDAC.Set(MCP48X2::Channel::A, voltage, true);
+#endif
+#ifdef AMP_CTRL_DIGITAL
+	status.requestedcdbm = cdbm;
+	// set highest possible attenuation at startup
+	status.used_variable_att = MCP48X2::MaxValue / 2;
+	PowerDAC.Set(MCP48X2::Channel::B, status.used_variable_att * 2, false);
+	status.unlevel = true;
+	spi_status->Status.AmplitudeUnlevel = 0;
+#endif
 	DetectorEnable(true);
 	LOG(Log_RF, LevelDebug, "Requested output level of %d.%02udbm", cdbm / 100,
 			abs(cdbm) % 100);
@@ -285,15 +298,17 @@ static void NewADCSamples(uint16_t *data, uint16_t len) {
 	}
 	sum /= len;
 
+	constexpr float ADC_reference = 3.3f;
+	constexpr uint16_t ADC_max = 4095;
+#ifdef AMP_CTRL_ANALOG
+
 	/*
 	 * voltage controlled attenuator has a usable input range of about
 	 * 0.3-2.1V. If the control signal is out of this range, the output
 	 * power does not meet the requested value.
 	 */
-	constexpr float ADC_reference = 3.3f;
 	constexpr float voltage_min = 0.3f;
 	constexpr float voltage_max = 2.1f;
-	constexpr uint16_t ADC_max = 4095;
 	constexpr uint16_t low_threshold = voltage_min / ADC_reference * ADC_max;
 	constexpr uint16_t high_threshold = voltage_max / ADC_reference * ADC_max;
 
@@ -346,6 +361,87 @@ static void NewADCSamples(uint16_t *data, uint16_t len) {
 		status.unlevel = false;
 		spi_status->Status.AmplitudeUnlevel = 0;
 	}
+#endif
+#ifdef AMP_CTRL_DIGITAL
+
+	static uint32_t last_adjust = HAL_GetTick();
+	constexpr uint32_t adjust_delay = 10;
+	if (HAL_GetTick() - last_adjust >= adjust_delay) {
+		last_adjust = HAL_GetTick();
+		// calculate measured dbm
+
+		// convert ADC value into voltage
+		constexpr uint16_t ADCRefmV = ADC_reference * 1000;
+		uint16_t voltage = ADCRefmV * sum / ADC_max;
+		int16_t cdbm_det = (voltage * 1000UL) / gain + cdbm_offset;
+		// actual output level is 9db higher than level at detector
+		int16_t cdbm = cdbm_det + 900;
+
+		int16_t cdbm_diff = status.requestedcdbm - cdbm;
+
+		// Variable attenuator has a slope of approximately -20db/V
+		int16_t voltage_change_mV = -cdbm_diff / 2;
+		if (status.used_variable_att + voltage_change_mV < 400) {
+			// variable attenuator at low attenuation limit, reduce
+			// fixed attenuator if possible
+			switch (status.used_att) {
+			case RF::Attenuation::DB45:
+				RF::SetAttenuator(RF::Attenuation::DB30);
+				cdbm_diff -= 1500;
+				break;
+			case RF::Attenuation::DB30:
+				RF::SetAttenuator(RF::Attenuation::DB15);
+				cdbm_diff -= 1500;
+				break;
+			case RF::Attenuation::DB15:
+				RF::SetAttenuator(RF::Attenuation::DB0);
+				cdbm_diff -= 1500;
+				break;
+			default:
+				break;
+			}
+			voltage_change_mV = -cdbm_diff / 2;
+		} else if (status.used_variable_att + voltage_change_mV > 2000) {
+			// variable attenuator at high attenuation limit, increase
+			// fixed attenuator if possible
+			switch (status.used_att) {
+			case RF::Attenuation::DB0:
+				RF::SetAttenuator(RF::Attenuation::DB15);
+				cdbm_diff += 1500;
+				break;
+			case RF::Attenuation::DB15:
+				RF::SetAttenuator(RF::Attenuation::DB30);
+				cdbm_diff += 1500;
+				break;
+			case RF::Attenuation::DB30:
+				RF::SetAttenuator(RF::Attenuation::DB45);
+				cdbm_diff += 1500;
+				break;
+			default:
+				break;
+			}
+			voltage_change_mV = -cdbm_diff / 2;
+		}
+		// adjust variable attenuator
+		uint16_t buf = status.used_variable_att;
+		status.used_variable_att += (voltage_change_mV * 8) / 10;
+		if (status.used_variable_att > MCP48X2::MaxValue) {
+			status.used_variable_att = MCP48X2::MaxValue;
+			status.unlevel = true;
+			spi_status->Status.AmplitudeUnlevel = 1;
+		} else if (status.used_variable_att < 0) {
+			status.used_variable_att = 0;
+			status.unlevel = true;
+			spi_status->Status.AmplitudeUnlevel = 1;
+		} else {
+			status.unlevel = false;
+			spi_status->Status.AmplitudeUnlevel = 0;
+		}
+//		LOG(Log_RF, LevelDebug, "Measured: %d, requested: %d, diff: %d, V_change: %d, old DAC: %u, new DAC: %u",
+//				cdbm, status.requestedcdbm, cdbm_diff, voltage_change_mV, buf, status.used_variable_att);
+		PowerDAC.Set(MCP48X2::Channel::B, status.used_variable_att * 2, false);
+	}
+#endif
 
 	// also check lock status in ADC interrupt
 	status.synth_unlocked = !Synthesizer.Locked();

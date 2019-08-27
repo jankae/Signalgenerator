@@ -14,19 +14,13 @@ public:
 		BPSK,
 		QPSK,
 		PSK8,
-		QAM4,
-		QAM8,
 		QAM16,
-		QAM32,
-		QAM64,
-		QAM128,
-		QAM256,
 		UserDefined,
 	};
 
 	Constellation(Type type);
 private:
-	static constexpr uint16_t MaxPoints = 256;
+	static constexpr uint16_t MaxPoints = 16;
 	uint16_t usedPoints;
 	Point *points;
 };
