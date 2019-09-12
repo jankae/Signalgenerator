@@ -55,6 +55,8 @@ using Status = struct {
 	bool lo_unlocked;
 	Attenuation used_att;
 #ifdef AMP_CTRL_DIGITAL
+	bool stabilized;
+	uint8_t stabilized_cnt;
 	int16_t used_variable_att;
 	int16_t requestedcdbm;
 #endif
@@ -67,5 +69,6 @@ void SetHeterodynePath(bool use);
 void DetectorEnable(bool en);
 void SetLPF(LPF l);
 void InternalReference(bool enabled);
+bool Stabilized();
 
 }

@@ -9,6 +9,8 @@
 #include "Drivers/mcp48x2.hpp"
 #include "main.h"
 
+#define Log_App		(LevelAll)
+
 static Protocol::RFToFront send;
 static Protocol::FrontToRF spi_new, recv;
 
@@ -16,6 +18,8 @@ static volatile bool new_data = false;
 
 extern SPI_HandleTypeDef hspi2;
 extern SPI_HandleTypeDef hspi1;
+
+static bool new_modulation_data = false;
 
 static MCP48X2 OffsetDAC = MCP48X2(&hspi1, OFFSET_CS_GPIO_Port, OFFSET_CS_Pin);
 
@@ -69,16 +73,22 @@ void app(void) {
 //				spi_new.modulation_registers[0],
 //				spi_new.modulation_registers[1],
 //				spi_new.modulation_registers[2]);
-		if (memcmp(spi_new.modulation_registers,
+		if (!RF::Stabilized() || memcmp(spi_new.modulation_registers,
 				spi_current.modulation_registers,
 				sizeof(spi_new.modulation_registers))) {
+			new_modulation_data = true;
+			LOG(Log_App, LevelDebug, "Updating modulation registers required");
+		}
+		spi_current = spi_new;
+		if (new_modulation_data && RF::Stabilized()) {
 			// Update registers on FPGA
 			for (uint8_t i = 0; i < 8; i++) {
 				FPGA::WriteReg((FPGA::Reg) (i + (int) FPGA::Reg::MOD_DATA_L),
-						spi_new.modulation_registers[i]);
+						spi_current.modulation_registers[i]);
 			}
+			new_modulation_data = false;
+			LOG(Log_App, LevelDebug, "Updated modulation registers");
 		}
-		spi_current = spi_new;
 	}
 }
 
