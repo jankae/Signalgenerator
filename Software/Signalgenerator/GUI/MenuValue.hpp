@@ -2,16 +2,65 @@
 
 #include "menuentry.hpp"
 #include "Unit.hpp"
+#include "Dialog/ValueInput.hpp"
+#include "cast.hpp"
+#include "buttons.h"
 
+template<typename T>
 class MenuValue: public MenuEntry {
 public:
-	MenuValue(const char *name, int32_t *value, const Unit::unit *unit[],
-			Callback cb = nullptr, void *ptr = nullptr);
+	MenuValue(const char *name, T *value, const Unit::unit *unit[],
+			Callback cb = nullptr, void *ptr = nullptr) {
+		/* set member variables */
+		this->cb = cb;
+		this->ptr = ptr;
+		this->unit = unit;
+		this->value = value;
+		strncpy(this->name, name, MaxNameLength);
+		this->name[MaxNameLength] = 0;
+		selectable = false;
+	}
 
 private:
-	void draw(coords_t offset) override;
-	void input(GUIEvent_t *ev) override;
-	void ValueCallback(bool updated);
+	void draw(coords_t offset) override {
+		display_SetForeground(Foreground);
+		display_SetBackground(Background);
+		display_AutoCenterString(name, COORDS(offset.x, offset.y),
+				COORDS(offset.x + size.x, offset.y + size.y / 2));
+		uint8_t len = size.x / fontValue->width;
+		char s[len + 1];
+		Unit::StringFromValue(s, len, *value, unit);
+		display_AutoCenterString(s, COORDS(offset.x, offset.y + size.y / 2),
+				COORDS(offset.x + size.x, offset.y + size.y));
+	}
+	void input(GUIEvent_t *ev) override {
+		char firstChar = 0;
+		switch(ev->type) {
+		case EVENT_BUTTON_CLICKED:
+			if(BUTTON_IS_DIGIT(ev->button)) {
+				firstChar = BUTTON_TODIGIT(ev->button) + '0';
+			} else if(ev->button & BUTTON_DOT) {
+				firstChar = '.';
+			} else if(ev->button & BUTTON_SIGN) {
+				firstChar = '-';
+			} else if(!(ev->button & (BUTTON_ENCODER))) {
+				break;
+			}
+			/* no break */
+		case EVENT_TOUCH_PRESSED:
+			new ValueInput<int32_t>("New value:", value, unit,
+					pmf_cast<void (*)(void*, bool), MenuValue,
+							&MenuValue::ValueCallback>::cfn, this, firstChar);
+		}
+		ev->type = EVENT_NONE;
+	}
+	void ValueCallback(bool updated) {
+		if (updated) {
+			if (cb) {
+				cb(ptr, this);
+			}
+		}
+	}
 
 	Widget::Type getType() override { return Widget::Type::MenuValue; };
 
@@ -22,7 +71,7 @@ private:
 
 	Callback cb;
 	void *ptr;
-	int32_t *value;
+	T *value;
     char name[MaxNameLength + 1];
     const Unit::unit **unit;
 };

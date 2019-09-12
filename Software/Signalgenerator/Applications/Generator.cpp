@@ -8,7 +8,7 @@
 
 // main carrier settings
 static bool RFon = false;
-static int32_t frequency = 1000000000;
+static uint32_t frequency = 1000000000;
 static int32_t dbm = 0;
 
 // modulation settings
@@ -54,13 +54,13 @@ static bool ModEnabled = false;
 static Label *lModulation;
 static Label *lFMDeviation;
 static Label *lAMDepth;
-static Entry *eFMDeviation;
-static Entry *eAMDepth;
+static Entry<int32_t> *eFMDeviation;
+static Entry<int32_t> *eAMDepth;
 
 static Label *lSource;
 static ItemChooser *cSource;
-static Entry *eSrcValue;
-static Entry *eSrcFreq;
+static Entry<int32_t> *eSrcValue;
+static Entry<int32_t> *eSrcFreq;
 
 static Label *lSrcBufSoft;
 static Label *lSrcBufHard;
@@ -143,8 +143,8 @@ void Generator::Init() {
 
 	Menu *mainmenu = new Menu("", SIZE(70, DISPLAY_HEIGHT));
 	mainmenu->AddEntry(new MenuBool("Output", &RFon, nullptr));
-	mainmenu->AddEntry(new MenuValue("Frequency", &frequency, Unit::Frequency));
-	mainmenu->AddEntry(new MenuValue("Amplitude", &dbm, Unit::dbm));
+	mainmenu->AddEntry(new MenuValue<uint32_t>("Frequency", &frequency, Unit::Frequency));
+	mainmenu->AddEntry(new MenuValue<int32_t>("Amplitude", &dbm, Unit::dbm));
 	mainmenu->AddEntry(new MenuBool("Modulation", &ModEnabled, ModulationChanged));
 
 	mainmenu->AddEntry(
@@ -197,11 +197,11 @@ void Generator::Init() {
 	c->attach(mainmenu, COORDS(DISPLAY_WIDTH - mainmenu->getSize().x, 0));
 
 	// create and attach frequency and amplitude display
-	auto sFreq = new SevenSegment(&frequency, 12, 3, 11, 6, COLOR_BLUE);
+	auto sFreq = new SevenSegment<uint32_t>(&frequency, 12, 3, 11, 6, COLOR_BLUE);
 	c->attach(sFreq, COORDS(0,5));
 	c->attach(new Label("MHz", Font_Big, COLOR_BLUE), COORDS(200, 20));
 
-	auto sdbm = new SevenSegment(&dbm, 12, 3, 5, 2, COLOR_BLUE);
+	auto sdbm = new SevenSegment<int32_t>(&dbm, 12, 3, 5, 2, COLOR_BLUE);
 	c->attach(sdbm, COORDS(108,45));
 	c->attach(new Label("dbm", Font_Big, COLOR_BLUE), COORDS(200, 60));
 
@@ -226,11 +226,11 @@ void Generator::Init() {
 	lFMDeviation = new Label("Deviation:", Font_Big);
 	c->attach(lFMDeviation, COORDS(10, 90));
 	// maximum deviation depends on internal FPGA bus widths
-	eFMDeviation = new Entry(&FMDeviation, 6248378, 0, Font_Big, 8, Unit::Frequency);
+	eFMDeviation = new Entry<int32_t>(&FMDeviation, 6248378, 0, Font_Big, 8, Unit::Frequency);
 	c->attach(eFMDeviation, COORDS(150, 90));
 	lAMDepth = new Label("Depth:", Font_Big);
 	c->attach(lAMDepth, COORDS(10, 90));
-	eAMDepth = new Entry(&AMDepth, Unit::maxPercent, 0, Font_Big, 8, Unit::Percent);
+	eAMDepth = new Entry<int32_t>(&AMDepth, Unit::maxPercent, 0, Font_Big, 8, Unit::Percent);
 	c->attach(eAMDepth, COORDS(150, 90));
 
 	// create and attach modulation source widgets
@@ -239,9 +239,9 @@ void Generator::Init() {
 	cSource = new ItemChooser(modSrcTypeNames, (uint8_t*) &modSourceType, Font_Big, 1, 80);
 	cSource->setCallback(ModulationChanged, nullptr);
 	c->attach(cSource, COORDS(10, 130));
-	eSrcValue = new Entry(&modSourceValue, 4095, 0, Font_Big, 8, Unit::None);
+	eSrcValue = new Entry<int32_t>(&modSourceValue, 4095, 0, Font_Big, 8, Unit::None);
 	c->attach(eSrcValue, COORDS(150, 130));
-	eSrcFreq = new Entry(&modSourceFreq, 48000, 0, Font_Big, 8, Unit::Frequency);
+	eSrcFreq = new Entry<int32_t>(&modSourceFreq, 48000, 0, Font_Big, 8, Unit::Frequency);
 	c->attach(eSrcFreq, COORDS(150, 130));
 
 	// Buffer indicators for streaming source

@@ -2,6 +2,7 @@
 
 #include "cast.hpp"
 #include "buttons.h"
+#include "gui.hpp"
 
 ItemChooserDialog::ItemChooserDialog(const char* title,
 		const char* const * items, uint8_t initial_selection, Callback cb,

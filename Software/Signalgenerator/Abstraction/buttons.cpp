@@ -1,4 +1,5 @@
 #include "buttons.h"
+#include <gui.hpp>
 
 #define BUTTONS_ROWS		6
 #define BUTTONS_COLUMNS		4

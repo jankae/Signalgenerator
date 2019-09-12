@@ -407,7 +407,7 @@ Result UnitInput(const char *title, int32_t *result, uint8_t maxLength, const Un
 	Window *w = new Window(title, Font_Big, COORDS(313, 233));
 	Container *c = new Container(w->getAvailableArea());
 
-	Entry *e = new Entry(result, nullptr, nullptr, Font_Big, maxLength, unit);
+	Entry<int32_t> *e = new Entry<int32_t>(result, nullptr, nullptr, Font_Big, maxLength, unit);
 
 	/* Create buttons */
 	Button *bOK = new Button("OK", Font_Big, [](void*, Widget *w) {

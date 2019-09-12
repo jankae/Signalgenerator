@@ -1,7 +1,6 @@
 #ifndef BUTTONS_H_
 #define BUTTONS_H_
 
-#include <gui.hpp>
 #include "gpio.h"
 
 /* Button definitions */

@@ -27,11 +27,11 @@ extern const int32_t null, maxPercent;
 uint32_t LeastDigitValueFromString(const char *s,
 		const unit *unit[]);
 
-void StringFromValue(char *to, uint8_t len, int32_t val,
+void StringFromValue(char *to, uint8_t len, int64_t val,
 		const unit *unit[]);
 
 uint8_t ValueFromString(int32_t *value, char *s, const unit *unit[]);
-int32_t ValueFromString(const char *s, uint32_t multiplier);
+int64_t ValueFromString(const char *s, uint32_t multiplier);
 
 }
 

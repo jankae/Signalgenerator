@@ -111,7 +111,7 @@ uint32_t Unit::LeastDigitValueFromString(const char *s,
 	}
 }
 
-void Unit::StringFromValue(char *to, uint8_t len, int32_t val,
+void Unit::StringFromValue(char *to, uint8_t len, int64_t val,
 		const Unit::unit *unit[]) {
 	if (unit == Unit::Hex) {
 		uint8_t encodedLength = snprintf(to, len + 1, "0x%X", val);
@@ -257,8 +257,8 @@ uint8_t Unit::ValueFromString(int32_t *value, char *s,
 	return 0;
 }
 
-int32_t Unit::ValueFromString(const char* s, uint32_t multiplier) {
-	int32_t value = 0;
+int64_t Unit::ValueFromString(const char* s, uint32_t multiplier) {
+	int64_t value = 0;
 	int8_t sign = 1;
 	uint32_t dotDivider = 0;
 	/* skip any leading spaces */

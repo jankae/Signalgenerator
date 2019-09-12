@@ -9,7 +9,6 @@
 #define WINDOW_HPP_
 
 #include <common.hpp>
-#include <gui.hpp>
 #include <widget.hpp>
 #include "display.h"
 #include "font.h"
