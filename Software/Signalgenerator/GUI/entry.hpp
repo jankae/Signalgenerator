@@ -36,9 +36,9 @@ public:
 			uint8_t length, const Unit::unit *unit[], const color_t c = COLOR_FG_DEFAULT) {
 		/* set member variables */
 		this->value = value;
-		limitPtr = true;
-		this->maxptr = max;
-		this->minptr = min;
+		limitPtr = false;
+		this->max = max;
+		this->min = min;
 		this->font = font;
 		this->unit = unit;
 		this->length = length;
@@ -73,8 +73,8 @@ public:
 
 private:
 	T constrainValue(T val) {
-		int32_t high = max;
-		int32_t low = min;
+		T high = max;
+		T low = min;
 		if (limitPtr) {
 			high = maxptr ? *maxptr : INT32_MAX;
 			low = minptr ? *minptr : INT32_MIN;
@@ -158,7 +158,7 @@ private:
 		}
 	    switch(ev->type) {
 	    case EVENT_TOUCH_RELEASED:
-			new ValueInput<int32_t>("New value?", value, unit,
+			new ValueInput<T>("New value?", value, unit,
 					pmf_cast<void (*)(void*, bool), Entry,
 							&Entry::ValueInputCallback>::cfn, this);
 			ev->type = EVENT_NONE;

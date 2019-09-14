@@ -48,7 +48,7 @@ private:
 			}
 			/* no break */
 		case EVENT_TOUCH_PRESSED:
-			new ValueInput<int32_t>("New value:", value, unit,
+			new ValueInput<T>("New value:", value, unit,
 					pmf_cast<void (*)(void*, bool), MenuValue,
 							&MenuValue::ValueCallback>::cfn, this, firstChar);
 		}

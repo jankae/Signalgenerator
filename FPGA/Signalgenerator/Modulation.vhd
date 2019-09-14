@@ -126,7 +126,7 @@ begin
 					fm_dds_enabled <= '1';
 					fm_pinc <= "0000" & mult_result;
 					DAC_I <= not fm_sine(11) & fm_sine(10 downto 0);
-					DAC_Q <= "100000000000";
+					DAC_Q <= not fm_sine(11) & fm_sine(10 downto 0);
 				-- FM lower sideband modulation
 				when "00000101" =>
 					mult_enabled <= '1';
