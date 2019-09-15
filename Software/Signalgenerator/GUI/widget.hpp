@@ -37,6 +37,7 @@ public:
 		EventCatcher,
 		MenuValue,
 		MenuAction,
+		Table,
 	};
 
 	Widget();

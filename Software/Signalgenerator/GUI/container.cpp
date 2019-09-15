@@ -129,11 +129,15 @@ void Container::draw(coords_t offset) {
 
 void Container::input(GUIEvent_t *ev) {
 	switch (ev->type) {
-	case EVENT_TOUCH_PRESSED: {
+	case EVENT_TOUCH_PRESSED:
+	case EVENT_TOUCH_DRAGGED: {
 		/* save old canvasOffset */
 		coords_t old = canvasOffset;
 		if (ev->pos.x > viewingSize.x) {
 			/* vertical scrollbar */
+			if (ev->type == EVENT_TOUCH_DRAGGED) {
+				ev->pos.y = ev->dragged.y;
+			}
 			/* adjust vertical canvas offset */
 			canvasOffset.y = common_Map(ev->pos.y, scrollBarLength.y / 2,
 					viewingSize.y - scrollBarLength.y / 2, 0,
@@ -147,6 +151,9 @@ void Container::input(GUIEvent_t *ev) {
 			ev->type = EVENT_NONE;
 		} else if (ev->pos.y > size.y - scrollHorizontal * ScrollbarSize) {
 			/* horizontal scrollbar */
+			if (ev->type == EVENT_TOUCH_DRAGGED) {
+				ev->pos.x = ev->dragged.x;
+			}
 			/* adjust horizontal canvas offset */
 			canvasOffset.x = common_Map(ev->pos.x, scrollBarLength.x / 2,
 					viewingSize.x - scrollBarLength.x / 2, 0,
@@ -287,6 +294,9 @@ void Container::drawChildren(coords_t offset) {
             break;
     }
 
+	display_SetActiveArea(offset.x, offset.x + viewingSize.x - 1, offset.y,
+			offset.y + viewingSize.y - 1);
+
 	offset.x -= canvasOffset.x;
     offset.y -= canvasOffset.y;
 
@@ -294,15 +304,13 @@ void Container::drawChildren(coords_t offset) {
     for (; child; child = child->next) {
          if (!child->selected) {
             /* check if child is fully in viewing field */
-            if (child->position.x >= canvasOffset.x
-                    && child->position.y >= canvasOffset.y
-                    && child->position.x + child->size.x
-                            <= canvasOffset.x + viewingSize.x
-                    && child->position.y + child->size.y
-                            <= canvasOffset.y + viewingSize.y) {
-                /* draw this child */
-                Widget::draw(child, offset);
-            }
+ 			if (child->position.x + child->size.x >= canvasOffset.x
+ 					&& child->position.y + child->size.y >= canvasOffset.y
+ 					&& child->position.x <= canvasOffset.x + viewingSize.x
+ 					&& child->position.y <= canvasOffset.y + viewingSize.y) {
+ 				/* draw this child */
+ 				Widget::draw(child, offset);
+ 			}
         }
     }
     /* always draw selected child last (might overwrite other children) */

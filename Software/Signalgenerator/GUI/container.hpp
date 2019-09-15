@@ -17,7 +17,7 @@ private:
 
 	Widget::Type getType() override { return Widget::Type::Container; };
 
-	static constexpr uint8_t ScrollbarSize = 8;
+	static constexpr uint8_t ScrollbarSize = 20;
 	static constexpr color_t ScrollbarColor = COLOR_ORANGE;
 	static constexpr color_t LineColor = COLOR_FG_DEFAULT;
 

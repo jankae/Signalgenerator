@@ -5,6 +5,7 @@
 #include "Calibration.hpp"
 #include "Stream.hpp"
 #include "Persistence.hpp"
+#include "Constellation.hpp"
 
 // main carrier settings
 static bool RFon = false;
@@ -17,11 +18,20 @@ enum class ModulationType : uint8_t {
 	FM = 1,
 	FM_USB = 2,
 	FM_LSB = 3,
+	QAM2 = 4,
+	QAM4 = 5,
+	QAM8 = 6,
+	QAM16 = 7,
+	QAM32 = 8,
 };
 static ModulationType modType = ModulationType::AM;
-static const char *modTypeNames[] { "AM", "FM", "FM USB", "FM LSB", nullptr};
+static const char *modTypeNames[] { "AM", "FM", "FM USB", "FM LSB", "2QAM",
+		"4QAM", "8QAM", "16QAM", "32QAM", nullptr };
 static int32_t FMDeviation = 75000;
 static int32_t AMDepth = 100000000;
+
+static int32_t QAMbaud = 1000000;
+static Constellation QAMconst;
 
 // modulation source settings
 enum class SourceType : uint8_t {
@@ -38,8 +48,8 @@ enum class SourceType : uint8_t {
 static SourceType modSourceType = SourceType::Disabled;
 static const char *modSrcTypeNames[] = { "Disabled", "Fixed", "Sine", "Ramp up",
 		"Ramp down", "Triangle", "Square", "PRBS", "Stream", nullptr };
-static int32_t modSourceFreq = 0;
-static int32_t modSourceValue = 0;
+static int32_t modSourceFreq = 1000;
+static int32_t modSourceValue = 4095;
 
 static Label *lRFon;
 static Label *lCom, *lUnlock, *lUnlevel;
@@ -54,8 +64,11 @@ static bool ModEnabled = false;
 static Label *lModulation;
 static Label *lFMDeviation;
 static Label *lAMDepth;
+static Label *lQAMbaud;
 static Entry<int32_t> *eFMDeviation;
 static Entry<int32_t> *eAMDepth;
+static Entry<int32_t> *eQAMbaud;
+static Button *bQAMedit;
 
 static Label *lSource;
 static ItemChooser *cSource;
@@ -74,6 +87,9 @@ static void ModulationChanged(void*, Widget*) {
 		lAMDepth->SetVisible(false);
 		eFMDeviation->SetVisible(false);
 		eAMDepth->SetVisible(false);
+		lQAMbaud->SetVisible(false);
+		eQAMbaud->SetVisible(false);
+		bQAMedit->SetVisible(false);
 		cSource->SetVisible(false);
 		lSource->SetVisible(false);
 		eSrcValue->SetVisible(false);
@@ -86,20 +102,35 @@ static void ModulationChanged(void*, Widget*) {
 		lModulation->setText(modTypeNames[(uint8_t) modType]);
 		cSource->SetVisible(true);
 		lSource->SetVisible(true);
+
+		lAMDepth->SetVisible(false);
+		eAMDepth->SetVisible(false);
+		lFMDeviation->SetVisible(false);
+		eFMDeviation->SetVisible(false);
+		lQAMbaud->SetVisible(false);
+		eQAMbaud->SetVisible(false);
+		bQAMedit->SetVisible(false);
 		switch(modType) {
 		case ModulationType::AM:
 			lAMDepth->SetVisible(true);
 			eAMDepth->SetVisible(true);
-			lFMDeviation->SetVisible(false);
-			eFMDeviation->SetVisible(false);
 			break;
 		case ModulationType::FM:
 		case ModulationType::FM_LSB:
 		case ModulationType::FM_USB:
-			lAMDepth->SetVisible(false);
-			eAMDepth->SetVisible(false);
 			lFMDeviation->SetVisible(true);
 			eFMDeviation->SetVisible(true);
+			break;
+		case ModulationType::QAM2:
+		case ModulationType::QAM4:
+		case ModulationType::QAM8:
+		case ModulationType::QAM16:
+		case ModulationType::QAM32:
+			lQAMbaud->SetVisible(true);
+			eQAMbaud->SetVisible(true);
+			bQAMedit->SetVisible(true);
+			QAMconst.SetUsedPoints(
+					strtol(modTypeNames[(int) modType], nullptr, 0));
 			break;
 		}
 		switch(modSourceType) {
@@ -233,6 +264,19 @@ void Generator::Init() {
 	eAMDepth = new Entry<int32_t>(&AMDepth, Unit::maxPercent, 0, Font_Big, 8, Unit::Percent);
 	c->attach(eAMDepth, COORDS(150, 90));
 
+	bool editConstellation = false;
+	bQAMedit = new Button("Edit QAM", Font_Medium, [](void*ptr, Widget*) {
+		bool *edit = (bool*) ptr;
+		*edit = true;
+	}, &editConstellation, COORDS(0, 22));
+	c->attach(bQAMedit, COORDS(10, 89));
+	lQAMbaud = new Label("Baud:", Font_Big);
+	c->attach(lQAMbaud, COORDS(85, 91));
+	eQAMbaud = new Entry<int32_t>(&QAMbaud, 2000000, 0, Font_Big, 8, Unit::SampleRate);
+	c->attach(eQAMbaud, COORDS(150, 90));
+
+	QAMconst = Constellation();
+
 	// create and attach modulation source widgets
 	lSource = new Label("Modulation source:", Font_Big);
 	c->attach(lSource, COORDS(10, 115));
@@ -263,6 +307,11 @@ void Generator::Init() {
 	c->requestRedrawFull();
 	gui_SetTopWidget(c);
 
+	vTaskDelay(1000);
+
+//	auto cst = Constellation(Constellation::Type::BPSK);
+//	cst.Edit();
+
 	while(1) {
 		uint32_t start = HAL_GetTick();
 		constexpr uint32_t delay = 100;
@@ -276,6 +325,11 @@ void Generator::Init() {
 			vTaskDelay(delay - (now - start));
 		}
 
+		if (editConstellation) {
+			QAMconst.Edit();
+			editConstellation = false;
+			continue;
+		}
 		if (calibrate_dbm) {
 			Calibration::RunAmplitude();
 			calibrate_dbm = false;

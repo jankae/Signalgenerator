@@ -9,8 +9,8 @@
 namespace Unit {
 
 using unit = struct unit {
-	/* name length up to 3 (plus string terminator) */
-	char name[4];
+	/* name length up to 4 (plus string terminator) */
+	char name[5];
 	uint32_t factor;
 };
 
@@ -18,7 +18,7 @@ using unit = struct unit {
 
 extern const unit *Current[], *Voltage[], *Power[], *Temperature[],
 		*Resistance[], *Energy[], *Time[], *Memory[], *Capacity[], *Percent[],
-		*Charge[], *Weight[], *Force[], *None[], *Hex[], *Frequency[], *dbm[];
+		*Charge[], *Weight[], *Force[], *None[], *Hex[], *Frequency[], *dbm[], *SampleRate[];
 extern const int32_t null, maxPercent;
 
 #define COORDS(v1, v2)	((coords_t){(int16_t) (v1), (int16_t) (v2)})

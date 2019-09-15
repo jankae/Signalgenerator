@@ -34,6 +34,7 @@ struct event {
 		/* Encoder movement */
 		int32_t movement;
 	};
+	coords_t dragged;
 };
 
 #endif

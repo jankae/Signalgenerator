@@ -41,9 +41,10 @@ static void inputThread(void) {
 				}
 				/* touch drag event */
 				GUIEvent_t ev;
+				touchMoved = 1;
 				ev.type = EVENT_TOUCH_DRAGGED;
-				ev.pos.x = touch.x - lastTouch.x;
-				ev.pos.y = touch.y - lastTouch.y;
+				ev.pos = initialTouch;
+				ev.dragged = touch;
 				gui_SendEvent(&ev);
 				lastTouch = touch;
 			}

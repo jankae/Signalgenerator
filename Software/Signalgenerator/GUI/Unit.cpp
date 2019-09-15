@@ -55,6 +55,10 @@ static const Unit::unit GHz = {"GHZ", 1000000000};
 
 static const Unit::unit dbms = {"dbm", 100};
 
+static const Unit::unit sps = {"S/s", 1};
+static const Unit::unit ksps = {"kS/s", 1000};
+static const Unit::unit Msps = {"MS/s", 1000000};
+
 static const Unit::unit none = {"", 1};
 
 const Unit::unit *Unit::Current[] = { &uA, &mA, &A, nullptr };
@@ -74,6 +78,7 @@ const Unit::unit *Unit::None[] = {&none, nullptr };
 const Unit::unit *Unit::Hex[] = {nullptr };
 const Unit::unit *Unit::Frequency[] = { &kHz, &MHz, &GHz, nullptr };
 const Unit::unit *Unit::dbm[] = {&dbms, nullptr };
+const Unit::unit *Unit::SampleRate[] = {&sps, &ksps, &Msps, nullptr };
 
 const int32_t Unit::null = 0;
 const int32_t Unit::maxPercent = 100000000;

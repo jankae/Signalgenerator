@@ -9,6 +9,7 @@ static Widget *newTopWidget = nullptr;
 
 TaskHandle_t GUIHandle;
 
+#include "display.h"
 #include "menu.hpp"
 #include "MenuBool.hpp"
 #include "MenuBack.hpp"
@@ -61,6 +62,7 @@ static void guiThread(void) {
 					}
 					break;
 				case EVENT_WINDOW_CLOSE:
+					display_SetDefaultArea();
 					break;
 				default:
 					break;

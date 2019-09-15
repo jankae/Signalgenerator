@@ -110,8 +110,7 @@ void Widget::input(Widget *w, GUIEvent_t* ev) {
 				w->select();
 		} else {
 			/* widget handled the input itself -> it is now selected */
-			if (ev->type == EVENT_TOUCH_PRESSED)
-				w->select();
+			w->select();
 		}
 		break;
 	case EVENT_BUTTON_CLICKED:

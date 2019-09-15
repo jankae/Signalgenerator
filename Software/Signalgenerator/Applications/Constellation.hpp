@@ -2,14 +2,10 @@
 
 #include <stdint.h>
 #include <array>
+#include "table.hpp"
 
 class Constellation {
 public:
-	using Point = struct {
-		int16_t I;
-		int16_t Q;
-	};
-
 	enum class Type : uint8_t {
 		BPSK,
 		QPSK,
@@ -18,9 +14,16 @@ public:
 		UserDefined,
 	};
 
-	Constellation(Type type);
+	Constellation();
+	void Edit();
+	void SetUsedPoints(uint8_t used) {
+		usedPoints = used;
+	}
 private:
-	static constexpr uint16_t MaxPoints = 16;
+	void View();
+	static constexpr uint16_t MaxPoints = 32;
 	uint16_t usedPoints;
-	Point *points;
+	int16_t I[MaxPoints];
+	int16_t Q[MaxPoints];
+	Table<int16_t> *table;
 };
