@@ -47,6 +47,7 @@ entity ModSource is
            SRCTYPE : in  STD_LOGIC_VECTOR (3 downto 0);
            PINC : in  STD_LOGIC_VECTOR (15 downto 0);
            RESULT : out  STD_LOGIC_VECTOR (11 downto 0);
+			  NEW_SAMPLE : out STD_LOGIC;
 			  SPI_SCK : in STD_LOGIC;
 			  SPI_CS : in STD_LOGIC;
 			  SPI_MOSI : in STD_LOGIC;
@@ -179,20 +180,32 @@ begin
 		if(RESET = '1') then
 			RESULT <= (others=>'0');
 			updated <= '0';
+			NEW_SAMPLE <= '0';
 		elsif(rising_edge(CLK)) then
 			case SRCTYPE is
 				-- Source disabled
-				when "0000" => RESULT <= (others=>'0');
+				when "0000" =>
+					RESULT <= (others=>'0');
+					NEW_SAMPLE <= '0';
 				-- Fixed value
-				when "0001" => RESULT <= PINC(11 downto 0);
+				when "0001" =>
+					RESULT <= PINC(11 downto 0);
+					NEW_SAMPLE <= '1';
 				-- Sine, invert MSB to convert from 2's complement to binary
-				when "0010" => RESULT <= not sine_value(11) & sine_value(10 downto 0);
+				when "0010" =>
+					RESULT <= not sine_value(11) & sine_value(10 downto 0);
+					NEW_SAMPLE <= '1';
 				-- Ramp up, use upper bits of phase value
-				when "0011" => RESULT <= phase_value(26 downto 15);
+				when "0011" =>
+					RESULT <= phase_value(26 downto 15);
+					NEW_SAMPLE <= '1';
 				-- Ramp down, use inverted upper bits of phase value
-				when "0100" => RESULT <= not phase_value(26 downto 15);
+				when "0100" =>
+					RESULT <= not phase_value(26 downto 15);
+					NEW_SAMPLE <= '1';
 				-- Triangle, use upper bits of phase value, invert if MSB set
 				when "0101" =>
+					NEW_SAMPLE <= '1';
 					if(phase_value(26)='1') then
 						RESULT <= not phase_value(25 downto 14);
 					else
@@ -200,6 +213,7 @@ begin
 					end if;
 				-- Square, set all bits if MSB of phase is set
 				when "0110" =>
+					NEW_SAMPLE <= '1';
 					if(phase_value(26)='1') then
 						RESULT <= (others => '1');
 					else
@@ -211,8 +225,12 @@ begin
 						if(updated = '0') then
 							RESULT <= prbs_value;
 							updated <= '1';
+							NEW_SAMPLE <= '0';
+						else
+							NEW_SAMPLE <= '1';
 						end if;
 					else
+						NEW_SAMPLE <= '0';
 						updated <= '0';
 					end if;
 				-- FIFO stream
@@ -222,10 +240,13 @@ begin
 						if(updated = '0') then
 							fifo_read <= '1';
 							updated <= '1';
+							NEW_SAMPLE <= '0';
 						else
+							NEW_SAMPLE <= '1';
 							fifo_read <= '0';
 						end if;
 					else
+						NEW_SAMPLE <= '0';
 						fifo_read <= '0';
 						updated <= '0';
 					end if;

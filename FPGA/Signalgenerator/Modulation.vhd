@@ -36,15 +36,27 @@ entity Modulation is
            DAC_I : out  STD_LOGIC_VECTOR (11 downto 0);
            DAC_Q : out  STD_LOGIC_VECTOR (11 downto 0);
            SOURCE : in  STD_LOGIC_VECTOR (11 downto 0);
+			  NEW_SAMPLE : in STD_LOGIC;
 			  	-- Modulation types:
 				-- 00000000 Modulation disabled
 				-- 00000100 FM modulation
 				-- 00000101 FM modulation, lower sideband
 				-- 00000110 FM modulation, upper sideband
 				-- 00001000 AM modulation
+				-- 00001100 QAM modulation
+				-- 00001101 QAM modulation, differentiell
            MODTYPE : in  STD_LOGIC_VECTOR (7 downto 0);
+			  -- Setting1:
+			  -- 		AM: modulation depth
+			  --		FM: frequency deviation
+			  -- 		QAM: Bitmask for I/Q lookup table (only lower 8 bits)
            SETTING1 : in  STD_LOGIC_VECTOR (15 downto 0);
-           SETTING2 : in  STD_LOGIC_VECTOR (15 downto 0));
+           SETTING2 : in  STD_LOGIC_VECTOR (15 downto 0);
+			  
+			  I_Q_Address : in STD_LOGIC_VECTOR (8 downto 0);
+			  I_Q_Data : in STD_LOGIC_VECTOR (11 downto 0);
+			  I_Q_Write : in STD_LOGIC_VECTOR (0 downto 0)
+			  );
 end Modulation;
 
 architecture Behavioral of Modulation is
@@ -68,6 +80,17 @@ architecture Behavioral of Modulation is
 		p : OUT STD_LOGIC_VECTOR(27 DOWNTO 0)
 	);
 	END COMPONENT;
+	COMPONENT IQMemory
+	PORT (
+		clka : IN STD_LOGIC;
+		wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+		addra : IN STD_LOGIC_VECTOR(8 DOWNTO 0);
+		dina : IN STD_LOGIC_VECTOR(11 DOWNTO 0);
+		clkb : IN STD_LOGIC;
+		addrb : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+		doutb : OUT STD_LOGIC_VECTOR(23 DOWNTO 0)
+	);
+	END COMPONENT;
 	signal mult_result : std_logic_vector(27 downto 0);
 	signal fm_sine : std_logic_vector(11 downto 0);
 	signal fm_cosine : std_logic_vector(11 downto 0);
@@ -78,6 +101,9 @@ architecture Behavioral of Modulation is
 	signal fm_dds_reset : std_logic;
 	
 	signal fm_pinc : std_logic_vector(31 downto 0);
+	signal I_Q_last : std_logic_vector(11 downto 0);
+	signal I_Q_index : std_logic_vector(7 downto 0);
+	signal I_Q_lookup : std_logic_vector(23 downto 0);
 begin
 
 	FM_DDS : DDS
@@ -100,6 +126,17 @@ begin
 		p => mult_result
 	);
 	
+	IQMem : IQMemory
+	PORT MAP (
+		clka => CLK,
+		wea => I_Q_write,
+		addra => I_Q_Address,
+		dina => I_Q_Data,
+		clkb => CLK,
+		addrb => I_Q_index,
+		doutb => I_Q_lookup
+	);
+	
 	fm_dds_reset <= not fm_dds_enabled;
 	mult_reset <= not mult_enabled;
 
@@ -111,7 +148,13 @@ begin
 			DAC_I <= "100000000000";
 			DAC_Q <= "100000000000";
 			fm_pinc <= (others => '0');
+			I_Q_last <= (others => '0');
+			I_Q_index <= (others => '0');
 		elsif rising_edge(CLK) then
+			if(MODTYPE = "00001101" and NEW_SAMPLE = '1') then
+				-- QAM differentiell and a new sample has come in
+				I_Q_last <= std_logic_vector(unsigned(I_Q_last) + unsigned(SOURCE));
+			end if;
 			case MODTYPE is
 				-- modulation is disabled
 				when "00000000" =>
@@ -120,6 +163,7 @@ begin
 					fm_pinc <= (others => '0');
 					DAC_I <= "111111111111";
 					DAC_Q <= "100000000000";
+					I_Q_last <= (others => '0');
 				-- FM modulation
 				when "00000100" =>
 					mult_enabled <= '1';
@@ -148,6 +192,15 @@ begin
 					fm_pinc <= (others => '0');
 					DAC_I <= std_logic_vector(to_unsigned(4095, 12) - unsigned(mult_result(27 downto 17)));
 					DAC_Q <= "100000000000";
+				-- QAM modulation
+				when "00001100" | "00001101" =>
+					mult_enabled <= '0';
+					fm_dds_enabled <= '0';
+					fm_pinc <= (others => '0');
+					-- set correct index in I/Q lookup RAM
+					I_Q_index <= I_Q_last(7 downto 0) and SETTING1(7 downto 0);
+					DAC_I <= I_Q_lookup(11 downto 0);
+					DAC_Q <= I_Q_lookup(23 downto 12);
 				when others =>
 					
 			end case;

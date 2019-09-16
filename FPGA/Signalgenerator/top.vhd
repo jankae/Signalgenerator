@@ -102,11 +102,16 @@ architecture Behavioral of top is
 		CLK : IN std_logic;
 		RESET : IN std_logic;
 		SOURCE : IN std_logic_vector(11 downto 0);
+		NEW_SAMPLE : IN std_logic;
 		MODTYPE : IN std_logic_vector(7 downto 0);
 		SETTING1 : IN std_logic_vector(15 downto 0);
 		SETTING2 : IN std_logic_vector(15 downto 0);          
 		DAC_I : OUT std_logic_vector(11 downto 0);
-		DAC_Q : OUT std_logic_vector(11 downto 0)
+		DAC_Q : OUT std_logic_vector(11 downto 0);
+		
+		I_Q_Address : in STD_LOGIC_VECTOR (8 downto 0);
+		I_Q_Data : in STD_LOGIC_VECTOR (11 downto 0);
+		I_Q_Write : in STD_LOGIC_VECTOR (0 downto 0)
 		);
 	END COMPONENT;
 	
@@ -120,6 +125,7 @@ architecture Behavioral of top is
 		SRCTYPE : IN std_logic_vector(3 downto 0);
 		PINC : IN std_logic_vector(15 downto 0);          
 		RESULT : OUT std_logic_vector(11 downto 0);
+		NEW_SAMPLE : OUT std_logic;
 		SPI_SCK : in STD_LOGIC;
 		SPI_CS : in STD_LOGIC;
 		SPI_MOSI : in STD_LOGIC;
@@ -146,6 +152,7 @@ architecture Behavioral of top is
 	signal mod_src_pinc : std_logic_vector(15 downto 0);
 	signal mod_src_type : std_logic_vector(3 downto 0);
 	signal mod_src_value : std_logic_vector(11 downto 0);
+	signal mod_src_new : std_logic;
 
 begin
 your_instance_name : MainPLL
@@ -205,6 +212,7 @@ your_instance_name : MainPLL
 		SRCTYPE => mod_src_type,
 		PINC => mod_src_pinc,
 		RESULT => mod_src_value,
+		NEW_SAMPLE => mod_src_new,
 		SPI_SCK => SPI_EXT_SCK,
 		SPI_CS => SPI_EXT_CS,
 		SPI_MISO => SPI_EXT_MISO,
@@ -217,9 +225,13 @@ your_instance_name : MainPLL
 		DAC_I => I,
 		DAC_Q => Q,
 		SOURCE => mod_src_value,
+		NEW_SAMPLE => mod_src_new,
 		MODTYPE => mod_type,
 		SETTING1 => mod_setting1,
-		SETTING2 => (others => '0')
+		SETTING2 => (others => '0'),
+		I_Q_Address => (others => '0'),
+		I_Q_Data => (others => '0'),
+		I_Q_Write => (others => '0')
 	);
 	
 	DORI <= '1';
