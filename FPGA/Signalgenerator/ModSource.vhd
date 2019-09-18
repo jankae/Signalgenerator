@@ -48,10 +48,9 @@ entity ModSource is
            PINC : in  STD_LOGIC_VECTOR (15 downto 0);
            RESULT : out  STD_LOGIC_VECTOR (11 downto 0);
 			  NEW_SAMPLE : out STD_LOGIC;
-			  SPI_SCK : in STD_LOGIC;
-			  SPI_CS : in STD_LOGIC;
-			  SPI_MOSI : in STD_LOGIC;
-			  SPI_MISO : out STD_LOGIC
+			  FIFO_IN : in STD_LOGIC_VECTOR (11 downto 0);
+			  FIFO_WRITE : in STD_LOGIC;
+			  FIFO_LEVEL : out STD_LOGIC_VECTOR (7 downto 0)
 			  );
 end ModSource;
 
@@ -74,19 +73,19 @@ architecture Behavioral of ModSource is
 		phase_out : OUT STD_LOGIC_VECTOR(26 DOWNTO 0)
 	);
 	END COMPONENT;
-	COMPONENT spi_slave
-	generic (W : integer);
-	PORT(
-		SPI_CLK : IN std_logic;
-		MOSI : IN std_logic;
-		CS : IN std_logic;
-		BUF_IN : IN std_logic_vector (W-1 downto 0);
-		CLK : IN std_logic;          
-		MISO : OUT std_logic;
-		BUF_OUT : OUT std_logic_vector (W-1 downto 0);
-		COMPLETE : OUT std_logic
-	);
-	END COMPONENT;
+--	COMPONENT spi_slave
+--	generic (W : integer);
+--	PORT(
+--		SPI_CLK : IN std_logic;
+--		MOSI : IN std_logic;
+--		CS : IN std_logic;
+--		BUF_IN : IN std_logic_vector (W-1 downto 0);
+--		CLK : IN std_logic;          
+--		MISO : OUT std_logic;
+--		BUF_OUT : OUT std_logic_vector (W-1 downto 0);
+--		COMPLETE : OUT std_logic
+--	);
+--	END COMPONENT;
 	COMPONENT FIFO
 		generic (
 		Datawidth : integer;
@@ -115,9 +114,9 @@ architecture Behavioral of ModSource is
 	signal spi_complete : std_logic;
 
 	signal fifo_clear : std_logic;
-	signal fifo_out : std_logic_vector(7 downto 0);
+	signal fifo_out : std_logic_vector(11 downto 0);
 	signal fifo_read : std_logic;
-	signal fifo_level : std_logic_vector(STREAM_DEPTH-1 downto 0);
+	signal fifo_level_int : std_logic_vector(STREAM_DEPTH-1 downto 0);
 begin
 
 	PRBS_Generator: PRBS
@@ -138,35 +137,35 @@ begin
 		phase_out => phase_value
 	);
 	
-	SPI_interface : spi_slave 
-	GENERIC MAP(W => 8)
-	PORT MAP(
-		SPI_CLK => SPI_SCK,
-		MISO => SPI_MISO,
-		MOSI => SPI_MOSI,
-		CS => SPI_CS,
-		BUF_OUT => spi_out,
-		BUF_IN => spi_in,
-		CLK => CLK,
-		COMPLETE => spi_complete
-	);
+--	SPI_interface : spi_slave 
+--	GENERIC MAP(W => 8)
+--	PORT MAP(
+--		SPI_CLK => SPI_SCK,
+--		MISO => SPI_MISO,
+--		MOSI => SPI_MOSI,
+--		CS => SPI_CS,
+--		BUF_OUT => spi_out,
+--		BUF_IN => spi_in,
+--		CLK => CLK,
+--		COMPLETE => spi_complete
+--	);
 	
 	ModStream: FIFO 
 	GENERIC MAP (
 		Addresswidth => STREAM_DEPTH,
-		Datawidth => 8
+		Datawidth => 12
 	)
 	PORT MAP (
 		CLK => CLK,
-		DIN => spi_out,
+		DIN => FIFO_IN,
 		DOUT => fifo_out,
-		WR => spi_complete,
+		WR => FIFO_WRITE,
 		RD => fifo_read,
 		CLEAR => fifo_clear,
-		LEVEL => fifo_level
+		LEVEL => fifo_level_int
 	);
 	
-	spi_in <= fifo_level(STREAM_DEPTH-1 downto STREAM_DEPTH-8);
+	FIFO_LEVEL <= fifo_level_int(STREAM_DEPTH-1 downto STREAM_DEPTH-8);
 	
 	fifo_clear <= '0' when SRCTYPE = "1000" else '1';
 	
@@ -235,7 +234,7 @@ begin
 					end if;
 				-- FIFO stream
 				when "1000" =>
-					RESULT <= fifo_out & "0000";
+					RESULT <= fifo_out;
 					if(phase_value(26)='1') then
 						if(updated = '0') then
 							fifo_read <= '1';

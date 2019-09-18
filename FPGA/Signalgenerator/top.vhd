@@ -126,11 +126,10 @@ architecture Behavioral of top is
 		PINC : IN std_logic_vector(15 downto 0);          
 		RESULT : OUT std_logic_vector(11 downto 0);
 		NEW_SAMPLE : OUT std_logic;
-		SPI_SCK : in STD_LOGIC;
-		SPI_CS : in STD_LOGIC;
-		SPI_MOSI : in STD_LOGIC;
-		SPI_MISO : out STD_LOGIC
-		);
+		FIFO_IN : in STD_LOGIC_VECTOR (11 downto 0);
+		FIFO_WRITE : in STD_LOGIC;
+		FIFO_LEVEL : out STD_LOGIC_VECTOR (7 downto 0)
+	);
 	END COMPONENT;
 	
 	signal CLK100 : std_logic;
@@ -145,14 +144,26 @@ architecture Behavioral of top is
 	signal spi_int_in : std_logic_vector(15 downto 0);
 	signal spi_int_complete : std_logic := '0';
 	
+	signal spi_ext_out : std_logic_vector(15 downto 0);
+	signal spi_ext_in : std_logic_vector(15 downto 0);
+	signal spi_ext_complete : std_logic := '0';
+	signal spi_ext_first_word : std_logic := '1';
+	signal spi_ext_I_Q_address : std_logic_vector(8 downto 0);
+	signal spi_ext_fifo_data : std_logic := '0';
+	
 	-- modulation settings
 	signal mod_type : std_logic_vector(7 downto 0);
 	signal mod_setting1 : std_logic_vector(15 downto 0);
+	
+	signal mod_write_I_Q : std_logic_vector(0 downto 0) := "0";
 	-- modulation source settings
 	signal mod_src_pinc : std_logic_vector(15 downto 0);
 	signal mod_src_type : std_logic_vector(3 downto 0);
 	signal mod_src_value : std_logic_vector(11 downto 0);
 	signal mod_src_new : std_logic;
+	
+	signal mod_src_write : std_logic := '0';
+	signal mod_src_fifo_level : std_logic_vector(7 downto 0);
 
 begin
 your_instance_name : MainPLL
@@ -191,7 +202,7 @@ your_instance_name : MainPLL
       I => DAC_CLK      -- Buffer input 
    );
 	
-	SPI_interface : spi_slave 
+	InternalSPI : spi_slave 
 	GENERIC MAP(W => 16)
 	PORT MAP(
 		SPI_CLK => SPI_INT_SCK,
@@ -204,6 +215,19 @@ your_instance_name : MainPLL
 		COMPLETE => spi_int_complete
 	);
 	
+	ExternalSPI : spi_slave 
+	GENERIC MAP(W => 16)
+	PORT MAP(
+		SPI_CLK => SPI_EXT_SCK,
+		MISO => SPI_EXT_MISO,
+		MOSI => SPI_EXT_MOSI,
+		CS => SPI_EXT_CS,
+		BUF_OUT => spi_ext_out,
+		BUF_IN => spi_ext_in,
+		CLK => CLK100,
+		COMPLETE => spi_ext_complete
+	);
+	
 	Source: ModSource
 	GENERIC MAP (STREAM_DEPTH => 14)
 	PORT MAP(
@@ -213,10 +237,9 @@ your_instance_name : MainPLL
 		PINC => mod_src_pinc,
 		RESULT => mod_src_value,
 		NEW_SAMPLE => mod_src_new,
-		SPI_SCK => SPI_EXT_SCK,
-		SPI_CS => SPI_EXT_CS,
-		SPI_MISO => SPI_EXT_MISO,
-		SPI_MOSI => SPI_EXT_MOSI
+		FIFO_IN => spi_ext_out(11 downto 0),
+		FIFO_WRITE => mod_src_write,
+		FIFO_LEVEL => mod_src_fifo_level
 	);
 	
 	Modulator: Modulation PORT MAP(
@@ -229,9 +252,9 @@ your_instance_name : MainPLL
 		MODTYPE => mod_type,
 		SETTING1 => mod_setting1,
 		SETTING2 => (others => '0'),
-		I_Q_Address => (others => '0'),
-		I_Q_Data => (others => '0'),
-		I_Q_Write => (others => '0')
+		I_Q_Address => spi_ext_I_Q_address,
+		I_Q_Data => spi_ext_out(11 downto 0),
+		I_Q_Write => mod_write_I_Q
 	);
 	
 	DORI <= '1';
@@ -240,6 +263,56 @@ your_instance_name : MainPLL
 	process(CLK100)
 	begin
 		if rising_edge(CLK100) then
+		
+		-- reset signals only valid for one cycle
+		if mod_src_write = '1' then
+			mod_src_write <= '0';
+		end if;
+		if mod_write_I_Q = "1" then
+			mod_write_I_Q <= "0";
+			spi_ext_I_Q_address <= std_logic_vector(unsigned(spi_ext_I_Q_address) + 1);
+		end if;
+		
+-----------------------------------------------
+-- START: External SPI handling
+-----------------------------------------------
+			if SPI_EXT_CS = '1' then
+				spi_ext_first_word <= '1';
+				spi_ext_fifo_data <= '0';
+			else
+				if spi_ext_complete = '1' then
+					if spi_ext_first_word = '1' then
+						spi_ext_first_word <= '0';
+						-- this is the first word, determine if transfer is
+						-- for modulation source FIFO or for I/Q lookup
+						if spi_ext_out = (spi_ext_out'range => '1') then
+							-- subsequent received data will be redirected to the FIFO
+							spi_ext_fifo_data <= '1';
+						else
+							-- subsequent data is for the I/Q lookup
+							spi_ext_I_Q_address <= spi_ext_out(8 downto 0);
+						end if;
+					else
+						-- not the first word
+						if spi_ext_fifo_data = '1' then
+							mod_src_write <= '1';
+						else
+							mod_write_I_Q <= "1";
+						end if;
+					end if;
+				end if;
+			end if;
+			if spi_ext_fifo_data = '1' then
+				spi_ext_in <= "00000000" & mod_src_fifo_level;
+			else
+				spi_ext_in <= "0000000" & spi_ext_I_Q_address;
+			end if;
+-----------------------------------------------
+-- STOP: External SPI handling
+-----------------------------------------------
+-----------------------------------------------
+-- START: Internal SPI handling
+-----------------------------------------------		
 			if SPI_INT_CS = '1' then
 				first <= '1';
 				mem_address <= "000000000000000";
@@ -294,6 +367,10 @@ your_instance_name : MainPLL
 					spi_int_in <= "0000" & mod_src_type & mod_type;
 				when others => spi_int_in <= (others => '0');
 			end case;
+-----------------------------------------------
+-- STOP: Internal SPI handling
+-----------------------------------------------
+
 		end if;
 	end process;
 

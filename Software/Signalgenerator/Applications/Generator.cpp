@@ -327,6 +327,7 @@ void Generator::Init() {
 
 		if (editConstellation) {
 			QAMconst.Edit();
+			QAMconst.LoadToFPGA();
 			editConstellation = false;
 			continue;
 		}
@@ -381,6 +382,14 @@ void Generator::Init() {
 			case ModulationType::FM_LSB:
 				type = 0x05;
 				break;
+			case ModulationType::QAM2:
+			case ModulationType::QAM4:
+			case ModulationType::QAM8:
+			case ModulationType::QAM16:
+			case ModulationType::QAM32:
+				type = 0x0C;
+				// TODO 0x0D if modulation is differential
+				break;
 			}
 			send.modulation_registers[3] |= type;
 			// calculate modulation settings
@@ -395,6 +404,22 @@ void Generator::Init() {
 			case ModulationType::FM_LSB:
 				// 0: 0 deviation, 65535: 6248378Hz deviation
 				setting1 = common_Map(FMDeviation, 0, 6248378, 0, UINT16_MAX);
+				break;
+			// in QAM modulation, settings1 determines bitmask of bits per symbol
+			case ModulationType::QAM2:
+				setting1 = 0x0001;
+				break;
+			case ModulationType::QAM4:
+				setting1 = 0x0003;
+				break;
+			case ModulationType::QAM8:
+				setting1 = 0x0007;
+				break;
+			case ModulationType::QAM16:
+				setting1 = 0x000F;
+				break;
+			case ModulationType::QAM32:
+				setting1 = 0x001F;
 				break;
 			}
 			send.modulation_registers[1] = setting1;

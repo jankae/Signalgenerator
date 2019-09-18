@@ -19,6 +19,7 @@ public:
 	void SetUsedPoints(uint8_t used) {
 		usedPoints = used;
 	}
+	void LoadToFPGA();
 private:
 	void View();
 	static constexpr uint16_t MaxPoints = 32;

@@ -2,6 +2,9 @@
 
 #include <math.h>
 #include "gui.hpp"
+#include "main.h"
+
+extern SPI_HandleTypeDef hspi1;
 
 static constexpr int16_t BPSK_I[] = {
 		INT16_MAX,
@@ -230,4 +233,23 @@ void Constellation::View() {
 
 	c->attach(graph, COORDS(40,0));
 	w->setMainWidget(c);
+}
+
+static uint16_t htons(uint16_t h) {
+	return ((h & 0xFF) << 8) | ((h & 0xFF00) >> 8);
+}
+
+void Constellation::LoadToFPGA() {
+	uint16_t data[2];
+	// start loading data to address 0
+	data[0] = 0x0000;
+	SPI1_CS_FPGA_GPIO_Port->BSRR = SPI1_CS_FPGA_Pin << 16;
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) data, 2, 100);
+	for (uint16_t i = 0; i < usedPoints; i++) {
+		// TODO scale values
+		data[0] = htons(I[i]);
+		data[1] = htons(Q[i]);
+		HAL_SPI_Transmit(&hspi1, (uint8_t*) data, 4, 100);
+	}
+	SPI1_CS_FPGA_GPIO_Port->BSRR = SPI1_CS_FPGA_Pin;
 }

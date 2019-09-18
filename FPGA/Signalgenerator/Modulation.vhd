@@ -44,7 +44,7 @@ entity Modulation is
 				-- 00000110 FM modulation, upper sideband
 				-- 00001000 AM modulation
 				-- 00001100 QAM modulation
-				-- 00001101 QAM modulation, differentiell
+				-- 00001101 QAM modulation, differential
            MODTYPE : in  STD_LOGIC_VECTOR (7 downto 0);
 			  -- Setting1:
 			  -- 		AM: modulation depth
@@ -152,7 +152,7 @@ begin
 			I_Q_index <= (others => '0');
 		elsif rising_edge(CLK) then
 			if(MODTYPE = "00001101" and NEW_SAMPLE = '1') then
-				-- QAM differentiell and a new sample has come in
+				-- QAM differential and a new sample has come in
 				I_Q_last <= std_logic_vector(unsigned(I_Q_last) + unsigned(SOURCE));
 			end if;
 			case MODTYPE is
@@ -198,9 +198,15 @@ begin
 					fm_dds_enabled <= '0';
 					fm_pinc <= (others => '0');
 					-- set correct index in I/Q lookup RAM
-					I_Q_index <= I_Q_last(7 downto 0) and SETTING1(7 downto 0);
-					DAC_I <= I_Q_lookup(11 downto 0);
-					DAC_Q <= I_Q_lookup(23 downto 12);
+					if MODTYPE = "00001100" then
+						-- absolute modulation mode
+						I_Q_index <= SOURCE(7 downto 0) and SETTING1(7 downto 0);
+					else
+						-- differential modulation mode
+						I_Q_index <= I_Q_last(7 downto 0) and SETTING1(7 downto 0);
+					end if;
+					DAC_I <= not I_Q_lookup(11) & I_Q_lookup(10 downto 0);
+					DAC_Q <= not I_Q_lookup(23) & I_Q_lookup(22 downto 12);
 				when others =>
 					
 			end case;
