@@ -239,16 +239,40 @@ static uint16_t htons(uint16_t h) {
 	return ((h & 0xFF) << 8) | ((h & 0xFF00) >> 8);
 }
 
+static int16_t constrain(int16_t v, int16_t min, int16_t max) {
+	if (v > max) {
+		v = max;
+	} else if (v < min) {
+		v = min;
+	}
+	return v;
+}
+
 void Constellation::LoadToFPGA() {
+	// find maximum amplitude used in constellation
+	uint32_t max_squared = 0;
+	for (uint16_t i = 0; i < usedPoints; i++) {
+		uint32_t squared = I[i] * I[i] + Q[i] * Q[i];
+		if (squared > max_squared) {
+			max_squared = squared;
+		}
+	}
+	uint16_t max_amplitude = sqrt(max_squared);
+	constexpr uint16_t max_DAC = 2048;
+
 	uint16_t data[2];
 	// start loading data to address 0
 	data[0] = 0x0000;
 	SPI1_CS_FPGA_GPIO_Port->BSRR = SPI1_CS_FPGA_Pin << 16;
 	HAL_SPI_Transmit(&hspi1, (uint8_t*) data, 2, 100);
 	for (uint16_t i = 0; i < usedPoints; i++) {
-		// TODO scale values
-		data[0] = htons(I[i]);
-		data[1] = htons(Q[i]);
+		// scale values so that the point with the highest amplitude
+		// corresponds to the selected dbm value
+		int16_t i_val = (int32_t) I[i] * max_DAC / max_amplitude;
+		int16_t q_val = (int32_t) Q[i] * max_DAC / max_amplitude;
+
+		data[0] = htons(constrain(i_val, -max_DAC, max_DAC - 1));
+		data[1] = htons(constrain(q_val, -max_DAC, max_DAC - 1));
 		HAL_SPI_Transmit(&hspi1, (uint8_t*) data, 4, 100);
 	}
 	SPI1_CS_FPGA_GPIO_Port->BSRR = SPI1_CS_FPGA_Pin;
