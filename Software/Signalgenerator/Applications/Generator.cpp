@@ -228,11 +228,11 @@ void Generator::Init() {
 	c->attach(mainmenu, COORDS(DISPLAY_WIDTH - mainmenu->getSize().x, 0));
 
 	// create and attach frequency and amplitude display
-	auto sFreq = new SevenSegment<uint32_t>(&frequency, 12, 3, 11, 6, COLOR_BLUE);
+	auto sFreq = new SevenSegment<uint32_t>(&frequency, 12, 3, 11, 6, COLOR_BLUE, true, 5000000, 2200000000);
 	c->attach(sFreq, COORDS(0,5));
 	c->attach(new Label("MHz", Font_Big, COLOR_BLUE), COORDS(200, 20));
 
-	auto sdbm = new SevenSegment<int32_t>(&dbm, 12, 3, 5, 2, COLOR_BLUE);
+	auto sdbm = new SevenSegment<int32_t>(&dbm, 12, 3, 5, 2, COLOR_BLUE, true, -6000, 2000);
 	c->attach(sdbm, COORDS(108,45));
 	c->attach(new Label("dbm", Font_Big, COLOR_BLUE), COORDS(200, 60));
 
