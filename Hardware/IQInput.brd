@@ -23,21 +23,21 @@
 <layer number="13" name="Route13" color="21" fill="1" visible="no" active="no"/>
 <layer number="14" name="Route14" color="22" fill="1" visible="no" active="no"/>
 <layer number="15" name="Route15" color="14" fill="1" visible="no" active="yes"/>
-<layer number="16" name="Bottom" color="1" fill="1" visible="yes" active="yes"/>
+<layer number="16" name="Bottom" color="1" fill="1" visible="no" active="yes"/>
 <layer number="17" name="Pads" color="2" fill="1" visible="yes" active="yes"/>
 <layer number="18" name="Vias" color="2" fill="1" visible="yes" active="yes"/>
 <layer number="19" name="Unrouted" color="6" fill="1" visible="yes" active="yes"/>
 <layer number="20" name="Dimension" color="24" fill="1" visible="yes" active="yes"/>
 <layer number="21" name="tPlace" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="22" name="bPlace" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="22" name="bPlace" color="7" fill="1" visible="no" active="yes"/>
 <layer number="23" name="tOrigins" color="15" fill="1" visible="yes" active="yes"/>
-<layer number="24" name="bOrigins" color="15" fill="1" visible="yes" active="yes"/>
+<layer number="24" name="bOrigins" color="15" fill="1" visible="no" active="yes"/>
 <layer number="25" name="tNames" color="7" fill="1" visible="no" active="yes"/>
 <layer number="26" name="bNames" color="7" fill="1" visible="no" active="yes"/>
 <layer number="27" name="tValues" color="7" fill="1" visible="no" active="yes"/>
 <layer number="28" name="bValues" color="7" fill="1" visible="no" active="yes"/>
 <layer number="29" name="tStop" color="7" fill="3" visible="yes" active="yes"/>
-<layer number="30" name="bStop" color="7" fill="6" visible="yes" active="yes"/>
+<layer number="30" name="bStop" color="7" fill="6" visible="no" active="yes"/>
 <layer number="31" name="tCream" color="7" fill="4" visible="no" active="yes"/>
 <layer number="32" name="bCream" color="7" fill="5" visible="no" active="yes"/>
 <layer number="33" name="tFinish" color="6" fill="3" visible="no" active="yes"/>
@@ -47,19 +47,19 @@
 <layer number="37" name="tTest" color="7" fill="1" visible="no" active="yes"/>
 <layer number="38" name="bTest" color="7" fill="1" visible="no" active="yes"/>
 <layer number="39" name="tKeepout" color="4" fill="11" visible="yes" active="yes"/>
-<layer number="40" name="bKeepout" color="1" fill="11" visible="yes" active="yes"/>
+<layer number="40" name="bKeepout" color="1" fill="11" visible="no" active="yes"/>
 <layer number="41" name="tRestrict" color="4" fill="10" visible="yes" active="yes"/>
-<layer number="42" name="bRestrict" color="1" fill="10" visible="yes" active="yes"/>
+<layer number="42" name="bRestrict" color="1" fill="10" visible="no" active="yes"/>
 <layer number="43" name="vRestrict" color="2" fill="10" visible="no" active="yes"/>
 <layer number="44" name="Drills" color="7" fill="1" visible="no" active="yes"/>
 <layer number="45" name="Holes" color="7" fill="1" visible="no" active="yes"/>
-<layer number="46" name="Milling" color="3" fill="1" visible="yes" active="yes"/>
+<layer number="46" name="Milling" color="3" fill="1" visible="no" active="yes"/>
 <layer number="47" name="Measures" color="7" fill="1" visible="no" active="yes"/>
 <layer number="48" name="Document" color="7" fill="1" visible="no" active="yes"/>
 <layer number="49" name="Reference" color="7" fill="1" visible="no" active="yes"/>
 <layer number="50" name="dxf" color="7" fill="1" visible="no" active="no"/>
 <layer number="51" name="tDocu" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="52" name="bDocu" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="52" name="bDocu" color="7" fill="1" visible="no" active="yes"/>
 <layer number="53" name="tPadExt" color="7" fill="1" visible="no" active="no"/>
 <layer number="54" name="bPadExt" color="1" fill="1" visible="no" active="no"/>
 <layer number="56" name="wert" color="7" fill="1" visible="no" active="no"/>
@@ -152,6 +152,16 @@
 <circle x="44.5" y="3" radius="3.501428125" width="0" layer="39"/>
 <circle x="44.5" y="3" radius="3.501428125" width="0" layer="40"/>
 <circle x="37.5" y="36" radius="3.501428125" width="0" layer="40"/>
+<wire x1="36.4" y1="19.3" x2="41" y2="14" width="0.15" layer="25"/>
+<wire x1="41" y1="14" x2="44" y2="14" width="0.15" layer="25"/>
+<wire x1="41" y1="14" x2="41" y2="9" width="0.15" layer="25"/>
+<text x="48.8" y="27.5" size="3.81" layer="22" font="vector" rot="MR0">I/Q input board</text>
+<text x="48.6" y="23.6" size="1.778" layer="22" font="vector" rot="MR0">Rev. A</text>
+<text x="48.6" y="21.3" size="1.4224" layer="22" font="vector" rot="MR0">github.com/jankae/Signalgenerator</text>
+<circle x="37.5" y="36" radius="3.501428125" width="0" layer="29"/>
+<circle x="44.5" y="3" radius="3.5" width="0" layer="29"/>
+<circle x="44.5" y="3" radius="3.501428125" width="0" layer="30"/>
+<circle x="37.5" y="36" radius="3.505709375" width="0" layer="30"/>
 </plain>
 <libraries>
 <library name="rcl">
@@ -3118,390 +3128,390 @@ design rules under a new name.</description>
 </autorouter>
 <elements>
 <element name="C1" library="rcl" package="C0603" value="" x="25.5" y="15.5" smashed="yes" rot="R180">
-<attribute name="NAME" x="26.135" y="14.865" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="26.135" y="14.665" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="26.135" y="17.405" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="C10" library="rcl" package="C0603" value="" x="36" y="21" smashed="yes" rot="R270">
-<attribute name="NAME" x="36.635" y="21.635" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="46" y="11.2" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="34.095" y="21.635" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="C11" library="rcl" package="C1206" value="10u" x="9" y="23" smashed="yes">
-<attribute name="NAME" x="7.73" y="24.27" size="1.27" layer="25"/>
+<attribute name="NAME" x="8.33" y="20.77" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="7.73" y="20.46" size="1.27" layer="27"/>
 </element>
 <element name="C12" library="rcl" package="C0603" value="10n" x="41" y="23.4" smashed="yes">
-<attribute name="NAME" x="40.365" y="24.035" size="1.27" layer="25"/>
+<attribute name="NAME" x="45.865" y="22.835" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="40.365" y="21.495" size="1.27" layer="27"/>
 </element>
 <element name="C13" library="rcl" package="C0603" value="10n" x="29" y="23.4" smashed="yes">
-<attribute name="NAME" x="28.365" y="24.035" size="1.27" layer="25"/>
+<attribute name="NAME" x="22.265" y="22.835" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="28.365" y="21.495" size="1.27" layer="27"/>
 </element>
 <element name="C14" library="rcl" package="C0603" value="1u" x="35" y="23.4" smashed="yes">
-<attribute name="NAME" x="34.365" y="24.035" size="1.27" layer="25"/>
+<attribute name="NAME" x="44" y="11.6" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="34.365" y="21.495" size="1.27" layer="27"/>
 </element>
 <element name="C15" library="rcl" package="C0603" value="1u" x="41" y="24.9" smashed="yes">
-<attribute name="NAME" x="40.365" y="25.535" size="1.27" layer="25"/>
+<attribute name="NAME" x="45.865" y="24.235" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="40.365" y="22.995" size="1.27" layer="27"/>
 </element>
 <element name="C16" library="rcl" package="C0603" value="1u" x="29" y="24.9" smashed="yes">
-<attribute name="NAME" x="28.365" y="25.535" size="1.27" layer="25"/>
+<attribute name="NAME" x="22.265" y="24.235" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="28.365" y="22.995" size="1.27" layer="27"/>
 </element>
 <element name="C17" library="rcl" package="C0603" value="1u" x="47.6" y="47.2" smashed="yes" rot="R180">
-<attribute name="NAME" x="48.235" y="46.565" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="48.935" y="49.165" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="48.235" y="49.105" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="C18" library="rcl" package="C0603" value="1u" x="45.1" y="43.9" smashed="yes" rot="R90">
-<attribute name="NAME" x="44.465" y="43.265" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="45.565" y="46.665" size="1.016" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="47.005" y="43.265" size="1.27" layer="27" rot="R90"/>
 </element>
 <element name="C19" library="rcl" package="C0603" value="1u" x="47.6" y="40.7" smashed="yes">
-<attribute name="NAME" x="46.965" y="41.335" size="1.27" layer="25"/>
+<attribute name="NAME" x="47.265" y="39.235" size="0.8128" layer="25" font="vector"/>
 <attribute name="VALUE" x="46.965" y="38.795" size="1.27" layer="27"/>
 </element>
 <element name="C2" library="rcl" package="C0603" value="" x="29" y="17.1" smashed="yes" rot="R180">
-<attribute name="NAME" x="29.635" y="16.465" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="29.635" y="16.265" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="29.635" y="19.005" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="C20" library="rcl" package="C1206" value="10u" x="46.4" y="32.6" smashed="yes" rot="R270">
-<attribute name="NAME" x="47.67" y="33.87" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="47.37" y="30.07" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="43.86" y="33.87" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="C21" library="rcl" package="C1206" value="10u" x="48.5" y="32.6" smashed="yes" rot="R270">
-<attribute name="NAME" x="49.77" y="33.87" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="48.77" y="30.17" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="45.96" y="33.87" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="C22" library="rcl" package="C1206" value="10u" x="44" y="32.6" smashed="yes" rot="R90">
-<attribute name="NAME" x="42.73" y="31.33" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="40.33" y="31.53" size="1.016" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="46.54" y="31.33" size="1.27" layer="27" rot="R90"/>
 </element>
 <element name="C23" library="rcl" package="C1206" value="10u" x="41.9" y="32.6" smashed="yes" rot="R90">
-<attribute name="NAME" x="40.63" y="31.33" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="39.03" y="31.53" size="1.016" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="44.44" y="31.33" size="1.27" layer="27" rot="R90"/>
 </element>
 <element name="C24" library="rcl" package="C0603" value="1u" x="32.3" y="17.1" smashed="yes">
-<attribute name="NAME" x="31.665" y="17.735" size="1.27" layer="25"/>
+<attribute name="NAME" x="32.765" y="15.335" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="31.665" y="15.195" size="1.27" layer="27"/>
 </element>
 <element name="C25" library="rcl" package="C0603" value="100n" x="18.5" y="8.5" smashed="yes" rot="R180">
-<attribute name="NAME" x="19.135" y="7.865" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="19.735" y="11.265" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="19.135" y="10.405" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="C26" library="rcl" package="C0603" value="10n" x="24.4" y="8" smashed="yes" rot="R90">
-<attribute name="NAME" x="23.765" y="7.365" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="24.365" y="9.865" size="1.016" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="26.305" y="7.365" size="1.27" layer="27" rot="R90"/>
 </element>
 <element name="C27" library="rcl" package="C0603" value="10n" x="38.1" y="13.3" smashed="yes" rot="R270">
-<attribute name="NAME" x="38.735" y="13.935" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="38.435" y="10.735" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="36.195" y="13.935" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="C28" library="rcl" package="C0603" value="1u" x="36.5" y="13.3" smashed="yes" rot="R270">
-<attribute name="NAME" x="37.135" y="13.935" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="37.135" y="10.635" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="34.595" y="13.935" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="C29" library="rcl" package="C0603" value="1u" x="26" y="8" smashed="yes" rot="R90">
-<attribute name="NAME" x="25.365" y="7.365" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="26.665" y="9.765" size="1.016" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="27.905" y="7.365" size="1.27" layer="27" rot="R90"/>
 </element>
 <element name="C3" library="rcl" package="C0603" value="" x="34" y="21" smashed="yes" rot="R270">
-<attribute name="NAME" x="34.635" y="21.635" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="43.3" y="11" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="32.095" y="21.635" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="C4" library="rcl" package="C0603" value="" x="24" y="21" smashed="yes" rot="R270">
-<attribute name="NAME" x="24.635" y="21.635" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="22.135" y="21.435" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="22.095" y="21.635" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="C5" library="rcl" package="C1206" value="10u" x="9" y="34" smashed="yes">
-<attribute name="NAME" x="7.73" y="35.27" size="1.27" layer="25"/>
+<attribute name="NAME" x="7.73" y="35.27" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="7.73" y="31.46" size="1.27" layer="27"/>
 </element>
 <element name="C6" library="rcl" package="C0603" value="10n" x="35" y="24.9" smashed="yes">
-<attribute name="NAME" x="34.365" y="25.535" size="1.27" layer="25"/>
+<attribute name="NAME" x="44.3" y="13" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="34.365" y="22.995" size="1.27" layer="27"/>
 </element>
 <element name="C7" library="rcl" package="C0603" value="" x="35.5" y="17.1" smashed="yes" rot="R180">
-<attribute name="NAME" x="36.135" y="16.465" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="36.835" y="16.365" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="36.135" y="19.005" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="C8" library="rcl" package="C0603" value="" x="41.05" y="17.08" smashed="yes" rot="R180">
-<attribute name="NAME" x="41.685" y="16.445" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="41.685" y="16.345" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="41.685" y="18.985" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="C9" library="rcl" package="C0603" value="" x="46" y="21" smashed="yes" rot="R270">
-<attribute name="NAME" x="46.635" y="21.635" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="48.235" y="21.735" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="44.095" y="21.635" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="D1" library="diode" package="SOT23" value="BAV199" x="25" y="28.5" smashed="yes" rot="R90">
-<attribute name="NAME" x="23.095" y="26.595" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="23.795" y="26.195" size="1.016" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="28.175" y="26.595" size="1.27" layer="27" rot="R90"/>
 </element>
 <element name="D2" library="diode" package="SOT23" value="BAV199" x="45" y="28.5" smashed="yes" rot="R270">
-<attribute name="NAME" x="46.905" y="30.405" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="46.295" y="26.605" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="41.825" y="30.405" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="D3" library="diode" package="SOT23" value="BAV199" x="29" y="28.5" smashed="yes" rot="R270">
-<attribute name="NAME" x="30.905" y="30.405" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="29.195" y="30.205" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="25.825" y="30.405" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="D4" library="diode" package="SOT23" value="BAV199" x="41" y="28.5" smashed="yes" rot="R90">
-<attribute name="NAME" x="39.095" y="26.595" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="39.195" y="30.105" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="44.175" y="26.595" size="1.27" layer="27" rot="R90"/>
 </element>
 <element name="D5" library="diode" package="MINIMELF" value="4148" x="3" y="23" smashed="yes">
-<attribute name="NAME" x="1.349" y="24.143" size="1.27" layer="25"/>
+<attribute name="NAME" x="2.849" y="20.743" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="1.349" y="20.587" size="1.27" layer="27"/>
 </element>
 <element name="D6" library="diode" package="MINIMELF" value="4148" x="12.7" y="21.4" smashed="yes" rot="R270">
-<attribute name="NAME" x="13.843" y="23.051" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="10.543" y="20.351" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="10.287" y="23.051" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="D7" library="diode" package="MINIMELF" value="4148" x="26.01" y="42.3" smashed="yes">
-<attribute name="NAME" x="24.359" y="43.443" size="1.27" layer="25"/>
+<attribute name="NAME" x="21.059" y="40.543" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="24.359" y="39.887" size="1.27" layer="27"/>
 </element>
 <element name="D8" library="diode" package="MINIMELF" value="4148" x="40.2" y="45.5" smashed="yes" rot="R270">
-<attribute name="NAME" x="41.343" y="47.151" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="41.443" y="45.951" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="37.787" y="47.151" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="IC1" library="rf" package="SOT23-5" value="TPS60403" x="47.6" y="43.9" smashed="yes" rot="R180">
-<attribute name="NAME" x="49.505" y="41.995" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="45.205" y="41.405" size="0.8128" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="49.505" y="47.329" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="IC2" library="linear" package="SO08" value="LT1819" x="35" y="28.5" smashed="yes" rot="R90">
-<attribute name="NAME" x="36.905" y="25.833" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="37.605" y="32.133" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="36.905" y="32.437" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="IC3" library="rf" package="MSOP8" value="AD8132" x="41" y="21" smashed="yes" rot="R270">
-<attribute name="NAME" x="41.15" y="22.15" size="1.016" layer="25" rot="R270"/>
+<attribute name="NAME" x="43.45" y="16.25" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="39.95" y="21.65" size="1.016" layer="27" rot="R270"/>
 </element>
 <element name="IC4" library="rf" package="MSOP8" value="AD8132" x="29" y="21" smashed="yes" rot="R270">
-<attribute name="NAME" x="29.15" y="22.15" size="1.016" layer="25" rot="R270"/>
+<attribute name="NAME" x="22.15" y="18.15" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="27.95" y="21.65" size="1.016" layer="27" rot="R270"/>
 </element>
 <element name="IC5" library="rf" package="QFN50P700X700X75-49T550N" package3d_urn="urn:adsk.eagle:package:14363703/1" value="MAX19515" x="31.2" y="10" smashed="yes" rot="R270">
-<attribute name="NAME" x="35.6996" y="10" size="1.27" layer="25" rot="R270" align="bottom-center"/>
+<attribute name="NAME" x="35.5996" y="8" size="1.016" layer="25" font="vector" rot="R270" align="bottom-center"/>
 <attribute name="VALUE" x="26.7004" y="10" size="1.27" layer="27" rot="R270" align="top-center"/>
 </element>
 <element name="IC6" library="micro-philips" package="HVQFN24" package3d_urn="urn:adsk.eagle:package:20194/1" value="PCA9555BS" x="14" y="7" smashed="yes" rot="R270">
 <attribute name="MF" value="" x="-39.34" y="-24.75" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="MPN" value="PCA9555BS,118" x="-39.34" y="-24.75" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="NAME" x="16.159" y="9.032" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="12.968" y="9.559" size="1.016" layer="25" font="vector"/>
 <attribute name="OC_FARNELL" value="1575354" x="-39.34" y="-24.75" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="OC_NEWARK" value="70R6671" x="-39.34" y="-24.75" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="POPULARITY" value="0" x="14" y="7" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="VALUE" x="10.571" y="9.032" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="K1" library="relay" package="FTR-B4G" value="FTR-B4G" x="6" y="28.5" smashed="yes">
-<attribute name="NAME" x="0.285" y="25.325" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="3.025" y="24.315" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="12.985" y="25.325" size="1.27" layer="27" rot="R90"/>
 </element>
 <element name="K2" library="relay" package="FTR-B4G" value="FTR-B4G" x="17" y="28.5" smashed="yes">
-<attribute name="NAME" x="11.285" y="25.325" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="10.825" y="31.615" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="23.985" y="25.325" size="1.27" layer="27" rot="R90"/>
 </element>
 <element name="K3" library="relay" package="FTR-B4G" value="FTR-B4G" x="26" y="36" smashed="yes" rot="R270">
-<attribute name="NAME" x="22.825" y="41.715" size="1.27" layer="25"/>
+<attribute name="NAME" x="22.825" y="41.715" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="22.825" y="29.015" size="1.27" layer="27"/>
 </element>
 <element name="K4" library="relay" package="FTR-B4G" value="FTR-B4G" x="34" y="45.5" smashed="yes" rot="R180">
-<attribute name="NAME" x="39.715" y="48.675" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="38.725" y="48.815" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="27.015" y="48.675" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="L1" library="rcl" package="L2012C" value="" x="48.5" y="37.5" smashed="yes" rot="R270">
-<attribute name="NAME" x="49.77" y="39.405" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="46.77" y="37.605" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="45.96" y="39.405" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="L2" library="rcl" package="L2012C" value="" x="44" y="37.5" smashed="yes" rot="R270">
-<attribute name="NAME" x="45.27" y="39.405" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="44.97" y="37.305" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="41.46" y="39.405" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="LD1" library="led" package="DUOLED-C-5MM" value="LTL-30EFJ" x="5" y="42.5" locked="yes" smashed="yes" rot="R90">
-<attribute name="NAME" x="2.46" y="46.31" size="1.27" layer="25" ratio="10" rot="R90"/>
+<attribute name="NAME" x="1.56" y="41.51" size="1.016" layer="25" font="vector" ratio="10" rot="R90"/>
 <attribute name="VALUE" x="7.54" y="46.31" size="1.27" layer="27" ratio="10" rot="R90"/>
 </element>
 <element name="LD2" library="led" package="DUOLED-C-5MM" value="LTL-30EFJ" x="5" y="14.5" locked="yes" smashed="yes" rot="R90">
-<attribute name="NAME" x="2.46" y="18.31" size="1.27" layer="25" ratio="10" rot="R90"/>
+<attribute name="NAME" x="1.66" y="13.51" size="1.016" layer="25" font="vector" ratio="10" rot="R90"/>
 <attribute name="VALUE" x="7.54" y="18.31" size="1.27" layer="27" ratio="10" rot="R90"/>
 </element>
 <element name="R1" library="rcl" package="R0603" value="" x="30.9" y="18.7" smashed="yes" rot="R180">
-<attribute name="NAME" x="31.535" y="18.065" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="41.265" y="7.635" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="31.535" y="20.605" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="R10" library="resistor" package="R1206" value="49R9" x="18.5" y="40.4" smashed="yes" rot="R270">
-<attribute name="NAME" x="19.77" y="41.67" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="19.57" y="41.77" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="15.96" y="41.67" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R11" library="rcl" package="R0603" value="750k" x="20.6" y="36.3" smashed="yes" rot="R270">
-<attribute name="NAME" x="21.235" y="36.935" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="20.065" y="37.935" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="18.695" y="36.935" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R12" library="rcl" package="R0603" value="190k" x="20.6" y="43.8" smashed="yes" rot="R270">
-<attribute name="NAME" x="21.235" y="44.435" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="18.835" y="46.235" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="18.695" y="44.435" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R13" library="rcl" package="R0603" value="60k" x="20.6" y="47.5" smashed="yes" rot="R270">
-<attribute name="NAME" x="21.235" y="48.135" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="17.735" y="48.735" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="18.695" y="48.135" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R14" library="rcl" package="R0603" value="" x="32.2" y="32.4" smashed="yes">
-<attribute name="NAME" x="31.565" y="33.035" size="1.27" layer="25"/>
+<attribute name="NAME" x="33.865" y="32.335" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="31.565" y="30.495" size="1.27" layer="27"/>
 </element>
 <element name="R15" library="rcl" package="R0603" value="" x="43" y="18.7" smashed="yes" rot="R180">
-<attribute name="NAME" x="43.635" y="18.065" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="47.335" y="19.165" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="43.635" y="20.605" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="R16" library="rcl" package="R0603" value="" x="39.1" y="18.7" smashed="yes">
-<attribute name="NAME" x="38.465" y="19.335" size="1.27" layer="25"/>
+<attribute name="NAME" x="47.165" y="7.635" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="38.465" y="16.795" size="1.27" layer="27"/>
 </element>
 <element name="R17" library="rcl" package="R0603" value="" x="44.5" y="21" smashed="yes" rot="R270">
-<attribute name="NAME" x="45.135" y="21.635" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="46.935" y="22.135" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="42.595" y="21.635" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R18" library="rcl" package="R0603" value="" x="37.5" y="21" smashed="yes" rot="R270">
-<attribute name="NAME" x="38.135" y="21.635" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="47.3" y="11.3" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="35.595" y="21.635" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R19" library="rcl" package="R0603" value="" x="43.5" y="24" smashed="yes" rot="R270">
-<attribute name="NAME" x="44.135" y="24.635" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="48.635" y="25.235" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="41.595" y="24.635" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R2" library="rcl" package="R0603" value="" x="27.1" y="18.7" smashed="yes">
-<attribute name="NAME" x="26.465" y="19.335" size="1.27" layer="25"/>
+<attribute name="NAME" x="25.565" y="16.935" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="26.465" y="16.795" size="1.27" layer="27"/>
 </element>
 <element name="R20" library="rcl" package="R0603" value="" x="38.5" y="24" smashed="yes" rot="R270">
-<attribute name="NAME" x="39.135" y="24.635" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="45.465" y="22.865" size="1.016" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="36.595" y="24.635" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R21" library="resistor" package="R1206" value="49R9" x="18.6" y="21.5" smashed="yes" rot="R90">
-<attribute name="NAME" x="17.33" y="20.23" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="20.83" y="20.23" size="1.016" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="21.14" y="20.23" size="1.27" layer="27" rot="R90"/>
 </element>
 <element name="R22" library="resistor" package="R1206" value="49R9" x="16" y="21.5" smashed="yes" rot="R90">
-<attribute name="NAME" x="14.73" y="20.23" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="14.73" y="20.23" size="1.016" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="18.54" y="20.23" size="1.27" layer="27" rot="R90"/>
 </element>
 <element name="R23" library="resistor" package="R1206" value="49R9" x="18.6" y="16.5" smashed="yes" rot="R90">
-<attribute name="NAME" x="17.33" y="15.23" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="20.83" y="15.33" size="1.016" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="21.14" y="15.23" size="1.27" layer="27" rot="R90"/>
 </element>
 <element name="R24" library="resistor" package="R1206" value="49R9" x="16" y="16.5" smashed="yes" rot="R90">
-<attribute name="NAME" x="14.73" y="15.23" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="14.73" y="15.23" size="1.016" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="18.54" y="15.23" size="1.27" layer="27" rot="R90"/>
 </element>
 <element name="R25" library="rcl" package="R0603" value="750k" x="32" y="37" smashed="yes" rot="R270">
-<attribute name="NAME" x="32.635" y="37.635" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="32.935" y="38.035" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="30.095" y="37.635" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R26" library="rcl" package="R0603" value="190k" x="34.3" y="40" smashed="yes" rot="R180">
-<attribute name="NAME" x="34.935" y="39.365" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="35.435" y="39.165" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="34.935" y="41.905" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="R27" library="rcl" package="R0603" value="60k" x="40" y="41" smashed="yes" rot="R270">
-<attribute name="NAME" x="40.635" y="41.635" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="38.135" y="40.835" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="38.095" y="41.635" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R28" library="rcl" package="R0603" value="" x="32.2" y="34.4" smashed="yes">
-<attribute name="NAME" x="31.565" y="35.035" size="1.27" layer="25"/>
+<attribute name="NAME" x="33.865" y="33.535" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="31.565" y="32.495" size="1.27" layer="27"/>
 </element>
 <element name="R29" library="rcl" package="R0603" value="4k7" x="5" y="35.4" smashed="yes" rot="R270">
-<attribute name="NAME" x="5.635" y="36.035" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="3.765" y="37.035" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="3.095" y="36.035" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R3" library="rcl" package="R0603" value="" x="32.5" y="21" smashed="yes" rot="R270">
-<attribute name="NAME" x="33.135" y="21.635" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="42" y="11" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="30.595" y="21.635" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R30" library="rcl" package="R0603" value="4k7" x="13.2" y="38.1" smashed="yes" rot="R180">
-<attribute name="NAME" x="13.835" y="37.465" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="11.235" y="41.435" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="13.835" y="40.005" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="R31" library="rcl" package="R0603" value="4k7" x="23.4" y="45.1" smashed="yes" rot="R270">
-<attribute name="NAME" x="24.035" y="45.735" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="22.265" y="46.735" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="21.495" y="45.735" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R32" library="rcl" package="R0603" value="4k7" x="42" y="38" smashed="yes" rot="R270">
-<attribute name="NAME" x="42.635" y="38.635" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="40.235" y="38.535" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="40.095" y="38.635" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R33" library="rcl" package="R0603" value="4k7" x="20" y="6" smashed="yes" rot="R90">
-<attribute name="NAME" x="19.365" y="5.365" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="20.765" y="1.865" size="1.016" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="21.905" y="5.365" size="1.27" layer="27" rot="R90"/>
 </element>
 <element name="R34" library="rcl" package="R0603" value="4k7" x="18" y="6" smashed="yes" rot="R90">
-<attribute name="NAME" x="17.365" y="5.365" size="1.27" layer="25" rot="R90"/>
+<attribute name="NAME" x="19.165" y="1.865" size="1.016" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="19.905" y="5.365" size="1.27" layer="27" rot="R90"/>
 </element>
 <element name="R35" library="rcl" package="R0603" value="51" x="26" y="5.6" smashed="yes" rot="R180">
-<attribute name="NAME" x="26.635" y="4.965" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="26.235" y="4.765" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="26.635" y="7.505" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="R36" library="rcl" package="R0603" value="4k7" x="9" y="12" smashed="yes" rot="R180">
-<attribute name="NAME" x="9.635" y="11.365" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="11.035" y="11.065" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="9.635" y="13.905" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="R37" library="rcl" package="R0603" value="4k7" x="9" y="17" smashed="yes" rot="R180">
-<attribute name="NAME" x="9.635" y="16.365" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="10.835" y="16.165" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="9.635" y="18.905" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="R38" library="rcl" package="R0603" value="4k7" x="9" y="40" smashed="yes" rot="R180">
-<attribute name="NAME" x="9.635" y="39.365" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="10.735" y="41.865" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="9.635" y="41.905" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="R39" library="rcl" package="R0603" value="4k7" x="9" y="45" smashed="yes" rot="R180">
-<attribute name="NAME" x="9.635" y="44.365" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="11.035" y="46.865" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="9.635" y="46.905" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="R4" library="rcl" package="R0603" value="" x="25.5" y="21" smashed="yes" rot="R270">
-<attribute name="NAME" x="26.135" y="21.635" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="24.435" y="19.435" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="23.595" y="21.635" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R5" library="rcl" package="R0603" value="" x="31.5" y="24" smashed="yes" rot="R270">
-<attribute name="NAME" x="32.135" y="24.635" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="24.635" y="24.735" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="29.595" y="24.635" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R6" library="rcl" package="R0603" value="" x="26.5" y="24" smashed="yes" rot="R270">
-<attribute name="NAME" x="27.135" y="24.635" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="21.035" y="24.135" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="24.595" y="24.635" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R7" library="resistor" package="R1206" value="49R9" x="16" y="35.4" smashed="yes" rot="R270">
-<attribute name="NAME" x="17.27" y="36.67" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="13.97" y="33.97" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="13.46" y="36.67" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R8" library="resistor" package="R1206" value="49R9" x="18.5" y="35.4" smashed="yes" rot="R270">
-<attribute name="NAME" x="19.77" y="36.67" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="19.87" y="34.57" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="15.96" y="36.67" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="R9" library="resistor" package="R1206" value="49R9" x="16" y="40.4" smashed="yes" rot="R270">
-<attribute name="NAME" x="17.27" y="41.67" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="13.77" y="41.37" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="13.46" y="41.67" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="T1" library="transistor-neu-to92" package="SOT23" value="BC847" x="2.2" y="35.1" smashed="yes" rot="R180">
-<attribute name="NAME" x="4.105" y="33.195" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="3.105" y="38.695" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="4.105" y="38.275" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="T2" library="transistor-neu-to92" package="SOT23" value="BC847" x="13.2" y="35.1" smashed="yes" rot="R180">
-<attribute name="NAME" x="15.105" y="33.195" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="11.305" y="37.995" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="15.105" y="38.275" size="1.27" layer="27" rot="R180"/>
 </element>
 <element name="T3" library="transistor-neu-to92" package="SOT23" value="BC847" x="26.6" y="45" smashed="yes" rot="R270">
-<attribute name="NAME" x="28.505" y="46.905" size="1.27" layer="25" rot="R270"/>
+<attribute name="NAME" x="26.595" y="46.705" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="23.425" y="46.905" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="T4" library="transistor-neu-to92" package="SOT23" value="BC847" x="42.58" y="42.03" smashed="yes">
-<attribute name="NAME" x="40.675" y="43.935" size="1.27" layer="25"/>
+<attribute name="NAME" x="42.775" y="44.135" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="40.675" y="38.855" size="1.27" layer="27"/>
 </element>
 <element name="X1" library="con-coax" package="AMP_227161" value="1-1337543-0" x="7.4" y="42.5" locked="yes" smashed="yes" rot="MR270">
 <attribute name="MF" value="TYCO ELECTRONICS" x="17.56" y="19.64" size="1.778" layer="28" rot="MR270" display="off"/>
 <attribute name="MPN" value="1-227161-7" x="17.56" y="19.64" size="1.778" layer="28" rot="MR270" display="off"/>
-<attribute name="NAME" x="16.29" y="49.485" size="1.27" layer="26" rot="MR270"/>
+<attribute name="NAME" x="15" y="40" size="1.27" layer="26" font="vector" rot="MR90"/>
 <attribute name="OC_FARNELL" value="unknown" x="17.56" y="19.64" size="1.778" layer="28" rot="MR270" display="off"/>
 <attribute name="OC_NEWARK" value="09H7855" x="17.56" y="19.64" size="1.778" layer="28" rot="MR270" display="off"/>
 <attribute name="VALUE" x="16.29" y="43.135" size="1.27" layer="28" rot="MR270"/>
@@ -3509,7 +3519,7 @@ design rules under a new name.</description>
 <element name="X2" library="con-hirose" package="FH12-20S-0.5SH" value="FH12-20S-0.5SH" x="33" y="1.4" smashed="yes">
 <attribute name="MF" value="" x="101.58" y="-40.51" size="1.778" layer="27" display="off"/>
 <attribute name="MPN" value="FH12-20S-0.5SH(55)" x="101.58" y="-40.51" size="1.778" layer="27" display="off"/>
-<attribute name="NAME" x="26.5524" y="5.495" size="1.27" layer="25"/>
+<attribute name="NAME" x="36.4524" y="5.895" size="1.016" layer="25" font="vector"/>
 <attribute name="OC_FARNELL" value="1324549" x="101.58" y="-40.51" size="1.778" layer="27" display="off"/>
 <attribute name="OC_NEWARK" value="34M6166" x="101.58" y="-40.51" size="1.778" layer="27" display="off"/>
 <attribute name="VALUE" x="27.7524" y="1.0742" size="1.27" layer="27"/>
@@ -3517,7 +3527,7 @@ design rules under a new name.</description>
 <element name="X3" library="con-coax" package="AMP_227161" value="1-1337543-0" x="7.4" y="14.5" locked="yes" smashed="yes" rot="MR270">
 <attribute name="MF" value="TYCO ELECTRONICS" x="17.56" y="-26.14" size="1.778" layer="28" rot="MR270" display="off"/>
 <attribute name="MPN" value="1-227161-7" x="17.56" y="-26.14" size="1.778" layer="28" rot="MR270" display="off"/>
-<attribute name="NAME" x="16.29" y="21.485" size="1.27" layer="26" rot="MR270"/>
+<attribute name="NAME" x="15" y="15" size="1.27" layer="26" font="vector" rot="MR90"/>
 <attribute name="OC_FARNELL" value="unknown" x="17.56" y="-26.14" size="1.778" layer="28" rot="MR270" display="off"/>
 <attribute name="OC_NEWARK" value="09H7855" x="17.56" y="-26.14" size="1.778" layer="28" rot="MR270" display="off"/>
 <attribute name="VALUE" x="16.29" y="15.135" size="1.27" layer="28" rot="MR270"/>
