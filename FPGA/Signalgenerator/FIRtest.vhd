@@ -31,16 +31,7 @@ USE ieee.std_logic_1164.ALL;
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
 USE ieee.numeric_std.ALL;
-
-package FIRfilter is
-	type coeffarray is array (natural range <>) of signed(11 downto 0);
-	type addarray is array (natural range <>) of signed(11 downto 0);
-end package;
-
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL;
-use work.FIRfilter.all;
+use work.types.all;
 
 ENTITY FIRtest IS
 END FIRtest;
@@ -86,7 +77,7 @@ BEGIN
    uut: FIR
 	generic map(
 		Taps => 4,
-		Multiplexed => 4
+		Multiplexed => 2
 	)
 	
 	PORT MAP (

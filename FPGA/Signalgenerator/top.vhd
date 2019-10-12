@@ -102,16 +102,17 @@ architecture Behavioral of top is
 		CLK : IN std_logic;
 		RESET : IN std_logic;
 		SOURCE : IN std_logic_vector(11 downto 0);
-		NEW_SAMPLE : IN std_logic;
 		MODTYPE : IN std_logic_vector(7 downto 0);
 		SETTING1 : IN std_logic_vector(15 downto 0);
-		SETTING2 : IN std_logic_vector(15 downto 0);          
+		SETTING2 : IN std_logic_vector(15 downto 0); 
+	   SETTING3 : in STD_LOGIC_VECTOR (15 downto 0);		
 		DAC_I : OUT std_logic_vector(11 downto 0);
 		DAC_Q : OUT std_logic_vector(11 downto 0);
 		
 		I_Q_Address : in STD_LOGIC_VECTOR (8 downto 0);
 		I_Q_Data : in STD_LOGIC_VECTOR (11 downto 0);
-		I_Q_Write : in STD_LOGIC_VECTOR (0 downto 0)
+		I_Q_Write : in STD_LOGIC_VECTOR (0 downto 0);
+		FIR_COEFF_WRITE : std_logic
 		);
 	END COMPONENT;
 	
@@ -248,13 +249,14 @@ your_instance_name : MainPLL
 		DAC_I => I,
 		DAC_Q => Q,
 		SOURCE => mod_src_value,
-		NEW_SAMPLE => mod_src_new,
 		MODTYPE => mod_type,
 		SETTING1 => mod_setting1,
 		SETTING2 => (others => '0'),
+		SETTING3 => (others => '0'),
 		I_Q_Address => spi_ext_I_Q_address,
 		I_Q_Data => spi_ext_out(11 downto 0),
-		I_Q_Write => mod_write_I_Q
+		I_Q_Write => mod_write_I_Q,
+		FIR_COEFF_WRITE => '0'
 	);
 	
 	DORI <= '1';

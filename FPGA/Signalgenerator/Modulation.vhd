@@ -20,6 +20,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.numeric_std.all;
+use work.types.all;
 
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
@@ -36,7 +37,6 @@ entity Modulation is
            DAC_I : out  STD_LOGIC_VECTOR (11 downto 0);
            DAC_Q : out  STD_LOGIC_VECTOR (11 downto 0);
            SOURCE : in  STD_LOGIC_VECTOR (11 downto 0);
-			  NEW_SAMPLE : in STD_LOGIC;
 			  	-- Modulation types:
 				-- 00000000 Modulation disabled
 				-- 00000100 FM modulation
@@ -49,17 +49,25 @@ entity Modulation is
 			  -- Setting1:
 			  -- 		AM: modulation depth
 			  --		FM: frequency deviation
-			  -- 		QAM: Bitmask for I/Q lookup table (only lower 8 bits)
+			  -- 		QAM:  Bitmask for I/Q lookup table (lower 8 bits)
+			  --				Samples per Symbol (higher 8 bits)
            SETTING1 : in  STD_LOGIC_VECTOR (15 downto 0);
+			  -- Setting2:
+			  --		QAM: Samplerate pinc (lower word)
            SETTING2 : in  STD_LOGIC_VECTOR (15 downto 0);
+			  --		QAM: Samplerate pinc (upper word)
+			  SETTING3 : in STD_LOGIC_VECTOR (15 downto 0);
 			  
 			  I_Q_Address : in STD_LOGIC_VECTOR (8 downto 0);
 			  I_Q_Data : in STD_LOGIC_VECTOR (11 downto 0);
-			  I_Q_Write : in STD_LOGIC_VECTOR (0 downto 0)
+			  I_Q_Write : in STD_LOGIC_VECTOR (0 downto 0);
+			  
+			  FIR_COEFF_WRITE : std_logic
 			  );
 end Modulation;
 
 architecture Behavioral of Modulation is
+	constant FIR_TAPS : integer := 6;
 	COMPONENT DDS
 	PORT (
 		ce : IN STD_LOGIC;
@@ -91,6 +99,20 @@ architecture Behavioral of Modulation is
 		doutb : OUT STD_LOGIC_VECTOR(23 DOWNTO 0)
 	);
 	END COMPONENT;
+	COMPONENT FIR
+	generic (
+		Taps : integer;
+		Multiplexed : integer
+	);
+	PORT(
+		CLK : IN  std_logic;
+		RESET : IN  std_logic;
+		NEW_DATA : IN  std_logic;
+		DATA : IN  signed(11 downto 0);
+		OUTPUT : OUT  signed(11 downto 0);
+		COEFF_ARRAY : IN  coeffarray(0 to Taps-1)
+	);
+   END COMPONENT;
 	signal mult_result : std_logic_vector(27 downto 0);
 	signal fm_sine : std_logic_vector(11 downto 0);
 	signal fm_cosine : std_logic_vector(11 downto 0);
@@ -104,6 +126,17 @@ architecture Behavioral of Modulation is
 	signal I_Q_last : std_logic_vector(11 downto 0);
 	signal I_Q_index : std_logic_vector(7 downto 0);
 	signal I_Q_lookup : std_logic_vector(23 downto 0);
+	
+	signal QAM_SPS : unsigned(7 downto 0);
+	signal QAM_DDS_last_sign : std_logic;
+	signal QAM_FIR_I_input : signed(11 downto 0);
+	signal QAM_FIR_Q_input : signed(11 downto 0);
+	signal QAM_FIR_NEW_SAMPLE : std_logic;
+	signal QAM_FIR_I_output : signed(11 downto 0);
+	signal QAM_FIR_Q_output : signed(11 downto 0);
+	signal QAM_FIR_RESET : std_logic;
+	
+	signal COEFF_ARRAY : coeffarray(0 to FIR_TAPS-1);
 begin
 
 	FM_DDS : DDS
@@ -137,6 +170,34 @@ begin
 		doutb => I_Q_lookup
 	);
 	
+	I_FIR: FIR
+	generic map(
+		Taps => FIR_TAPS,
+		Multiplexed => 2
+	)	
+	PORT MAP (
+		CLK => CLK,
+		RESET => QAM_FIR_RESET,
+		NEW_DATA => QAM_FIR_NEW_SAMPLE,
+		DATA => QAM_FIR_I_input,
+		OUTPUT => QAM_FIR_I_output,
+		COEFF_ARRAY => COEFF_ARRAY
+	);
+	
+	Q_FIR: FIR
+	generic map(
+		Taps => FIR_TAPS,
+		Multiplexed => 2
+	)	
+	PORT MAP (
+		CLK => CLK,
+		RESET => QAM_FIR_RESET,
+		NEW_DATA => QAM_FIR_NEW_SAMPLE,
+		DATA => QAM_FIR_Q_input,
+		OUTPUT => QAM_FIR_Q_output,
+		COEFF_ARRAY => COEFF_ARRAY
+	);
+	
 	fm_dds_reset <= not fm_dds_enabled;
 	mult_reset <= not mult_enabled;
 
@@ -150,10 +211,15 @@ begin
 			fm_pinc <= (others => '0');
 			I_Q_last <= (others => '0');
 			I_Q_index <= (others => '0');
+			QAM_SPS <= (others => '0');
+			QAM_DDS_last_sign <= '0';
+			QAM_FIR_NEW_SAMPLE <= '0';
+			QAM_FIR_RESET <= '1';
 		elsif rising_edge(CLK) then
-			if(MODTYPE = "00001101" and NEW_SAMPLE = '1') then
-				-- QAM differential and a new sample has come in
-				I_Q_last <= std_logic_vector(unsigned(I_Q_last) + unsigned(SOURCE));
+			if(FIR_COEFF_WRITE = '1') then
+				-- received a new FIR coefficient
+				-- Address will be in I_Q_Address and data in I_Q_data
+				COEFF_ARRAY(to_integer(unsigned(I_Q_Address))) <= signed(I_Q_data);
 			end if;
 			case MODTYPE is
 				-- modulation is disabled
@@ -164,6 +230,10 @@ begin
 					DAC_I <= "111111111111";
 					DAC_Q <= "100000000000";
 					I_Q_last <= (others => '0');
+					QAM_SPS <= (others => '0');
+					QAM_DDS_last_sign <= '0';
+					QAM_FIR_NEW_SAMPLE <= '0';
+					QAM_FIR_RESET <= '1';
 				-- FM modulation
 				when "00000100" =>
 					mult_enabled <= '1';
@@ -195,18 +265,38 @@ begin
 				-- QAM modulation
 				when "00001100" | "00001101" =>
 					mult_enabled <= '0';
-					fm_dds_enabled <= '0';
-					fm_pinc <= (others => '0');
-					-- set correct index in I/Q lookup RAM
-					if MODTYPE = "00001100" then
-						-- absolute modulation mode
-						I_Q_index <= SOURCE(7 downto 0) and SETTING1(7 downto 0);
+					fm_dds_enabled <= '1';
+					QAM_FIR_RESET <= '0';
+					fm_pinc <= SETTING3 & SETTING2;
+					if fm_sine(11)='1' and QAM_DDS_last_sign='0' then
+						-- it is time for the next sample
+						if(QAM_SPS = 0) then
+							-- insert an actual new sample
+							QAM_FIR_I_input <= signed(I_Q_lookup(11 downto 0));
+							QAM_FIR_Q_input <= signed(I_Q_lookup(23 downto 12));
+							-- update index of next sample
+							-- set correct index in I/Q lookup RAM
+							if MODTYPE = "00001100" then
+								-- absolute modulation mode
+								I_Q_index <= SOURCE(7 downto 0) and SETTING1(7 downto 0);
+							else
+								-- differential modulation mode
+								I_Q_last <= std_logic_vector(unsigned(I_Q_last) + unsigned(SOURCE));
+								I_Q_index <= I_Q_last(7 downto 0) and SETTING1(7 downto 0);
+							end if;
+						else
+							-- insert dummy zero sample
+							QAM_FIR_I_input <= (others => '0');
+							QAM_FIR_Q_input <= (others => '0');
+						end if;
+						QAM_FIR_NEW_SAMPLE <= '1';
 					else
-						-- differential modulation mode
-						I_Q_index <= I_Q_last(7 downto 0) and SETTING1(7 downto 0);
+						QAM_FIR_NEW_SAMPLE <= '0';
 					end if;
-					DAC_I <= not I_Q_lookup(11) & I_Q_lookup(10 downto 0);
-					DAC_Q <= not I_Q_lookup(23) & I_Q_lookup(22 downto 12);
+					QAM_DDS_last_sign <= fm_sine(11);
+
+					DAC_I <= std_logic_vector(QAM_FIR_I_output);
+					DAC_Q <= std_logic_vector(QAM_FIR_Q_output);
 				when others =>
 					
 			end case;

@@ -23,20 +23,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
 use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx primitives in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
-package FIRfilter is
-	type coeffarray is array (natural range <>) of signed(11 downto 0);
-	type addarray is array (natural range <>) of signed(11 downto 0);
-end package;
-
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL;
-use work.FIRfilter.all;
+use work.types.all;
 
 entity FIR is
 	generic (
@@ -57,43 +44,36 @@ end FIR;
 
 architecture Behavioral of FIR is
 	signal pipe : addarray(0 to Taps);
-	signal stage : integer range 0 to Multiplexed-1;
+	signal stage : integer range 0 to Multiplexed;
 	signal data_latched : signed (11 downto 0);
-	signal pipe_buffer : addarray(0 to Taps/Multiplexed - 1);
+	signal pipe_buffer : addarray(0 to Taps);
 begin
 	process(CLK)
+		variable d : signed(11 downto 0);
 	begin
 		if(rising_edge(CLK)) then
 			if(RESET = '1') then
 				for i in 0 to Taps loop
 					pipe(i) <= (others=>'0');
+					pipe_buffer(i) <= (others=>'0');
 				end loop;
 				stage <= 0;
-			elsif (NEW_DATA = '1') and (stage = 0) then
-				if(Multiplexed > 1) then
-					for i in 0 to (Taps/Multiplexed)-1 loop
-						pipe_buffer(i) <= pipe(i*Multiplexed+1)
-									+resize(DATA*COEFF_ARRAY(i*Multiplexed), 24)(22 downto 11);
-					end loop;
-					stage <= 1;
+			elsif ((NEW_DATA = '1') and (stage = 0)) or stage > 0 then
+				if(NEW_DATA = '1') then
+					data_latched <= DATA;
+					d := DATA;
 				else
-					for i in 0 to Taps-1 loop
-						pipe(i) <= pipe(i+1)+resize(DATA*COEFF_ARRAY(i), 24)(22 downto 11);
-					end loop;
+					d := data_latched;
 				end if;
-				data_latched <= DATA;
-			elsif (stage > 0) then
-				for i in 0 to (Taps/Multiplexed)-1 loop
-					pipe(i*Multiplexed + stage) <= pipe(i*Multiplexed + stage+1)
-								+resize(data_latched*COEFF_ARRAY(i*Multiplexed + stage), 24)(22 downto 11);
-				end loop;
-				if(stage < Multiplexed - 1) then
-					stage <= stage + 1;
-				else
-					stage <= 0;
+				if(stage < Multiplexed) then
 					for i in 0 to (Taps/Multiplexed)-1 loop
-						pipe(i*Multiplexed) <= pipe_buffer(i);
+						pipe_buffer(i*Multiplexed + stage) <= pipe(i*Multiplexed + stage+1)
+									+resize(d*COEFF_ARRAY(i*Multiplexed + stage), 24)(22 downto 11);
 					end loop;
+					stage <= stage + 1;
+				elsif (stage = Multiplexed) then
+					stage <= 0;
+					pipe <= pipe_buffer;
 				end if;
 			end if;
 		end if;
