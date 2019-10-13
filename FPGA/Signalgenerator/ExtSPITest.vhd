@@ -443,7 +443,7 @@ BEGIN
 		wait for CLK_period*10;
 		SPI_INT_CS <= '1';
 		
-		-- only one valid bit, 4 samples per second
+		-- only one valid bit, 4 samples per symbol
 		wait for CLK_period*10;
 		SPI_INT_CS <= '0';
 		wait for CLK_period*10;

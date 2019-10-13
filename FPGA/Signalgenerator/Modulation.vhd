@@ -286,7 +286,7 @@ begin
 								I_Q_last <= std_logic_vector(unsigned(I_Q_last) + unsigned(SOURCE));
 								I_Q_index <= I_Q_last(7 downto 0) and SETTING1(7 downto 0);
 							end if;
-							QAM_SPS <= unsigned(SETTING1(15 downto 8));
+							QAM_SPS <= unsigned(SETTING1(15 downto 8)) - 1;
 						else
 							-- insert dummy zero sample
 							QAM_FIR_I_input <= (others => '0');
