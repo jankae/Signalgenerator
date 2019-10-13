@@ -13,18 +13,7 @@ static uint32_t frequency = 1000000000;
 static int32_t dbm = 0;
 
 // modulation settings
-enum class ModulationType : uint8_t {
-	AM = 0,
-	FM = 1,
-	FM_USB = 2,
-	FM_LSB = 3,
-	QAM2 = 4,
-	QAM4 = 5,
-	QAM8 = 6,
-	QAM16 = 7,
-	QAM32 = 8,
-};
-static ModulationType modType = ModulationType::AM;
+static Protocol::ModulationType modType = Protocol::ModulationType::AM;
 static const char *modTypeNames[] { "AM", "FM", "FM USB", "FM LSB", "2QAM",
 		"4QAM", "8QAM", "16QAM", "32QAM", nullptr };
 static int32_t FMDeviation = 75000;
@@ -34,18 +23,7 @@ static int32_t QAMbaud = 1000000;
 static Constellation QAMconst;
 
 // modulation source settings
-enum class SourceType : uint8_t {
-	Disabled = 0,
-	FixedValue = 1,
-	Sine = 2,
-	RampUp = 3,
-	RampDown = 4,
-	Triangle = 5,
-	Square = 6,
-	PRBS = 7,
-	Stream = 8,
-};
-static SourceType modSourceType = SourceType::Disabled;
+static Protocol::SourceType modSourceType = Protocol::SourceType::Disabled;
 static const char *modSrcTypeNames[] = { "Disabled", "Fixed", "Sine", "Ramp up",
 		"Ramp down", "Triangle", "Square", "PRBS", "Stream", nullptr };
 static int32_t modSourceFreq = 1000;
@@ -111,21 +89,21 @@ static void ModulationChanged(void*, Widget*) {
 		eQAMbaud->SetVisible(false);
 		bQAMedit->SetVisible(false);
 		switch(modType) {
-		case ModulationType::AM:
+		case Protocol::ModulationType::AM:
 			lAMDepth->SetVisible(true);
 			eAMDepth->SetVisible(true);
 			break;
-		case ModulationType::FM:
-		case ModulationType::FM_LSB:
-		case ModulationType::FM_USB:
+		case Protocol::ModulationType::FM:
+		case Protocol::ModulationType::FM_LSB:
+		case Protocol::ModulationType::FM_USB:
 			lFMDeviation->SetVisible(true);
 			eFMDeviation->SetVisible(true);
 			break;
-		case ModulationType::QAM2:
-		case ModulationType::QAM4:
-		case ModulationType::QAM8:
-		case ModulationType::QAM16:
-		case ModulationType::QAM32:
+		case Protocol::ModulationType::QAM2:
+		case Protocol::ModulationType::QAM4:
+		case Protocol::ModulationType::QAM8:
+		case Protocol::ModulationType::QAM16:
+		case Protocol::ModulationType::QAM32:
 			lQAMbaud->SetVisible(true);
 			eQAMbaud->SetVisible(true);
 			bQAMedit->SetVisible(true);
@@ -134,26 +112,26 @@ static void ModulationChanged(void*, Widget*) {
 			break;
 		}
 		switch(modSourceType) {
-		case SourceType::Disabled:
+		case Protocol::SourceType::Disabled:
 			eSrcValue->SetVisible(false);
 			eSrcFreq->SetVisible(false);
 			break;
-		case SourceType::FixedValue:
+		case Protocol::SourceType::FixedValue:
 			eSrcValue->SetVisible(true);
 			eSrcFreq->SetVisible(false);
 			break;
-		case SourceType::RampDown:
-		case SourceType::RampUp:
-		case SourceType::Sine:
-		case SourceType::Square:
-		case SourceType::Triangle:
-		case SourceType::PRBS:
-		case SourceType::Stream:
+		case Protocol::SourceType::RampDown:
+		case Protocol::SourceType::RampUp:
+		case Protocol::SourceType::Sine:
+		case Protocol::SourceType::Square:
+		case Protocol::SourceType::Triangle:
+		case Protocol::SourceType::PRBS:
+		case Protocol::SourceType::Stream:
 			eSrcValue->SetVisible(false);
 			eSrcFreq->SetVisible(true);
 			break;
 		}
-		if (modSourceType == SourceType::Stream) {
+		if (modSourceType == Protocol::SourceType::Stream) {
 			lSrcBufSoft->SetVisible(true);
 			pSrcBufSoft->SetVisible(true);
 			lSrcBufHard->SetVisible(true);
@@ -265,7 +243,7 @@ void Generator::Init() {
 	c->attach(eAMDepth, COORDS(150, 90));
 
 	bool editConstellation = false;
-	bQAMedit = new Button("Edit QAM", Font_Medium, [](void*ptr, Widget*) {
+	bQAMedit = new Button("Constellation", Font_Medium, [](void*ptr, Widget*) {
 		bool *edit = (bool*) ptr;
 		*edit = true;
 	}, &editConstellation, COORDS(0, 22));
@@ -315,7 +293,7 @@ void Generator::Init() {
 	while(1) {
 		uint32_t start = HAL_GetTick();
 		constexpr uint32_t delay = 100;
-		if (ModEnabled && modSourceType == SourceType::Stream) {
+		if (ModEnabled && modSourceType == Protocol::SourceType::Stream) {
 			uint8_t FPGAfree = Stream::LoadToFPGA(delay);
 			uint8_t fillState = (255 - FPGAfree) * 100 / 255;
 			pSrcBufHard->setState(fillState);
@@ -328,6 +306,8 @@ void Generator::Init() {
 		if (editConstellation) {
 			QAMconst.Edit();
 			QAMconst.LoadToFPGA();
+			// TODO move FIR tap generation to proper place
+			Constellation::SetFIRinFPGA(4, 0.5);
 			editConstellation = false;
 			continue;
 		}
@@ -357,72 +337,34 @@ void Generator::Init() {
 		send.offset_I = balance.I;
 		send.offset_Q = balance.Q;
 		if (ModEnabled) {
-			if(modSourceType == SourceType::FixedValue) {
-				send.modulation_registers[0] = modSourceValue;
+			Protocol::Modulation mod;
+			mod.type = modType;
+			switch(modType) {
+			case Protocol::ModulationType::AM:
+				mod.AM.depth = AMDepth;
+				break;
+			case Protocol::ModulationType::FM:
+			case Protocol::ModulationType::FM_USB:
+			case Protocol::ModulationType::FM_LSB:
+				mod.FM.deviation = FMDeviation;
+				break;
+			case Protocol::ModulationType::QAM2:
+			case Protocol::ModulationType::QAM4:
+			case Protocol::ModulationType::QAM8:
+			case Protocol::ModulationType::QAM16:
+			case Protocol::ModulationType::QAM32:
+				// TODO replace dummy values
+				mod.QAM.SamplesPerSymbol = 4;
+				mod.QAM.SymbolsPerSecond = 1000;
+				break;
+			}
+			mod.source = modSourceType;
+			if(modSourceType == Protocol::SourceType::FixedValue) {
+				mod.Fixed.value = modSourceValue;
 			} else {
-				// calculate phase increment for requested frequency
-				static constexpr uint32_t FPGA_clock = 100000000;
-				send.modulation_registers[0] = ((uint64_t) modSourceFreq)
-						* (1ULL << 27) / FPGA_clock;
+				mod.Periodic.frequency = modSourceFreq;
 			}
-			send.modulation_registers[3] |= (((uint8_t) modSourceType) << 8);
-
-			// set modulation type
-			uint8_t type = 0x00;
-			switch(modType) {
-			case ModulationType::AM:
-				type = 0x08;
-				break;
-			case ModulationType::FM:
-				type = 0x04;
-				break;
-			case ModulationType::FM_USB:
-				type = 0x06;
-				break;
-			case ModulationType::FM_LSB:
-				type = 0x05;
-				break;
-			case ModulationType::QAM2:
-			case ModulationType::QAM4:
-			case ModulationType::QAM8:
-			case ModulationType::QAM16:
-			case ModulationType::QAM32:
-				type = 0x0C;
-				// TODO 0x0D if modulation is differential
-				break;
-			}
-			send.modulation_registers[3] |= type;
-			// calculate modulation settings
-			uint16_t setting1 = 0x0000;
-			switch(modType) {
-			case ModulationType::AM:
-				// 0: 0% depth, 65535: 100% depth
-				setting1 = common_Map(AMDepth, 0, Unit::maxPercent, 0, UINT16_MAX);
-				break;
-			case ModulationType::FM:
-			case ModulationType::FM_USB:
-			case ModulationType::FM_LSB:
-				// 0: 0 deviation, 65535: 6248378Hz deviation
-				setting1 = common_Map(FMDeviation, 0, 6248378, 0, UINT16_MAX);
-				break;
-			// in QAM modulation, settings1 determines bitmask of bits per symbol
-			case ModulationType::QAM2:
-				setting1 = 0x0001;
-				break;
-			case ModulationType::QAM4:
-				setting1 = 0x0003;
-				break;
-			case ModulationType::QAM8:
-				setting1 = 0x0007;
-				break;
-			case ModulationType::QAM16:
-				setting1 = 0x000F;
-				break;
-			case ModulationType::QAM32:
-				setting1 = 0x001F;
-				break;
-			}
-			send.modulation_registers[1] = setting1;
+			Protocol::SetupModulation(send, mod);
 		}
 		SPI1_CS_RF_GPIO_Port->BSRR = SPI1_CS_RF_Pin << 16;
 		HAL_SPI_TransmitReceive(&hspi1, (uint8_t*) &send, (uint8_t*) &recv,

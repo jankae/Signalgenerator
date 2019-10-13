@@ -67,7 +67,8 @@ entity Modulation is
 end Modulation;
 
 architecture Behavioral of Modulation is
-	constant FIR_TAPS : integer := 6;
+	constant FIR_TAPS : integer := 32;
+	constant FIR_MULTIPLEXED : integer := 8;
 	COMPONENT DDS
 	PORT (
 		ce : IN STD_LOGIC;
@@ -110,7 +111,7 @@ architecture Behavioral of Modulation is
 		NEW_DATA : IN  std_logic;
 		DATA : IN  signed(11 downto 0);
 		OUTPUT : OUT  signed(11 downto 0);
-		COEFF_ARRAY : IN  coeffarray(0 to Taps-1)
+		COEFF_ARRAY : IN  firarray(0 to Taps-1)
 	);
    END COMPONENT;
 	signal mult_result : std_logic_vector(27 downto 0);
@@ -136,7 +137,7 @@ architecture Behavioral of Modulation is
 	signal QAM_FIR_Q_output : signed(11 downto 0);
 	signal QAM_FIR_RESET : std_logic;
 	
-	signal COEFF_ARRAY : coeffarray(0 to FIR_TAPS-1);
+	signal COEFF_ARRAY : firarray(0 to FIR_TAPS-1);
 begin
 
 	FM_DDS : DDS
@@ -173,7 +174,7 @@ begin
 	I_FIR: FIR
 	generic map(
 		Taps => FIR_TAPS,
-		Multiplexed => 2
+		Multiplexed => FIR_MULTIPLEXED
 	)	
 	PORT MAP (
 		CLK => CLK,
@@ -187,7 +188,7 @@ begin
 	Q_FIR: FIR
 	generic map(
 		Taps => FIR_TAPS,
-		Multiplexed => 2
+		Multiplexed => FIR_MULTIPLEXED
 	)	
 	PORT MAP (
 		CLK => CLK,
@@ -234,6 +235,7 @@ begin
 					QAM_DDS_last_sign <= '0';
 					QAM_FIR_NEW_SAMPLE <= '0';
 					QAM_FIR_RESET <= '1';
+					QAM_SPS <= (others => '0');
 				-- FM modulation
 				when "00000100" =>
 					mult_enabled <= '1';
@@ -284,10 +286,12 @@ begin
 								I_Q_last <= std_logic_vector(unsigned(I_Q_last) + unsigned(SOURCE));
 								I_Q_index <= I_Q_last(7 downto 0) and SETTING1(7 downto 0);
 							end if;
+							QAM_SPS <= unsigned(SETTING1(15 downto 8));
 						else
 							-- insert dummy zero sample
 							QAM_FIR_I_input <= (others => '0');
 							QAM_FIR_Q_input <= (others => '0');
+							QAM_SPS <= QAM_SPS - 1;
 						end if;
 						QAM_FIR_NEW_SAMPLE <= '1';
 					else
@@ -295,8 +299,8 @@ begin
 					end if;
 					QAM_DDS_last_sign <= fm_sine(11);
 
-					DAC_I <= std_logic_vector(QAM_FIR_I_output);
-					DAC_Q <= std_logic_vector(QAM_FIR_Q_output);
+					DAC_I <= not std_logic(QAM_FIR_I_output(11)) & std_logic_vector(QAM_FIR_I_output(10 downto 0));
+					DAC_Q <= not std_logic(QAM_FIR_Q_output(11)) & std_logic_vector(QAM_FIR_Q_output(10 downto 0));
 				when others =>
 					
 			end case;

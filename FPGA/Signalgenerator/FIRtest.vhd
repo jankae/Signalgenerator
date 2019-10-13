@@ -53,7 +53,7 @@ ARCHITECTURE behavior OF FIRtest IS
          NEW_DATA : IN  std_logic;
          DATA : IN  signed(11 downto 0);
          OUTPUT : OUT  signed(11 downto 0);
-         COEFF_ARRAY : IN  coeffarray(0 to 3)
+         COEFF_ARRAY : IN  firarray(0 to 3)
         );
     END COMPONENT;
     
@@ -63,21 +63,21 @@ ARCHITECTURE behavior OF FIRtest IS
    signal RESET : std_logic := '0';
    signal NEW_DATA : std_logic := '0';
    signal DATA : signed(11 downto 0) := (others => '0');
-   signal COEFF_ARRAY : coeffarray(0 to 3) := (others => to_signed(0, 12));
+   signal COEFF_ARRAY : firarray(0 to 3) := (others => to_signed(0, 12));
 
  	--Outputs
    signal OUTPUT : signed(11 downto 0);
 
    -- Clock period definitions
    constant CLK_period : time := 10 ns;
- 
+	constant CLKS_PER_SAMPLE : integer := 4;
 BEGIN
  
 	-- Instantiate the Unit Under Test (UUT)
    uut: FIR
 	generic map(
 		Taps => 4,
-		Multiplexed => 2
+		Multiplexed => 4
 	)
 	
 	PORT MAP (
@@ -117,7 +117,7 @@ BEGIN
 		NEW_DATA <= '1';
 		wait for CLK_period*1;
 		NEW_DATA <= '0';
-		wait for CLK_period*10;
+		wait for CLK_period*(CLKS_PER_SAMPLE-1);
 
 		DATA <= to_signed(0, 12);
 
@@ -125,34 +125,34 @@ BEGIN
 		NEW_DATA <= '1';
 		wait for CLK_period;
 		NEW_DATA <= '0';
-		wait for CLK_period*10;
+		wait for CLK_period*(CLKS_PER_SAMPLE-1);
 
 
 
 		NEW_DATA <= '1';
 		wait for CLK_period;
 		NEW_DATA <= '0';
-		wait for CLK_period*10;
+		wait for CLK_period*(CLKS_PER_SAMPLE-1);
 		NEW_DATA <= '1';
 		wait for CLK_period;
 		NEW_DATA <= '0';
-		wait for CLK_period*10;
+		wait for CLK_period*(CLKS_PER_SAMPLE-1);
 		NEW_DATA <= '1';
 		wait for CLK_period;
 		NEW_DATA <= '0';
-		wait for CLK_period*10;
+		wait for CLK_period*(CLKS_PER_SAMPLE-1);
 		NEW_DATA <= '1';
 		wait for CLK_period;
 		NEW_DATA <= '0';
-		wait for CLK_period*10;
+		wait for CLK_period*(CLKS_PER_SAMPLE-1);
 		NEW_DATA <= '1';
 		wait for CLK_period;
 		NEW_DATA <= '0';
-		wait for CLK_period*10;
+		wait for CLK_period*(CLKS_PER_SAMPLE-1);
 		NEW_DATA <= '1';
 		wait for CLK_period;
 		NEW_DATA <= '0';
-		wait for CLK_period*10;
+		wait for CLK_period*(CLKS_PER_SAMPLE-1);
 
 
       wait;

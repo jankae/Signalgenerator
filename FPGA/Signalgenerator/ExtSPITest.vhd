@@ -369,32 +369,97 @@ BEGIN
       -- insert stimulus here
 		SPI_EXT_CS <= '1';
 		SPI_INT_CS <= '1';
+		-- disable modulation
+		wait for CLK_period*10;
+		SPI_INT_CS <= '0';
+		wait for CLK_period*10;
+		SPI_int("1000000000000111");
+		SPI_int("0000000000000000");
+		wait for CLK_period*10;
+		SPI_INT_CS <= '1';
+		
 		wait for CLK_period*10;
 		-- Write first I/Q entry in lookup table
 		SPI_EXT_CS <= '0';
 		wait for CLK_period*10;
-		SPI_ext("1000000000000000");
-		SPI_ext("0000111100001111");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000011100001111");
 		SPI_ext("0000000011110000");
 		wait for CLK_period*10;
 		SPI_EXT_CS <= '1';
 		wait for CLK_period*10;
+		-- Write FIR coefficients
+		SPI_EXT_CS <= '0';
+		wait for CLK_period*10;
+		SPI_ext("1000000000000000");
+		SPI_ext("0000011111111111");
+		SPI_ext("0000001111111111");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		SPI_ext("0000000000000000");
+		wait for CLK_period*10;
+		SPI_EXT_CS <= '1';
+		
+		-- set high sample rate
+		wait for CLK_period*10;
+		SPI_INT_CS <= '0';
+		wait for CLK_period*10;
+		SPI_int("1000000000000110");
+		SPI_int("1111111111111111");
+		wait for CLK_period*10;
+		SPI_INT_CS <= '1';
+		wait for CLK_period*10;
+		SPI_INT_CS <= '0';
+		wait for CLK_period*10;
+		SPI_int("1000000000001000");
+		SPI_int("0001111111111111");
+		wait for CLK_period*10;
+		SPI_INT_CS <= '1';
+		
+		-- only one valid bit, 4 samples per second
+		wait for CLK_period*10;
+		SPI_INT_CS <= '0';
+		wait for CLK_period*10;
+		SPI_int("1000000000000101");
+		SPI_int("0000010000000001");
+		wait for CLK_period*10;
+		SPI_INT_CS <= '1';
 		-- set modulation to QAM
+		wait for CLK_period*10;
 		SPI_INT_CS <= '0';
 		wait for CLK_period*10;
 		SPI_int("1000000000000111");
 		SPI_int("0000000000001100");
 		wait for CLK_period*10;
 		SPI_INT_CS <= '1';
-		
-		-- only one valid bit
-		wait for CLK_period*10;
-		SPI_INT_CS <= '0';
-		wait for CLK_period*10;
-		SPI_int("1000000000000101");
-		SPI_int("0000000000000001");
-		wait for CLK_period*10;
-		SPI_INT_CS <= '1';
+
       wait;
    end process;
 

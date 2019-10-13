@@ -38,4 +38,54 @@ using RFToFront = struct rftofront {
 	uint8_t reserved2[24];
 } __attribute__((packed, aligned(8)));;
 
+enum class ModulationType : uint8_t {
+	AM = 0,
+	FM = 1,
+	FM_USB = 2,
+	FM_LSB = 3,
+	QAM2 = 4,
+	QAM4 = 5,
+	QAM8 = 6,
+	QAM16 = 7,
+	QAM32 = 8,
+};
+enum class SourceType : uint8_t {
+	Disabled = 0,
+	FixedValue = 1,
+	Sine = 2,
+	RampUp = 3,
+	RampDown = 4,
+	Triangle = 5,
+	Square = 6,
+	PRBS = 7,
+	Stream = 8,
+};
+
+using Modulation = struct modulation {
+	ModulationType type;
+	union {
+		struct {
+			uint32_t depth; // Unit::Percent
+		} AM;
+		struct {
+			uint32_t deviation; // Unit::Frequency
+		} FM;
+		struct {
+			uint8_t SamplesPerSymbol;
+			uint32_t SymbolsPerSecond;
+		} QAM;
+	};
+	SourceType source;
+	union {
+		struct {
+			int32_t value;
+		} Fixed;
+		struct {
+			uint32_t frequency;
+		} Periodic;
+	};
+};
+
+void SetupModulation(FrontToRF &data, Modulation mod);
+
 }

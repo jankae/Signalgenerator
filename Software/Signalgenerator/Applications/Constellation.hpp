@@ -20,7 +20,9 @@ public:
 		usedPoints = used;
 	}
 	void LoadToFPGA();
+	static void SetFIRinFPGA(uint8_t sps, float beta);
 private:
+	static constexpr uint8_t FIRTaps = 32; // must be an even number
 	void View();
 	static constexpr uint16_t MaxPoints = 32;
 	uint16_t usedPoints;

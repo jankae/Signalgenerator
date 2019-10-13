@@ -215,7 +215,7 @@
                                 								
                                 <option id="gnu.cpp.link.option.other.1111304467" name="Other options (-Xlinker [option])" superClass="gnu.cpp.link.option.other" useByScannerDiscovery="false"/>
                                 								
-                                <option id="gnu.cpp.link.option.flags.356887732" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="" valueType="string"/>
+                                <option id="gnu.cpp.link.option.flags.356887732" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-u _printf_float" valueType="string"/>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.701540693" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
                                     									

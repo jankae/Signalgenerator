@@ -277,3 +277,30 @@ void Constellation::LoadToFPGA() {
 	}
 	SPI1_CS_FPGA_GPIO_Port->BSRR = SPI1_CS_FPGA_Pin;
 }
+
+void Constellation::SetFIRinFPGA(uint8_t sps, float beta) {
+	int16_t FIRdata[FIRTaps];
+	static constexpr int16_t MaxAmplitude = 1024; // TODO adjust to scale (keep in mind possible overflow in FPGA FIR addition!)
+	static constexpr float PI = 3.1415926535f;
+	for (uint8_t i = 0; i < FIRTaps; i++) {
+		int8_t t = i - FIRTaps / 2;
+		float h_t;
+		if (t == 0) {
+			h_t = 1.0;
+		} else if (abs(t) == sps / (2 * beta)) {
+			h_t = std::sin(PI / (2 * beta)) / (PI / (2 * beta)) * PI / 4;
+		} else {
+			h_t = std::sin(PI * t / sps) / (PI * t / sps)
+					* std::cos(beta * PI * t / sps)
+					/ (1 - (2 * beta * t / sps) * (2 * beta * t / sps));
+		}
+		printf("FIR tap %d: %f\n", i, h_t);
+		FIRdata[i] = htons(h_t * MaxAmplitude);
+	}
+	// start loading data to address 0
+	uint16_t data = htons(0x8000);
+	SPI1_CS_FPGA_GPIO_Port->BSRR = SPI1_CS_FPGA_Pin << 16;
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) &data, 2, 100);
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) FIRdata, sizeof(FIRdata), 100);
+	SPI1_CS_FPGA_GPIO_Port->BSRR = SPI1_CS_FPGA_Pin;
+}

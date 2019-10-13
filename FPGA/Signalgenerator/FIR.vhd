@@ -38,42 +38,69 @@ entity FIR is
 		NEW_DATA : in std_logic;
 		DATA : in signed(11 downto 0);
 		OUTPUT : out signed(11 downto 0);
-		COEFF_ARRAY : in coeffarray(0 to Taps-1)
+		COEFF_ARRAY : in firarray(0 to Taps-1)
 	);
 end FIR;
 
 architecture Behavioral of FIR is
-	signal pipe : addarray(0 to Taps);
-	signal stage : integer range 0 to Multiplexed;
+	constant mult_latency : integer := 2;
+	signal pipe : firarray(0 to Taps);
+	signal mult_reg1 : firarray(0 to Taps-1);
+	signal mult_reg2 : firarray(0 to Taps-1);
+	signal mult_result : firarray(0 to Taps-1);
+	signal mult_stage : integer range 0 to Multiplexed;
 	signal data_latched : signed (11 downto 0);
-	signal pipe_buffer : addarray(0 to Taps);
+	
+	signal add_stage : integer range -mult_latency-1 to Multiplexed;
 begin
 	process(CLK)
 		variable d : signed(11 downto 0);
 	begin
 		if(rising_edge(CLK)) then
+			mult_result <= mult_reg2;
+			mult_reg2 <= mult_reg1;
 			if(RESET = '1') then
 				for i in 0 to Taps loop
 					pipe(i) <= (others=>'0');
-					pipe_buffer(i) <= (others=>'0');
 				end loop;
-				stage <= 0;
-			elsif ((NEW_DATA = '1') and (stage = 0)) or stage > 0 then
-				if(NEW_DATA = '1') then
-					data_latched <= DATA;
-					d := DATA;
-				else
-					d := data_latched;
-				end if;
-				if(stage < Multiplexed) then
+				mult_stage <= 0;
+				add_stage <= -mult_latency-1;
+			else
+				if ((NEW_DATA = '1') and (mult_stage = 0)) or mult_stage > 0 then
+					if(NEW_DATA = '1') then
+						data_latched <= DATA;
+						d := DATA;
+					else
+						d := data_latched;
+					end if;
+					if add_stage = -mult_latency-1 then
+						add_stage <= -mult_latency;
+					end if;
 					for i in 0 to (Taps/Multiplexed)-1 loop
-						pipe_buffer(i*Multiplexed + stage) <= pipe(i*Multiplexed + stage+1)
-									+resize(d*COEFF_ARRAY(i*Multiplexed + stage), 24)(22 downto 11);
+						mult_reg1(mult_stage*(Taps/Multiplexed)+i) <= resize(d*COEFF_ARRAY(mult_stage*(Taps/Multiplexed)+i), 24)(22 downto 11);
 					end loop;
-					stage <= stage + 1;
-				elsif (stage = Multiplexed) then
-					stage <= 0;
-					pipe <= pipe_buffer;
+					if(mult_stage < Multiplexed - 1) then
+						mult_stage <= mult_stage + 1;
+					else
+						mult_stage <= 0;
+					end if;
+				end if;
+				if add_stage >= -mult_latency then
+					if(add_stage >= 0) then
+						for i in 0 to (Taps/Multiplexed)-1 loop
+							pipe(add_stage*(Taps/Multiplexed)+i) <= mult_result(add_stage*(Taps/Multiplexed)+i)
+																				+pipe(add_stage*(Taps/Multiplexed)+i+1);
+						end loop;
+					end if;
+					if(add_stage < Multiplexed - 1) then
+						add_stage <= add_stage + 1;
+					elsif (mult_stage > 0 and mult_stage <= mult_latency) then
+						add_stage <= mult_stage-mult_latency;
+					elsif NEW_DATA = '1' then
+						add_stage <= -mult_latency;
+					else
+						add_stage <= -mult_latency-1;
+					end if;
 				end if;
 			end if;
 		end if;

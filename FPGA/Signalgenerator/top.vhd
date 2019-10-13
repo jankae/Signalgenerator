@@ -151,12 +151,16 @@ architecture Behavioral of top is
 	signal spi_ext_first_word : std_logic := '1';
 	signal spi_ext_I_Q_address : std_logic_vector(8 downto 0);
 	signal spi_ext_fifo_data : std_logic := '0';
+	signal spi_ext_fir_data : std_logic := '0';
 	
 	-- modulation settings
 	signal mod_type : std_logic_vector(7 downto 0);
 	signal mod_setting1 : std_logic_vector(15 downto 0);
+	signal mod_setting2 : std_logic_vector(15 downto 0);
+	signal mod_setting3 : std_logic_vector(15 downto 0);
 	
 	signal mod_write_I_Q : std_logic_vector(0 downto 0) := "0";
+	signal mod_write_FIR : std_logic;
 	-- modulation source settings
 	signal mod_src_pinc : std_logic_vector(15 downto 0);
 	signal mod_src_type : std_logic_vector(3 downto 0);
@@ -251,12 +255,12 @@ your_instance_name : MainPLL
 		SOURCE => mod_src_value,
 		MODTYPE => mod_type,
 		SETTING1 => mod_setting1,
-		SETTING2 => (others => '0'),
-		SETTING3 => (others => '0'),
+		SETTING2 => mod_setting2,
+		SETTING3 => mod_setting3,
 		I_Q_Address => spi_ext_I_Q_address,
 		I_Q_Data => spi_ext_out(11 downto 0),
 		I_Q_Write => mod_write_I_Q,
-		FIR_COEFF_WRITE => '0'
+		FIR_COEFF_WRITE => mod_write_FIR
 	);
 	
 	DORI <= '1';
@@ -270,8 +274,9 @@ your_instance_name : MainPLL
 		if mod_src_write = '1' then
 			mod_src_write <= '0';
 		end if;
-		if mod_write_I_Q = "1" then
+		if mod_write_I_Q = "1" or mod_write_FIR = '1' then
 			mod_write_I_Q <= "0";
+			mod_write_FIR <= '0';
 			spi_ext_I_Q_address <= std_logic_vector(unsigned(spi_ext_I_Q_address) + 1);
 		end if;
 		
@@ -281,6 +286,7 @@ your_instance_name : MainPLL
 			if SPI_EXT_CS = '1' then
 				spi_ext_first_word <= '1';
 				spi_ext_fifo_data <= '0';
+				spi_ext_fir_data <= '0';
 			else
 				if spi_ext_complete = '1' then
 					if spi_ext_first_word = '1' then
@@ -290,6 +296,11 @@ your_instance_name : MainPLL
 						if spi_ext_out = (spi_ext_out'range => '1') then
 							-- subsequent received data will be redirected to the FIFO
 							spi_ext_fifo_data <= '1';
+						elsif spi_ext_out(15 downto 9) = "1000000" then
+							LED(0) <= '1';
+							-- subsequent data is for FIR coefficients
+							spi_ext_I_Q_address <= "0000" & spi_ext_out(4 downto 0);
+							spi_ext_fir_data <= '1';
 						else
 							-- subsequent data is for the I/Q lookup
 							spi_ext_I_Q_address <= spi_ext_out(8 downto 0);
@@ -298,6 +309,8 @@ your_instance_name : MainPLL
 						-- not the first word
 						if spi_ext_fifo_data = '1' then
 							mod_src_write <= '1';
+						elsif spi_ext_fir_data = '1' then
+							mod_write_FIR <= '1';
 						else
 							mod_write_I_Q <= "1";
 						end if;
@@ -333,17 +346,23 @@ your_instance_name : MainPLL
 									SW2_CTL <= spi_int_out(6 downto 4);
 									MOD_EN <= spi_int_out(7);
 									SW1_CTL <= spi_int_out(2 downto 0);
-									LED <= spi_int_out(12 downto 8);
+									--LED <= spi_int_out(12 downto 8);
 								-- modulation source phase increment
 								when "000000000000100" =>
 									mod_src_pinc <= spi_int_out;
 								-- modulation setting1
 								when "000000000000101" =>
 									mod_setting1 <= spi_int_out;
+								-- modulation setting2
+								when "000000000000110" =>
+									mod_setting2 <= spi_int_out;
 								-- modulation and source types
 								when "000000000000111" =>
 									mod_type <= spi_int_out(7 downto 0);
 									mod_src_type <= spi_int_out(11 downto 8);
+								-- modulation setting3
+								when "000000000001000" =>
+									mod_setting3 <= spi_int_out;
 								when others =>
 							end case;
 						end if;
@@ -365,8 +384,12 @@ your_instance_name : MainPLL
 					spi_int_in <= mod_src_pinc;
 				when "000000000000101" =>
 					spi_int_in <= mod_setting1;
+				when "000000000000110" =>
+					spi_int_in <= mod_setting2;
 				when "000000000000111" =>
 					spi_int_in <= "0000" & mod_src_type & mod_type;
+				when "000000000001000" =>
+					spi_int_in <= mod_setting3;
 				when others => spi_int_in <= (others => '0');
 			end case;
 -----------------------------------------------
