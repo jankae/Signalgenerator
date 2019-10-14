@@ -19,8 +19,9 @@ Menu::~Menu() {
 	delete name;
 }
 
-bool Menu::AddEntry(MenuEntry* e) {
-	if (firstChild) {
+bool Menu::AddEntry(MenuEntry* e, int8_t position) {
+	if (firstChild && position != 0 && position + nentries > 0) {
+		uint8_t cnt = 1;
 		/* find end of entry list */
 		Widget *entry = firstChild;
 		do {
@@ -29,16 +30,24 @@ bool Menu::AddEntry(MenuEntry* e) {
 				CRIT_ERROR("Duplicate entry in menu");
 				return false;
 			}
+			if ((position > 0 && cnt >= position)
+					|| (position < 0 && cnt >= nentries + position)) {
+				// reached requested position, insert here
+				break;
+			}
 			if (entry->next) {
 				entry = entry->next;
+				cnt++;
 			} else {
 				break;
 			}
 		} while (1);
 		/* add widget to the end */
+		e->next = entry->next;
 		entry->next = e;
 	} else {
 		/* this is the first child */
+		e->next = firstChild;
 		firstChild = e;
 	}
 	e->parent = this;
@@ -55,6 +64,44 @@ bool Menu::AddEntry(MenuEntry* e) {
 	entriesPerPage = size.y / EntrySizeY;
 	if (nentries > entriesPerPage) {
 		usePages = true;
+		entriesPerPage--;
+	}
+	return true;
+}
+
+bool Menu::RemoveEntry(MenuEntry *e) {
+	if (!firstChild) {
+		// no entries available, can not remove any
+		return false;
+	}
+	if(e == firstChild) {
+		// Removing the first entry
+		firstChild = e->next;
+		e->parent = nullptr;
+		e->next = nullptr;
+	} else {
+		// find entry before e
+		MenuEntry *before = firstChild;
+		while(before->next != e) {
+			if (!before->next) {
+				// reached end of list before finding e
+				return false;
+			} else {
+				before = before->next;
+			}
+		}
+		before->next = e->next;
+		e->parent = nullptr;
+		e->next = nullptr;
+	}
+	// If we get here, the entry has already been removed.
+	// Adjust number of entries and paging
+	nentries--;
+	entriesPerPage = size.y / EntrySizeY;
+	if (nentries <= entriesPerPage) {
+		usePages = false;
+	} else {
+		// paging is still used, one less entry per page
 		entriesPerPage--;
 	}
 	return true;

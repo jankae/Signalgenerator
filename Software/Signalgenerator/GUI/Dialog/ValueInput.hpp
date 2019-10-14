@@ -101,7 +101,7 @@ public:
 			uint16_t yOffset = fieldOffsetY;
 			while (*unit) {
 				const char *name = (*unit)->name;
-				if (unit == Unit::None) {
+				if (unit == Unit::None || unit == Unit::Fixed3) {
 					name = "Enter";
 				}
 				auto button = new Button(name, Font_Big,
@@ -152,6 +152,8 @@ private:
 	void UnitPressed(Widget *w) {
 		if (unit == Unit::Hex || unit == Unit::None) {
 			*value = strtol(string, nullptr, 0);
+		} else if(unit == Unit::Fixed3) {
+			*value = Unit::ValueFromString(string, unit[0]->factor);
 		} else {
 			Button *b = (Button*) w;
 			// find correct unit

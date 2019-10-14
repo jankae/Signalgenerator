@@ -19,8 +19,11 @@ static const char *modTypeNames[] { "AM", "FM", "FM USB", "FM LSB", "2QAM",
 static int32_t FMDeviation = 75000;
 static int32_t AMDepth = 100000000;
 
-static int32_t QAMbaud = 1000000;
+static uint32_t QAMSymbolrate = 1000000;
+static uint8_t QAMSPS = 4;
+static int32_t QAMRolloff = 350;
 static Constellation QAMconst;
+static bool QAMdiff = false;
 
 // modulation source settings
 static Protocol::SourceType modSourceType = Protocol::SourceType::Disabled;
@@ -40,108 +43,154 @@ static_assert(sizeof(Protocol::FrontToRF) == 32);
 static bool ModEnabled = false;
 
 static Label *lModulation;
-static Label *lFMDeviation;
-static Label *lAMDepth;
-static Label *lQAMbaud;
-static Entry<int32_t> *eFMDeviation;
-static Entry<int32_t> *eAMDepth;
-static Entry<int32_t> *eQAMbaud;
-static Button *bQAMedit;
-
-static Label *lSource;
-static ItemChooser *cSource;
-static Entry<int32_t> *eSrcValue;
-static Entry<int32_t> *eSrcFreq;
+static Label *lModDescr1;
+static Label *lModDescr2;
+static Label *lModSrcDescr;
 
 static Label *lSrcBufSoft;
 static Label *lSrcBufHard;
 static ProgressBar *pSrcBufSoft;
 static ProgressBar *pSrcBufHard;
 
+// Changeable modulation menu entries
+static Menu *mModulation;
+static MenuEntry *mModSrcValue;
+static MenuEntry *mModSrcFreq;
+static MenuEntry *mAMDepth;
+static MenuEntry *mFMDeviation;
+static MenuEntry *mQAMConstellation;
+static MenuEntry *mQAMSymbolrate;
+static MenuEntry *mQAMSPS;
+static MenuEntry *mQAMRolloff;
+static MenuEntry *mQAMDiff;
+
 static void ModulationChanged(void*, Widget*) {
-	if (!ModEnabled) {
+	if (ModEnabled) {
+		lModulation->setText(modTypeNames[(uint8_t) modType]);
+	} else {
 		lModulation->setText("CW");
-		lFMDeviation->SetVisible(false);
-		lAMDepth->SetVisible(false);
-		eFMDeviation->SetVisible(false);
-		eAMDepth->SetVisible(false);
-		lQAMbaud->SetVisible(false);
-		eQAMbaud->SetVisible(false);
-		bQAMedit->SetVisible(false);
-		cSource->SetVisible(false);
-		lSource->SetVisible(false);
-		eSrcValue->SetVisible(false);
-		eSrcFreq->SetVisible(false);
+	}
+
+	// Check if QAM modulation settings are valid
+	if(QAMSPS * QAMSymbolrate > Constellation::MaxFIRRate) {
+		Dialog::MessageBox("WARNING", Font_Big,
+				"Symbolrate not achievable\n"
+				"with selected samples per\n"
+				"symbol. Value has been\n"
+				"changed accordingly.", Dialog::MsgBox::OK,
+				nullptr, false);
+		QAMSymbolrate = Constellation::MaxFIRRate / QAMSPS;
+	}
+
+	lSrcBufSoft->SetVisible(false);
+	pSrcBufSoft->SetVisible(false);
+	lSrcBufHard->SetVisible(false);
+	pSrcBufHard->SetVisible(false);
+
+	// Remove modulation entries from submenu
+	mModulation->RemoveEntry(mModSrcValue);
+	mModulation->RemoveEntry(mModSrcFreq);
+	mModulation->RemoveEntry(mAMDepth);
+	mModulation->RemoveEntry(mFMDeviation);
+	mModulation->RemoveEntry(mQAMConstellation);
+	mModulation->RemoveEntry(mQAMSymbolrate);
+	mModulation->RemoveEntry(mQAMSPS);
+	mModulation->RemoveEntry(mQAMRolloff);
+	mModulation->RemoveEntry(mQAMDiff);
+
+	char descr[50] = "";
+	char value[10];
+	switch (modType) {
+	case Protocol::ModulationType::AM:
+		mModulation->AddEntry(mAMDepth, -1);
+		Unit::StringFromValue(value, 7, AMDepth, Unit::Percent);
+		snprintf(descr, sizeof(descr), "Max. depth %s", value);
+		lModDescr1->setText("AM modulation");
+		lModDescr2->setText(descr);
+		break;
+	case Protocol::ModulationType::FM:
+	case Protocol::ModulationType::FM_LSB:
+	case Protocol::ModulationType::FM_USB:
+		mModulation->AddEntry(mFMDeviation, -1);
+		Unit::StringFromValue(value, 9, FMDeviation, Unit::Frequency);
+		snprintf(descr, sizeof(descr), "Deviation %s", value);
+		if (modType == Protocol::ModulationType::FM_LSB) {
+			lModDescr1->setText("FM modulation (LSB)");
+		} else if (modType == Protocol::ModulationType::FM_USB) {
+			lModDescr1->setText("FM modulation (USB)");
+		} else {
+			lModDescr1->setText("FM modulation");
+		}
+		lModDescr2->setText(descr);
+		break;
+	case Protocol::ModulationType::QAM2:
+	case Protocol::ModulationType::QAM4:
+	case Protocol::ModulationType::QAM8:
+	case Protocol::ModulationType::QAM16:
+	case Protocol::ModulationType::QAM32:
+		QAMconst.SetUsedPoints(strtol(modTypeNames[(int) modType], nullptr, 0));
+		mModulation->AddEntry(mQAMConstellation, -1);
+		mModulation->AddEntry(mQAMSymbolrate, -1);
+		mModulation->AddEntry(mQAMSPS, -1);
+		mModulation->AddEntry(mQAMRolloff, -1);
+		mModulation->AddEntry(mQAMDiff, -1);
+		if (QAMdiff) {
+			snprintf(descr, sizeof(descr), "%s, differential",
+					modTypeNames[(int) modType]);
+		} else {
+			snprintf(descr, sizeof(descr), "%s modulation",
+					modTypeNames[(int) modType]);
+		}
+		lModDescr1->setText(descr);
+		Unit::StringFromValue(descr, 7, QAMSymbolrate, Unit::SampleRate);
+		sprintf(&descr[7], " %02dSPS ", QAMSPS);
+		Unit::StringFromValue(&descr[14], 5, QAMRolloff, Unit::Fixed3);
+		lModDescr2->setText(descr);
+		break;
+	}
+	lModSrcDescr->setColor(COLOR_BLACK);
+	switch (modSourceType) {
+	case Protocol::SourceType::Disabled:
+		if (ModEnabled) {
+			lModSrcDescr->setColor(COLOR_ORANGE);
+		}
+		strncpy(descr, "Source disabled",
+				sizeof(descr));
+		break;
+	case Protocol::SourceType::FixedValue:
+		mModulation->AddEntry(mModSrcValue, 1);
+		snprintf(descr, sizeof(descr), "Fixed value(%lu)",
+				modSourceValue);
+		break;
+	case Protocol::SourceType::RampDown:
+	case Protocol::SourceType::RampUp:
+	case Protocol::SourceType::Sine:
+	case Protocol::SourceType::Square:
+	case Protocol::SourceType::Triangle:
+		mModulation->AddEntry(mModSrcFreq, 1);
+		Unit::StringFromValue(value, 9, modSourceFreq, Unit::Frequency);
+		snprintf(descr, sizeof(descr), "%s@%s",
+				modSrcTypeNames[(int) modSourceType], value);
+		break;
+	case Protocol::SourceType::PRBS:
+	case Protocol::SourceType::Stream:
+		mModulation->AddEntry(mModSrcFreq, 1);
+		Unit::StringFromValue(value, 9, modSourceFreq, Unit::SampleRate);
+		snprintf(descr, sizeof(descr), "%s@%s",
+				modSrcTypeNames[(int) modSourceType], value);
+		break;
+	}
+	lModSrcDescr->setText(descr);
+	if (modSourceType == Protocol::SourceType::Stream) {
+		lSrcBufSoft->SetVisible(true);
+		pSrcBufSoft->SetVisible(true);
+		lSrcBufHard->SetVisible(true);
+		pSrcBufHard->SetVisible(true);
+	} else {
 		lSrcBufSoft->SetVisible(false);
 		pSrcBufSoft->SetVisible(false);
 		lSrcBufHard->SetVisible(false);
 		pSrcBufHard->SetVisible(false);
-	} else {
-		lModulation->setText(modTypeNames[(uint8_t) modType]);
-		cSource->SetVisible(true);
-		lSource->SetVisible(true);
-
-		lAMDepth->SetVisible(false);
-		eAMDepth->SetVisible(false);
-		lFMDeviation->SetVisible(false);
-		eFMDeviation->SetVisible(false);
-		lQAMbaud->SetVisible(false);
-		eQAMbaud->SetVisible(false);
-		bQAMedit->SetVisible(false);
-		switch(modType) {
-		case Protocol::ModulationType::AM:
-			lAMDepth->SetVisible(true);
-			eAMDepth->SetVisible(true);
-			break;
-		case Protocol::ModulationType::FM:
-		case Protocol::ModulationType::FM_LSB:
-		case Protocol::ModulationType::FM_USB:
-			lFMDeviation->SetVisible(true);
-			eFMDeviation->SetVisible(true);
-			break;
-		case Protocol::ModulationType::QAM2:
-		case Protocol::ModulationType::QAM4:
-		case Protocol::ModulationType::QAM8:
-		case Protocol::ModulationType::QAM16:
-		case Protocol::ModulationType::QAM32:
-			lQAMbaud->SetVisible(true);
-			eQAMbaud->SetVisible(true);
-			bQAMedit->SetVisible(true);
-			QAMconst.SetUsedPoints(
-					strtol(modTypeNames[(int) modType], nullptr, 0));
-			break;
-		}
-		switch(modSourceType) {
-		case Protocol::SourceType::Disabled:
-			eSrcValue->SetVisible(false);
-			eSrcFreq->SetVisible(false);
-			break;
-		case Protocol::SourceType::FixedValue:
-			eSrcValue->SetVisible(true);
-			eSrcFreq->SetVisible(false);
-			break;
-		case Protocol::SourceType::RampDown:
-		case Protocol::SourceType::RampUp:
-		case Protocol::SourceType::Sine:
-		case Protocol::SourceType::Square:
-		case Protocol::SourceType::Triangle:
-		case Protocol::SourceType::PRBS:
-		case Protocol::SourceType::Stream:
-			eSrcValue->SetVisible(false);
-			eSrcFreq->SetVisible(true);
-			break;
-		}
-		if (modSourceType == Protocol::SourceType::Stream) {
-			lSrcBufSoft->SetVisible(true);
-			pSrcBufSoft->SetVisible(true);
-			lSrcBufHard->SetVisible(true);
-			pSrcBufHard->SetVisible(true);
-		} else {
-			lSrcBufSoft->SetVisible(false);
-			pSrcBufSoft->SetVisible(false);
-			lSrcBufHard->SetVisible(false);
-			pSrcBufHard->SetVisible(false);
-		}
 	}
 }
 
@@ -150,22 +199,39 @@ void Generator::Init() {
 
 	Container *c = new Container(SIZE(DISPLAY_WIDTH, DISPLAY_HEIGHT));
 
+	auto callback_setTrue = [](void *ptr, Widget*) {
+		bool *flag = (bool*) ptr;
+		*flag = true;
+	};
+
 	Menu *mainmenu = new Menu("", SIZE(70, DISPLAY_HEIGHT));
 	mainmenu->AddEntry(new MenuBool("Output", &RFon, nullptr));
 	mainmenu->AddEntry(new MenuValue<uint32_t>("Frequency", &frequency, Unit::Frequency));
 	mainmenu->AddEntry(new MenuValue<int32_t>("Amplitude", &dbm, Unit::dbm));
 	mainmenu->AddEntry(new MenuBool("Modulation", &ModEnabled, ModulationChanged));
 
-	mainmenu->AddEntry(
-			new MenuChooser("Mod Type", modTypeNames, (uint8_t*)&modType, ModulationChanged));
-
-//	Menu *Source = new Menu("ModSrc", mainmenu->getSize());
-//	Source->AddEntry(new MenuChooser("ModSrc", modSrcTypeNames, (uint8_t*) &modSourceType, nullptr, nullptr));
-//	Source->AddEntry(new MenuValue("Frequency", &modSourceFreq, Unit::Frequency, nullptr, nullptr));
-//	Source->AddEntry(new MenuValue("Value", &modSourceValue, Unit::None, nullptr, nullptr));
-//	Source->AddEntry(new MenuBack());
-//
-//	mainmenu->AddEntry(Source);
+	mModulation = new Menu("Configure\nModulation", mainmenu->getSize());
+	mModulation->AddEntry(
+			new MenuChooser("Source", modSrcTypeNames,
+					(uint8_t*) &modSourceType, ModulationChanged, nullptr));
+	mModulation->AddEntry(
+			new MenuChooser("Type", modTypeNames, (uint8_t*)&modType, ModulationChanged));
+	mModSrcFreq = new MenuValue<int32_t>("Src Freq", &modSourceFreq, Unit::Frequency, ModulationChanged, nullptr);
+	mModSrcValue = new MenuValue<int32_t>("Src Value", &modSourceValue, Unit::None, ModulationChanged, nullptr);
+	mAMDepth = new MenuValue<int32_t>("Depth", &AMDepth, Unit::Percent, ModulationChanged, nullptr);
+	mFMDeviation = new MenuValue<int32_t>("Deviation", &FMDeviation, Unit::Frequency, ModulationChanged, nullptr);
+	bool editConstellation = false;
+	mQAMConstellation = new MenuAction("Edit Con-\nstellation", callback_setTrue,
+			&editConstellation);
+	mQAMSymbolrate = new MenuValue<uint32_t>("Symbolrate", &QAMSymbolrate, Unit::SampleRate, ModulationChanged, nullptr);
+	bool updateFIR = true;
+	mQAMSPS = new MenuValue<uint8_t>("Samples\nper symbol", &QAMSPS, Unit::None,
+			callback_setTrue, &updateFIR);
+	mQAMRolloff = new MenuValue<int32_t>("Excess\nbandwidth", &QAMRolloff, Unit::Fixed3,
+			callback_setTrue, &updateFIR);
+	mQAMDiff = new MenuBool("Diff.\nencoding", &QAMdiff, ModulationChanged);
+	mModulation->AddEntry(new MenuBack());
+	mainmenu->AddEntry(mModulation);
 
 	bool IntRef = true;
 	mainmenu->AddEntry(new MenuBool("IntRef", &IntRef, nullptr));
@@ -178,15 +244,12 @@ void Generator::Init() {
 	}, nullptr));
 
 	bool calibrate_dbm = false;
-	system->AddEntry(new MenuAction("Cal dbm", [](void* ptr, Widget *w) {
-		bool *calibrate = (bool*) ptr;
-		*calibrate = true;
-	}, &calibrate_dbm));
+	system->AddEntry(
+			new MenuAction("Cal dbm", callback_setTrue, &calibrate_dbm));
 	bool calibrate_balance = false;
-	system->AddEntry(new MenuAction("Cal balance", [](void* ptr, Widget *w) {
-		bool *calibrate = (bool*) ptr;
-		*calibrate = true;
-	}, &calibrate_balance));
+	system->AddEntry(
+			new MenuAction("Cal balance", callback_setTrue,
+					&calibrate_balance));
 	system->AddEntry(new MenuAction("Reset Cal", [](void *ptr, Widget *w) {
 		Dialog::MessageBox("Confirm reset", Font_Big,
 				"Really reset\nall calibration\nvalues?",
@@ -218,6 +281,15 @@ void Generator::Init() {
 	lRFon->SetVisible(RFon);
 	c->attach(lRFon, COORDS(30, 44));
 
+	// create and attach modulation/source labels
+	lModDescr1 = new Label(20, Font_Big, Label::Orientation::LEFT, COLOR_BLACK);
+	c->attach(lModDescr1, COORDS(5, 90));
+	lModDescr2 = new Label(20, Font_Big, Label::Orientation::LEFT, COLOR_BLACK);
+	c->attach(lModDescr2, COORDS(5, 110));
+
+	lModSrcDescr = new Label(20, Font_Big, Label::Orientation::LEFT, COLOR_BLACK);
+	c->attach(lModSrcDescr, COORDS(5, 140));
+
 	// create and attach error labels
 	lUnlock = new Label("UNLOCK", Font_Big, COLOR_RED);
 	c->attach(lUnlock, COORDS(5, 220));
@@ -232,39 +304,7 @@ void Generator::Init() {
 	lModulation = new Label(6, Font_Big, Label::Orientation::CENTER, COLOR_DARKGREEN);
 	c->attach(lModulation, COORDS(24, 61));
 
-	lFMDeviation = new Label("Deviation:", Font_Big);
-	c->attach(lFMDeviation, COORDS(10, 90));
-	// maximum deviation depends on internal FPGA bus widths
-	eFMDeviation = new Entry<int32_t>(&FMDeviation, 6248378, 0, Font_Big, 8, Unit::Frequency);
-	c->attach(eFMDeviation, COORDS(150, 90));
-	lAMDepth = new Label("Depth:", Font_Big);
-	c->attach(lAMDepth, COORDS(10, 90));
-	eAMDepth = new Entry<int32_t>(&AMDepth, Unit::maxPercent, 0, Font_Big, 8, Unit::Percent);
-	c->attach(eAMDepth, COORDS(150, 90));
-
-	bool editConstellation = false;
-	bQAMedit = new Button("Constellation", Font_Medium, [](void*ptr, Widget*) {
-		bool *edit = (bool*) ptr;
-		*edit = true;
-	}, &editConstellation, COORDS(0, 22));
-	c->attach(bQAMedit, COORDS(10, 89));
-	lQAMbaud = new Label("Baud:", Font_Big);
-	c->attach(lQAMbaud, COORDS(85, 91));
-	eQAMbaud = new Entry<int32_t>(&QAMbaud, 2000000, 0, Font_Big, 8, Unit::SampleRate);
-	c->attach(eQAMbaud, COORDS(150, 90));
-
 	QAMconst = Constellation();
-
-	// create and attach modulation source widgets
-	lSource = new Label("Modulation source:", Font_Big);
-	c->attach(lSource, COORDS(10, 115));
-	cSource = new ItemChooser(modSrcTypeNames, (uint8_t*) &modSourceType, Font_Big, 1, 80);
-	cSource->setCallback(ModulationChanged, nullptr);
-	c->attach(cSource, COORDS(10, 130));
-	eSrcValue = new Entry<int32_t>(&modSourceValue, 4095, 0, Font_Big, 8, Unit::None);
-	c->attach(eSrcValue, COORDS(150, 130));
-	eSrcFreq = new Entry<int32_t>(&modSourceFreq, 48000, 0, Font_Big, 8, Unit::Frequency);
-	c->attach(eSrcFreq, COORDS(150, 130));
 
 	// Buffer indicators for streaming source
 	lSrcBufSoft = new Label("Software buffer:", Font_Medium);
@@ -287,9 +327,6 @@ void Generator::Init() {
 
 	vTaskDelay(1000);
 
-//	auto cst = Constellation(Constellation::Type::BPSK);
-//	cst.Edit();
-
 	while(1) {
 		uint32_t start = HAL_GetTick();
 		constexpr uint32_t delay = 100;
@@ -306,9 +343,14 @@ void Generator::Init() {
 		if (editConstellation) {
 			QAMconst.Edit();
 			QAMconst.LoadToFPGA();
-			// TODO move FIR tap generation to proper place
-			Constellation::SetFIRinFPGA(4, 0.5);
 			editConstellation = false;
+			continue;
+		}
+		if (updateFIR) {
+			ModulationChanged(nullptr, nullptr);
+			float beta = (float) QAMRolloff / 1000;
+			Constellation::SetFIRinFPGA(QAMSPS, beta);
+			updateFIR = false;
 			continue;
 		}
 		if (calibrate_dbm) {
@@ -353,9 +395,9 @@ void Generator::Init() {
 			case Protocol::ModulationType::QAM8:
 			case Protocol::ModulationType::QAM16:
 			case Protocol::ModulationType::QAM32:
-				// TODO replace dummy values
-				mod.QAM.SamplesPerSymbol = 4;
-				mod.QAM.SymbolsPerSecond = 1000;
+				mod.QAM.SamplesPerSymbol = QAMSPS;
+				mod.QAM.SymbolsPerSecond = QAMSymbolrate;
+				mod.QAM.differential = QAMdiff;
 				break;
 			}
 			mod.source = modSourceType;

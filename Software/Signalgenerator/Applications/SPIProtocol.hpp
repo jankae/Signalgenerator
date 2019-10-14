@@ -73,6 +73,7 @@ using Modulation = struct modulation {
 		struct {
 			uint8_t SamplesPerSymbol;
 			uint32_t SymbolsPerSecond;
+			bool differential;
 		} QAM;
 	};
 	SourceType source;

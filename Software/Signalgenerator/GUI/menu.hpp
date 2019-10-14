@@ -16,7 +16,19 @@ class Menu : public MenuEntry {
 public:
 	Menu(const char *name, coords_t size);
 	~Menu();
-	bool AddEntry(MenuEntry *e);
+	/*
+	 * Adds a new entry to the menu.
+	 * Optionally specify the position where the entry will be added.
+	 * 	Position positive: 	Add entry at this position if menu has
+	 * 						sufficient number of entries. Otherwise
+	 * 						the entry will be added at the end
+	 * 	Position negative: 	Position specified from the end of the
+	 * 						menu. If the menu has less entries than
+	 * 						abs(position), the new entry will be added
+	 * 						as the first entry
+	 */
+	bool AddEntry(MenuEntry *e, int8_t position = INT8_MAX);
+	bool RemoveEntry(MenuEntry *e);
 private:
 	void draw(coords_t offset) override;
 	void input(GUIEvent_t *ev) override;

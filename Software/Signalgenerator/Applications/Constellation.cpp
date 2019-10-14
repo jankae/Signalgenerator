@@ -143,6 +143,7 @@ void Constellation::Edit() {
 		xSemaphoreGive(s);
 	}, semphr, COORDS(60, 60)), COORDS(250, 150));
 	w->setMainWidget(c);
+	table->select();
 	xSemaphoreTake(semphr, portMAX_DELAY);
 	vSemaphoreDelete(semphr);
 	delete w;
@@ -280,7 +281,7 @@ void Constellation::LoadToFPGA() {
 
 void Constellation::SetFIRinFPGA(uint8_t sps, float beta) {
 	int16_t FIRdata[FIRTaps];
-	static constexpr int16_t MaxAmplitude = 1600; // TODO adjust to scale (keep in mind possible overflow in FPGA FIR addition!)
+	static constexpr int16_t MaxAmplitude = 1400; // TODO adjust to scale (keep in mind possible overflow in FPGA FIR addition!)
 	static constexpr float PI = 3.1415926535f;
 	for (uint8_t i = 0; i < FIRTaps; i++) {
 		int8_t t = i - FIRTaps / 2;

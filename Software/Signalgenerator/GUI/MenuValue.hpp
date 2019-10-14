@@ -66,7 +66,7 @@ private:
 
 	static constexpr color_t Background = COLOR_BG_DEFAULT;
 	static constexpr color_t Foreground = COLOR_FG_DEFAULT;
-	static constexpr uint8_t MaxNameLength = 10;
+	static constexpr uint8_t MaxNameLength = 25;
 	static constexpr const font_t *fontValue = &Font_Medium;
 
 	Callback cb;

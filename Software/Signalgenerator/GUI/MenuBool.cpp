@@ -2,31 +2,31 @@
 
 #include "buttons.h"
 
-MenuBool::MenuBool(const char *name, bool *value, void (*cb)(Widget&)) {
+MenuBool::MenuBool(const char *name, bool *value, void (*cb)(void*, Widget*),
+		void *ptr) {
 	this->value = value;
 	strncpy(this->name, name, MaxNameLength);
 	this->name[MaxNameLength] = 0;
 	this->callback = cb;
+	this->cb_ptr = ptr;
 	selectable = false;
 }
 
 void MenuBool::draw(coords_t offset) {
-	uint16_t shiftX = (size.x - strlen(name) * fontName->width) / 2;
 	display_SetFont(*fontName);
 	display_SetForeground(Foreground);
 	display_SetBackground(Background);
-	display_String(offset.x + shiftX, offset.y + 1, name);
+	display_AutoCenterString(name, COORDS(offset.x, offset.y),
+			COORDS(offset.x + size.x, offset.y + size.y / 2));
 	display_SetFont(*fontValue);
 	if (*value) {
 		display_SetForeground(ColorOn);
-		shiftX = (size.x - 2 * fontValue->width) / 2;
-		display_String(offset.x + shiftX, offset.y + size.y - fontValue->height - 3,
-				"ON");
+		display_AutoCenterString("ON", COORDS(offset.x, offset.y + size.y / 2),
+				COORDS(offset.x + size.x, offset.y + size.y));
 	} else {
 		display_SetForeground(ColorOff);
-		shiftX = (size.x - 3 * fontValue->width) / 2;
-		display_String(offset.x + shiftX, offset.y + size.y - fontValue->height - 3,
-				"OFF");
+		display_AutoCenterString("OFF", COORDS(offset.x, offset.y + size.y / 2),
+				COORDS(offset.x + size.x, offset.y + size.y));
 	}
 }
 void MenuBool::input(GUIEvent_t *ev) {
@@ -41,7 +41,7 @@ void MenuBool::input(GUIEvent_t *ev) {
 		*value = !*value;
 		requestRedrawFull();
 		if (callback)
-			callback(*this);
+			callback(cb_ptr, this);
 		break;
 	}
 	ev->type = EVENT_NONE;

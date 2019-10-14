@@ -464,17 +464,49 @@ void display_SetDefaultArea() {
 
 void display_AutoCenterString(const char* s, coords_t upperLeft,
 		coords_t lowerRight) {
-	uint16_t lenS = strlen(s);
+	uint8_t lines = 1;
+	uint16_t maxLineLength = 0;
+	const char *start = s;
+	const char *linebreak;
+	while(linebreak = strchr(start, '\n')) {
+		uint16_t segmentLength = linebreak - start;
+		if (segmentLength > maxLineLength) {
+			maxLineLength = segmentLength;
+		}
+		start = linebreak + 1;
+		lines++;
+	}
+	// check last string segment
+	if(strlen(start) > maxLineLength) {
+		maxLineLength = strlen(start);
+	}
 	uint16_t lenX = lowerRight.x - upperLeft.x + 1;
 	uint16_t lenY = lowerRight.y - upperLeft.y + 1;
 	font_t font = Font_Big;
-	if (lenX < lenS * Font_Medium.width || lenY < Font_Medium.height) {
+	if (lenX < maxLineLength * Font_Medium.width
+			|| lenY < Font_Medium.height * lines) {
 		font = Font_Small;
-	} else if (lenX < lenS * Font_Big.width || lenY < Font_Big.height) {
+	} else if (lenX < maxLineLength * Font_Big.width
+			|| lenY < Font_Big.height * lines) {
 		font = Font_Medium;
 	}
-	uint16_t shiftX = (lenX - lenS * font.width) / 2;
-	uint16_t shiftY = (lenY - font.height) / 2;
 	display_SetFont(font);
-	display_String(upperLeft.x + shiftX, upperLeft.y + shiftY, s);
+	uint16_t shiftY = (lenY - font.height * lines) / 2;
+	start = s;
+	do {
+		linebreak = strchr(start, '\n');
+		uint8_t len;
+		char strbuf[maxLineLength + 1];
+		if (linebreak) {
+			len = linebreak - start;
+		} else {
+			len = strlen(start);
+		}
+		strncpy(strbuf, start, len);
+		strbuf[len] = 0;
+		uint16_t shiftX = (lenX - len * font.width) / 2;
+		display_String(upperLeft.x + shiftX, upperLeft.y + shiftY, strbuf);
+		start = linebreak + 1;
+		shiftY += font.height;
+	} while (linebreak);
 }

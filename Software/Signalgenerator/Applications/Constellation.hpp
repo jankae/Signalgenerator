@@ -21,6 +21,8 @@ public:
 	}
 	void LoadToFPGA();
 	static void SetFIRinFPGA(uint8_t sps, float beta);
+
+	static constexpr uint32_t MaxFIRRate = 12500000;
 private:
 	static constexpr uint8_t FIRTaps = 32; // must be an even number
 	void View();

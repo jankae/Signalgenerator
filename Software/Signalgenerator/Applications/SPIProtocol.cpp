@@ -42,8 +42,11 @@ void Protocol::SetupModulation(FrontToRF &data, Modulation mod) {
 	case ModulationType::QAM8:
 	case ModulationType::QAM16:
 	case ModulationType::QAM32: {
-		type = 0x0C;
-		// TODO 0x0D if modulation is differential
+		if(mod.QAM.differential) {
+			type = 0x0D;
+		} else {
+			type = 0x0C;
+		}
 		data.modulation_registers[1] |= (uint16_t) mod.QAM.SamplesPerSymbol << 8;
 		// calculate PINC
 		uint64_t SamplesPerSecond = mod.QAM.SamplesPerSymbol

@@ -12,7 +12,8 @@
 
 class MenuBool : public MenuEntry {
 public:
-	MenuBool(const char *name, bool *value, void (*cb)(Widget&));
+	MenuBool(const char *name, bool *value, void (*cb)(void*, Widget*) = nullptr,
+			void *ptr = nullptr);
 
 private:
 	void draw(coords_t offset) override;
@@ -24,11 +25,12 @@ private:
 	static constexpr color_t Foreground = COLOR_FG_DEFAULT;
 	static constexpr color_t ColorOn = COLOR(0, 192, 0);
 	static constexpr color_t ColorOff = COLOR(238, 0, 0);
-	static constexpr uint8_t MaxNameLength = 10;
+	static constexpr uint8_t MaxNameLength = 25;
 	static constexpr const font_t *fontName = &Font_Medium;
 	static constexpr const font_t *fontValue = &Font_Big;
 
-    void (*callback)(Widget& source);
+    void (*callback)(void *ptr, Widget* source);
+    void *cb_ptr;
     bool *value;
     char name[MaxNameLength + 1];
 };
