@@ -2,8 +2,8 @@
 #include <cstring>
 #include "common.hpp"
 #include "Unit.hpp"
+#include "HardwareLimits.hpp"
 
-static constexpr uint32_t FPGA_CLK = 100000000;
 
 void Protocol::SetupModulation(FrontToRF &data, Modulation mod) {
 	// clear any possible previous settings
@@ -18,7 +18,8 @@ void Protocol::SetupModulation(FrontToRF &data, Modulation mod) {
 	default:
 		// all other cases use a DDS to generate the source signal
 		data.modulation_registers[0] = ((uint64_t) mod.Periodic.frequency)
-								* (1ULL << 27) / FPGA_CLK;
+				* (1ULL << HardwareLimits::BitsModSrcPinc)
+				/ HardwareLimits::FPGA_CLK;
 	}
 
 	// Setup the modulation scheme
@@ -51,7 +52,9 @@ void Protocol::SetupModulation(FrontToRF &data, Modulation mod) {
 		// calculate PINC
 		uint64_t SamplesPerSecond = mod.QAM.SamplesPerSymbol
 				* mod.QAM.SymbolsPerSecond;
-		uint32_t pinc = SamplesPerSecond * (1ULL << 32) / FPGA_CLK;
+		uint32_t pinc = SamplesPerSecond
+				* (1ULL << HardwareLimits::BitsQAMSampleratePinc)
+				/ HardwareLimits::FPGA_CLK;
 		data.modulation_registers[2] = pinc & 0xFFFF;
 		data.modulation_registers[4] = (pinc >> 16) & 0xFFFF;
 	}
@@ -68,7 +71,9 @@ void Protocol::SetupModulation(FrontToRF &data, Modulation mod) {
 	case ModulationType::FM_USB:
 	case ModulationType::FM_LSB:
 		// 0: 0 deviation, 65535: 6248378Hz deviation
-		data.modulation_registers[1] = common_Map(mod.FM.deviation, 0, 6248378, 0, UINT16_MAX);
+		data.modulation_registers[1] = common_Map(mod.FM.deviation, 0,
+				HardwareLimits::MaxFMDeviation, 0,
+				HardwareLimits::MaxFMDeviationSetting);
 		break;
 	// in QAM modulation, settings1 determines bitmask of bits per symbol
 	case ModulationType::QAM2:

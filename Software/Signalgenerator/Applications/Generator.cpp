@@ -6,6 +6,7 @@
 #include "Stream.hpp"
 #include "Persistence.hpp"
 #include "Constellation.hpp"
+#include "HardwareLimits.hpp"
 
 // main carrier settings
 static bool RFon = false;
@@ -67,19 +68,25 @@ static MenuEntry *mQAMDiff;
 static void ModulationChanged(void*, Widget*) {
 	if (ModEnabled) {
 		lModulation->setText(modTypeNames[(uint8_t) modType]);
+		lModDescr1->setColor(COLOR_BLACK);
+		lModDescr2->setColor(COLOR_BLACK);
+		lModSrcDescr->setColor(COLOR_BLACK);
 	} else {
 		lModulation->setText("CW");
+		lModDescr1->setColor(COLOR_LIGHTGRAY);
+		lModDescr2->setColor(COLOR_LIGHTGRAY);
+		lModSrcDescr->setColor(COLOR_LIGHTGRAY);
 	}
 
 	// Check if QAM modulation settings are valid
-	if(QAMSPS * QAMSymbolrate > Constellation::MaxFIRRate) {
+	if(QAMSPS * QAMSymbolrate > HardwareLimits::MaxFIRRate) {
 		Dialog::MessageBox("WARNING", Font_Big,
 				"Symbolrate not achievable\n"
 				"with selected samples per\n"
 				"symbol. Value has been\n"
 				"changed accordingly.", Dialog::MsgBox::OK,
 				nullptr, false);
-		QAMSymbolrate = Constellation::MaxFIRRate / QAMSPS;
+		QAMSymbolrate = HardwareLimits::MaxFIRRate / QAMSPS;
 	}
 
 	lSrcBufSoft->SetVisible(false);
@@ -148,11 +155,10 @@ static void ModulationChanged(void*, Widget*) {
 		lModDescr2->setText(descr);
 		break;
 	}
-	lModSrcDescr->setColor(COLOR_BLACK);
 	switch (modSourceType) {
 	case Protocol::SourceType::Disabled:
 		if (ModEnabled) {
-			lModSrcDescr->setColor(COLOR_ORANGE);
+			lModSrcDescr->setColor(COLOR_RED);
 		}
 		strncpy(descr, "Source disabled",
 				sizeof(descr));
@@ -206,8 +212,14 @@ void Generator::Init() {
 
 	Menu *mainmenu = new Menu("", SIZE(70, DISPLAY_HEIGHT));
 	mainmenu->AddEntry(new MenuBool("Output", &RFon, nullptr));
-	mainmenu->AddEntry(new MenuValue<uint32_t>("Frequency", &frequency, Unit::Frequency));
-	mainmenu->AddEntry(new MenuValue<int32_t>("Amplitude", &dbm, Unit::dbm));
+	mainmenu->AddEntry(
+			new MenuValue<uint32_t>("Frequency", &frequency, Unit::Frequency,
+					nullptr, nullptr, HardwareLimits::MinFrequency,
+					HardwareLimits::MaxFrequency));
+	mainmenu->AddEntry(
+			new MenuValue<int32_t>("Amplitude", &dbm, Unit::dbm, nullptr,
+					nullptr, HardwareLimits::MinOutputLevel,
+					HardwareLimits::MaxOutputLevel));
 	mainmenu->AddEntry(new MenuBool("Modulation", &ModEnabled, ModulationChanged));
 
 	mModulation = new Menu("Configure\nModulation", mainmenu->getSize());
@@ -216,19 +228,28 @@ void Generator::Init() {
 					(uint8_t*) &modSourceType, ModulationChanged, nullptr));
 	mModulation->AddEntry(
 			new MenuChooser("Type", modTypeNames, (uint8_t*)&modType, ModulationChanged));
-	mModSrcFreq = new MenuValue<int32_t>("Src Freq", &modSourceFreq, Unit::Frequency, ModulationChanged, nullptr);
-	mModSrcValue = new MenuValue<int32_t>("Src Value", &modSourceValue, Unit::None, ModulationChanged, nullptr);
-	mAMDepth = new MenuValue<int32_t>("Depth", &AMDepth, Unit::Percent, ModulationChanged, nullptr);
-	mFMDeviation = new MenuValue<int32_t>("Deviation", &FMDeviation, Unit::Frequency, ModulationChanged, nullptr);
+	mModSrcFreq = new MenuValue<int32_t>("Src Freq", &modSourceFreq,
+			Unit::Frequency, ModulationChanged, nullptr, 0,
+			HardwareLimits::MaxModSrcFreq);
+	mModSrcValue = new MenuValue<int32_t>("Src Value", &modSourceValue,
+			Unit::None, ModulationChanged, nullptr, 0,
+			HardwareLimits::MaxSrcValue);
+	mAMDepth = new MenuValue<int32_t>("Depth", &AMDepth, Unit::Percent,
+			ModulationChanged, nullptr, 0, Unit::maxPercent);
+	mFMDeviation = new MenuValue<int32_t>("Deviation", &FMDeviation,
+			Unit::Frequency, ModulationChanged, nullptr, 0,
+			HardwareLimits::MaxFMDeviation);
 	bool editConstellation = false;
 	mQAMConstellation = new MenuAction("Edit Con-\nstellation", callback_setTrue,
 			&editConstellation);
-	mQAMSymbolrate = new MenuValue<uint32_t>("Symbolrate", &QAMSymbolrate, Unit::SampleRate, ModulationChanged, nullptr);
+	mQAMSymbolrate = new MenuValue<uint32_t>("Symbolrate", &QAMSymbolrate,
+			Unit::SampleRate, ModulationChanged, nullptr, 0,
+			HardwareLimits::MaxFIRRate);
 	bool updateFIR = true;
 	mQAMSPS = new MenuValue<uint8_t>("Samples\nper symbol", &QAMSPS, Unit::None,
-			callback_setTrue, &updateFIR);
+			callback_setTrue, &updateFIR, 1, HardwareLimits::FIRTaps / 2);
 	mQAMRolloff = new MenuValue<int32_t>("Excess\nbandwidth", &QAMRolloff, Unit::Fixed3,
-			callback_setTrue, &updateFIR);
+			callback_setTrue, &updateFIR, 0, 1000);
 	mQAMDiff = new MenuBool("Diff.\nencoding", &QAMdiff, ModulationChanged);
 	mModulation->AddEntry(new MenuBack());
 	mainmenu->AddEntry(mModulation);
@@ -269,11 +290,14 @@ void Generator::Init() {
 	c->attach(mainmenu, COORDS(DISPLAY_WIDTH - mainmenu->getSize().x, 0));
 
 	// create and attach frequency and amplitude display
-	auto sFreq = new SevenSegment<uint32_t>(&frequency, 12, 3, 11, 6, COLOR_BLUE, true, 5000000, 2200000000);
+	auto sFreq = new SevenSegment<uint32_t>(&frequency, 12, 3, 11, 6,
+			COLOR_BLUE, true, HardwareLimits::MinFrequency,
+			HardwareLimits::MaxFrequency);
 	c->attach(sFreq, COORDS(0,5));
 	c->attach(new Label("MHz", Font_Big, COLOR_BLUE), COORDS(200, 20));
 
-	auto sdbm = new SevenSegment<int32_t>(&dbm, 12, 3, 5, 2, COLOR_BLUE, true, -6000, 2000);
+	auto sdbm = new SevenSegment<int32_t>(&dbm, 12, 3, 5, 2, COLOR_BLUE, true,
+			HardwareLimits::MinOutputLevel, HardwareLimits::MaxOutputLevel);
 	c->attach(sdbm, COORDS(108,45));
 	c->attach(new Label("dbm", Font_Big, COLOR_BLUE), COORDS(200, 60));
 

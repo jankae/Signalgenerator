@@ -10,12 +10,16 @@ template<typename T>
 class MenuValue: public MenuEntry {
 public:
 	MenuValue(const char *name, T *value, const Unit::unit *unit[],
-			Callback cb = nullptr, void *ptr = nullptr) {
+			Callback cb = nullptr, void *ptr = nullptr, T min =
+					std::numeric_limits<T>::min(), T max =
+					std::numeric_limits<T>::max()) {
 		/* set member variables */
 		this->cb = cb;
 		this->ptr = ptr;
 		this->unit = unit;
 		this->value = value;
+		this->min = min;
+		this->max = max;
 		strncpy(this->name, name, MaxNameLength);
 		this->name[MaxNameLength] = 0;
 		selectable = false;
@@ -56,6 +60,11 @@ private:
 	}
 	void ValueCallback(bool updated) {
 		if (updated) {
+			if (*value > max) {
+				*value = max;
+			} else if (*value < min) {
+				*value = min;
+			}
 			if (cb) {
 				cb(ptr, this);
 			}
@@ -72,6 +81,7 @@ private:
 	Callback cb;
 	void *ptr;
 	T *value;
+	T min, max;
     char name[MaxNameLength + 1];
     const Unit::unit **unit;
 };

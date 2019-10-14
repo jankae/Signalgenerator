@@ -295,7 +295,7 @@ void Constellation::SetFIRinFPGA(uint8_t sps, float beta) {
 					* std::cos(beta * PI * t / sps)
 					/ (1 - (2 * beta * t / sps) * (2 * beta * t / sps));
 		}
-		printf("FIR tap %d: %f\n", i, h_t);
+//		printf("FIR tap %d: %f\n", i, h_t);
 		FIRdata[i] = htons(h_t * MaxAmplitude);
 	}
 	// start loading data to address 0
