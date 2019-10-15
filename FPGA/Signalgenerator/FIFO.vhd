@@ -60,21 +60,29 @@ begin
 		if (CLEAR = '1') then
 			wrcnt <= (others => '0');
 			rdcnt <= (others => '0');
+			full <= '0';
+			empty <= '1';
+			LEVEL <= std_logic_vector(to_signed(-1,LEVEL'length));
 		else
 			if (Wr='1' and full='0') then
 				memory(to_integer(wrcnt)) <= unsigned(Din);
 				wrcnt <= wrcnt+1;
+				if (rdcnt = wrcnt) then
+					full <= '1';
+				end if;
+				empty <= '0';
 			end if;
 			if (Rd='1' and empty='0') then
 				Dout <= std_logic_vector(memory(to_integer(rdcnt)));
 				rdcnt <= rdcnt+1;
+				full <= '0';
+				if (rdcnt + 1 = wrcnt) then
+					empty <= '1';
+				end if;
 			end if;
+			LEVEL <= std_logic_vector(rdcnt - wrcnt - 1);
 		end if;
 	end if;
 	end process;
-	
-	LEVEL <= std_logic_vector(rdcnt - wrcnt - 1);
-	full  <= '1' when rdcnt = wrcnt+1 else '0';
-	empty <= '1' when rdcnt = wrcnt   else '0';
 end Behavioral;
 

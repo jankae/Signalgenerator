@@ -62,7 +62,8 @@ entity Modulation is
 			  I_Q_Data : in STD_LOGIC_VECTOR (11 downto 0);
 			  I_Q_Write : in STD_LOGIC_VECTOR (0 downto 0);
 			  
-			  FIR_COEFF_WRITE : std_logic
+			  FIR_COEFF_WRITE : std_logic;
+			  FIR_COEFF_RELOAD : std_logic
 			  );
 end Modulation;
 
@@ -100,20 +101,37 @@ architecture Behavioral of Modulation is
 		doutb : OUT STD_LOGIC_VECTOR(23 DOWNTO 0)
 	);
 	END COMPONENT;
-	COMPONENT FIR
-	generic (
-		Taps : integer;
-		Multiplexed : integer
+--	COMPONENT FIR
+--	generic (
+--		Taps : integer;
+--		Multiplexed : integer
+--	);
+--	PORT(
+--		CLK : IN  std_logic;
+--		RESET : IN  std_logic;
+--		NEW_DATA : IN  std_logic;
+--		DATA : IN  signed(11 downto 0);
+--		OUTPUT : OUT  signed(11 downto 0);
+--		COEFF_ARRAY : IN  firarray(0 to Taps-1)
+--	);
+--   END COMPONENT;
+	component fir_ip
+	port (
+		sclr: in std_logic;
+		clk: in std_logic;
+		ce: in std_logic;
+		nd: in std_logic;
+		coef_ld: in std_logic;
+		coef_we: in std_logic;
+		coef_din: in std_logic_vector(11 downto 0);
+		rfd: out std_logic;
+		rdy: out std_logic;
+		din_1: in std_logic_vector(11 downto 0);
+		din_2: in std_logic_vector(11 downto 0);
+		dout_1: out std_logic_vector(30 downto 0);
+		dout_2: out std_logic_vector(30 downto 0)
 	);
-	PORT(
-		CLK : IN  std_logic;
-		RESET : IN  std_logic;
-		NEW_DATA : IN  std_logic;
-		DATA : IN  signed(11 downto 0);
-		OUTPUT : OUT  signed(11 downto 0);
-		COEFF_ARRAY : IN  firarray(0 to Taps-1)
-	);
-   END COMPONENT;
+	end component;
 	signal mult_result : std_logic_vector(27 downto 0);
 	signal fm_sine : std_logic_vector(11 downto 0);
 	signal fm_cosine : std_logic_vector(11 downto 0);
@@ -130,14 +148,14 @@ architecture Behavioral of Modulation is
 	
 	signal QAM_SPS : unsigned(7 downto 0);
 	signal QAM_DDS_last_sign : std_logic;
-	signal QAM_FIR_I_input : signed(11 downto 0);
-	signal QAM_FIR_Q_input : signed(11 downto 0);
+	signal QAM_FIR_I_input : std_logic_vector(11 downto 0);
+	signal QAM_FIR_Q_input : std_logic_vector(11 downto 0);
 	signal QAM_FIR_NEW_SAMPLE : std_logic;
-	signal QAM_FIR_I_output : signed(11 downto 0);
-	signal QAM_FIR_Q_output : signed(11 downto 0);
-	signal QAM_FIR_RESET : std_logic;
+	signal QAM_FIR_I_output : std_logic_vector(30 downto 0);
+	signal QAM_FIR_Q_output : std_logic_vector(30 downto 0);
+--	signal QAM_FIR_ENABLED : std_logic;
 	
-	signal COEFF_ARRAY : firarray(0 to FIR_TAPS-1);
+--	signal COEFF_ARRAY : firarray(0 to FIR_TAPS-1);
 begin
 
 	FM_DDS : DDS
@@ -171,32 +189,48 @@ begin
 		doutb => I_Q_lookup
 	);
 	
-	I_FIR: FIR
-	generic map(
-		Taps => FIR_TAPS,
-		Multiplexed => FIR_MULTIPLEXED
-	)	
-	PORT MAP (
-		CLK => CLK,
-		RESET => QAM_FIR_RESET,
-		NEW_DATA => QAM_FIR_NEW_SAMPLE,
-		DATA => QAM_FIR_I_input,
-		OUTPUT => QAM_FIR_I_output,
-		COEFF_ARRAY => COEFF_ARRAY
-	);
-	
-	Q_FIR: FIR
-	generic map(
-		Taps => FIR_TAPS,
-		Multiplexed => FIR_MULTIPLEXED
-	)	
-	PORT MAP (
-		CLK => CLK,
-		RESET => QAM_FIR_RESET,
-		NEW_DATA => QAM_FIR_NEW_SAMPLE,
-		DATA => QAM_FIR_Q_input,
-		OUTPUT => QAM_FIR_Q_output,
-		COEFF_ARRAY => COEFF_ARRAY
+--	I_FIR: FIR
+--	generic map(
+--		Taps => FIR_TAPS,
+--		Multiplexed => FIR_MULTIPLEXED
+--	)	
+--	PORT MAP (
+--		CLK => CLK,
+--		RESET => QAM_FIR_RESET,
+--		NEW_DATA => QAM_FIR_NEW_SAMPLE,
+--		DATA => QAM_FIR_I_input,
+--		OUTPUT => QAM_FIR_I_output,
+--		COEFF_ARRAY => COEFF_ARRAY
+--	);
+--	
+--	Q_FIR: FIR
+--	generic map(
+--		Taps => FIR_TAPS,
+--		Multiplexed => FIR_MULTIPLEXED
+--	)	
+--	PORT MAP (
+--		CLK => CLK,
+--		RESET => QAM_FIR_RESET,
+--		NEW_DATA => QAM_FIR_NEW_SAMPLE,
+--		DATA => QAM_FIR_Q_input,
+--		OUTPUT => QAM_FIR_Q_output,
+--		COEFF_ARRAY => COEFF_ARRAY
+--	);
+	FIR : fir_ip
+	port map (
+		sclr => '0',
+		clk => clk,
+		ce => '1',
+		nd => QAM_FIR_NEW_SAMPLE,
+		coef_ld => FIR_COEFF_RELOAD,
+		coef_we => FIR_COEFF_WRITE,
+		coef_din => I_Q_Data,
+		rfd => open,
+		rdy => open,
+		din_1 => QAM_FIR_I_input,
+		din_2 => QAM_FIR_Q_input,
+		dout_1 => QAM_FIR_I_output,
+		dout_2 => QAM_FIR_Q_output
 	);
 	
 	fm_dds_reset <= not fm_dds_enabled;
@@ -215,13 +249,12 @@ begin
 			QAM_SPS <= (others => '0');
 			QAM_DDS_last_sign <= '0';
 			QAM_FIR_NEW_SAMPLE <= '0';
-			QAM_FIR_RESET <= '1';
 		elsif rising_edge(CLK) then
-			if(FIR_COEFF_WRITE = '1') then
-				-- received a new FIR coefficient
-				-- Address will be in I_Q_Address and data in I_Q_data
-				COEFF_ARRAY(to_integer(unsigned(I_Q_Address))) <= signed(I_Q_data);
-			end if;
+--			if(FIR_COEFF_WRITE = '1') then
+--				-- received a new FIR coefficient
+--				-- Address will be in I_Q_Address and data in I_Q_data
+--				COEFF_ARRAY(to_integer(unsigned(I_Q_Address))) <= signed(I_Q_data);
+--			end if;
 			case MODTYPE is
 				-- modulation is disabled
 				when "00000000" =>
@@ -234,7 +267,6 @@ begin
 					QAM_SPS <= (others => '0');
 					QAM_DDS_last_sign <= '0';
 					QAM_FIR_NEW_SAMPLE <= '0';
-					QAM_FIR_RESET <= '1';
 					QAM_SPS <= (others => '0');
 				-- FM modulation
 				when "00000100" =>
@@ -268,14 +300,13 @@ begin
 				when "00001100" | "00001101" =>
 					mult_enabled <= '0';
 					fm_dds_enabled <= '1';
-					QAM_FIR_RESET <= '0';
 					fm_pinc <= SETTING3 & SETTING2;
 					if fm_sine(11)='1' and QAM_DDS_last_sign='0' then
 						-- it is time for the next sample
 						if(QAM_SPS = 0) then
 							-- insert an actual new sample
-							QAM_FIR_I_input <= signed(I_Q_lookup(11 downto 0));
-							QAM_FIR_Q_input <= signed(I_Q_lookup(23 downto 12));
+							QAM_FIR_I_input <= I_Q_lookup(11 downto 0);
+							QAM_FIR_Q_input <= I_Q_lookup(23 downto 12);
 							-- update index of next sample
 							-- set correct index in I/Q lookup RAM
 							if MODTYPE = "00001100" then
@@ -299,8 +330,8 @@ begin
 					end if;
 					QAM_DDS_last_sign <= fm_sine(11);
 
-					DAC_I <= not std_logic(QAM_FIR_I_output(11)) & std_logic_vector(QAM_FIR_I_output(10 downto 0));
-					DAC_Q <= not std_logic(QAM_FIR_Q_output(11)) & std_logic_vector(QAM_FIR_Q_output(10 downto 0));
+					DAC_I <= not QAM_FIR_I_output(23) & QAM_FIR_I_output(22 downto 12);
+					DAC_Q <= not QAM_FIR_Q_output(23) & QAM_FIR_Q_output(22 downto 12);
 				when others =>
 					
 			end case;

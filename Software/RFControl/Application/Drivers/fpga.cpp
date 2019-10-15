@@ -29,7 +29,7 @@ void FPGA::UpdateGPIO() {
 	WriteReg(Reg::GPIO, gpio);
 }
 
-void FPGA::SetDAC(uint16_t i, uint16_t q) {
-	WriteReg(Reg::DAC_I, i);
-	WriteReg(Reg::DAC_Q, q);
-}
+//void FPGA::SetDAC(uint16_t i, uint16_t q) {
+//	WriteReg(Reg::DAC_I, i);
+//	WriteReg(Reg::DAC_Q, q);
+//}

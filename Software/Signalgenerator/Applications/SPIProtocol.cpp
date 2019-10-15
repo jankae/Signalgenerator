@@ -13,13 +13,16 @@ void Protocol::SetupModulation(FrontToRF &data, Modulation mod) {
 	data.modulation_registers[3] |= (((uint8_t) mod.source) << 8);
 	switch(mod.source) {
 	case SourceType::FixedValue:
-		data.modulation_registers[0] = mod.Fixed.value;
+		data.modulation_registers[0] |= mod.Fixed.value;
 		break;
 	default:
 		// all other cases use a DDS to generate the source signal
-		data.modulation_registers[0] = ((uint64_t) mod.Periodic.frequency)
+		uint32_t pinc = ((uint64_t) mod.Periodic.frequency)
 				* (1ULL << HardwareLimits::BitsModSrcPinc)
 				/ HardwareLimits::FPGA_CLK;
+		// lower 16 bits in register 0, higher 4 bits in highest nibble of register 3
+		data.modulation_registers[0] |= pinc & 0xFFFF;
+		data.modulation_registers[3] |= (pinc & 0xF0000) >> 4;
 	}
 
 	// Setup the modulation scheme
@@ -55,8 +58,8 @@ void Protocol::SetupModulation(FrontToRF &data, Modulation mod) {
 		uint32_t pinc = SamplesPerSecond
 				* (1ULL << HardwareLimits::BitsQAMSampleratePinc)
 				/ HardwareLimits::FPGA_CLK;
-		data.modulation_registers[2] = pinc & 0xFFFF;
-		data.modulation_registers[4] = (pinc >> 16) & 0xFFFF;
+		data.modulation_registers[2] |= pinc & 0xFFFF;
+		data.modulation_registers[4] |= (pinc >> 16) & 0xFFFF;
 	}
 		break;
 	}
@@ -65,13 +68,13 @@ void Protocol::SetupModulation(FrontToRF &data, Modulation mod) {
 	switch(mod.type) {
 	case ModulationType::AM:
 		// 0: 0% depth, 65535: 100% depth
-		data.modulation_registers[1] = common_Map(mod.AM.depth, 0, Unit::maxPercent, 0, UINT16_MAX);
+		data.modulation_registers[1] |= common_Map(mod.AM.depth, 0, Unit::maxPercent, 0, UINT16_MAX);
 		break;
 	case ModulationType::FM:
 	case ModulationType::FM_USB:
 	case ModulationType::FM_LSB:
 		// 0: 0 deviation, 65535: 6248378Hz deviation
-		data.modulation_registers[1] = common_Map(mod.FM.deviation, 0,
+		data.modulation_registers[1] |= common_Map(mod.FM.deviation, 0,
 				HardwareLimits::MaxFMDeviation, 0,
 				HardwareLimits::MaxFMDeviationSetting);
 		break;

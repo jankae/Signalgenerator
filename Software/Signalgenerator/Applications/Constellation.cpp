@@ -1,5 +1,8 @@
 #include "Constellation.hpp"
 
+#include "FIRTapOrder.hpp"
+#include "HardwareLimits.hpp"
+
 #include <math.h>
 #include "gui.hpp"
 #include "main.h"
@@ -280,11 +283,11 @@ void Constellation::LoadToFPGA() {
 }
 
 void Constellation::SetFIRinFPGA(uint8_t sps, float beta) {
-	int16_t FIRdata[FIRTaps];
+	int16_t FIRdata[(HardwareLimits::FIRTaps + 1) / 2];
 	static constexpr int16_t MaxAmplitude = 1400; // TODO adjust to scale (keep in mind possible overflow in FPGA FIR addition!)
 	static constexpr float PI = 3.1415926535f;
-	for (uint8_t i = 0; i < FIRTaps; i++) {
-		int8_t t = i - FIRTaps / 2;
+	for (uint8_t i = 0; i < (HardwareLimits::FIRTaps + 1) / 2; i++) {
+		int8_t t = i - (HardwareLimits::FIRTaps + 1) / 2 + 1;
 		float h_t;
 		if (t == 0) {
 			h_t = 1.0;
@@ -295,13 +298,16 @@ void Constellation::SetFIRinFPGA(uint8_t sps, float beta) {
 					* std::cos(beta * PI * t / sps)
 					/ (1 - (2 * beta * t / sps) * (2 * beta * t / sps));
 		}
-//		printf("FIR tap %d: %f\n", i, h_t);
+		printf("FIR tap %d: %f\n", i, h_t);
 		FIRdata[i] = htons(h_t * MaxAmplitude);
 	}
 	// start loading data to address 0
 	uint16_t data = htons(0x8000);
 	SPI1_CS_FPGA_GPIO_Port->BSRR = SPI1_CS_FPGA_Pin << 16;
 	HAL_SPI_Transmit(&hspi1, (uint8_t*) &data, 2, 100);
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) FIRdata, sizeof(FIRdata), 100);
+	// Transmit coefficients in the correct order to the FPGA
+	for (uint8_t i = 0; i < (HardwareLimits::FIRTaps + 1) / 2; i++) {
+		HAL_SPI_Transmit(&hspi1, (uint8_t*) &FIRdata[FIRTapOrder[i]], 2, 100);
+	}
 	SPI1_CS_FPGA_GPIO_Port->BSRR = SPI1_CS_FPGA_Pin;
 }

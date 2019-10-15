@@ -21,11 +21,13 @@ enum class GPIO : uint16_t {
 
 enum class Reg : uint16_t {
 	GPIO = 0x0000,
-	DAC_I = 0x0002,
-	DAC_Q = 0x0003,
-	MOD_DATA_L = 0x0004,
-	MOD_DATA_H = 0x0005,
-	MOD_CTRL = 0x0006,
+//	DAC_I = 0x0002,		// direct write to I/Q DAC not supported by FPGA anymore
+//	DAC_Q = 0x0003,
+	MOD_REG0 = 0x0004,
+	MOD_REG1 = 0x0005,
+	MOD_REG2 = 0x0006,
+	MOD_REG3 = 0x0007,
+	MOD_REG4 = 0x0008,
 };
 
 inline GPIO operator|(GPIO a, GPIO b) {
@@ -36,6 +38,6 @@ void WriteReg(Reg reg, uint16_t val);
 void SetGPIO(GPIO g);
 void ResetGPIO(GPIO g);
 void UpdateGPIO();
-void SetDAC(uint16_t i, uint16_t q);
+//void SetDAC(uint16_t i, uint16_t q);
 
 }

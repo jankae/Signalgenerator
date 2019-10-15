@@ -46,7 +46,7 @@ void RF::Init(Protocol::RFToFront *s) {
 	InternalReference(false);
 	HAL_ADCEx_Calibration_Start(&hadc);
 	HAL_ADC_Start_DMA(&hadc, (uint32_t*) ADC_Samples, samplelength);
-	FPGA::SetDAC(0x0FFF, 0x0800);
+//	FPGA::SetDAC(0x0FFF, 0x0800);
 	PowerDAC.Shutdown(MCP48X2::Channel::A);
 	PowerDAC.Shutdown(MCP48X2::Channel::B);
 	HeterodyneLO.Init();
@@ -232,7 +232,7 @@ void RF::Configure(uint64_t f, int16_t cdbm) {
 
 	// disable modulation for now
 	for (uint8_t i = 0; i < 8; i++) {
-		FPGA::WriteReg((FPGA::Reg) (i + (int) FPGA::Reg::MOD_DATA_L), 0x0000);
+		FPGA::WriteReg((FPGA::Reg) (i + (int) FPGA::Reg::MOD_REG0), 0x0000);
 	}
 
 	// turn on RF path

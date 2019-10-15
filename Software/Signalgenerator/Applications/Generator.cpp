@@ -247,7 +247,7 @@ void Generator::Init() {
 			HardwareLimits::MaxFIRRate);
 	bool updateFIR = true;
 	mQAMSPS = new MenuValue<uint8_t>("Samples\nper symbol", &QAMSPS, Unit::None,
-			callback_setTrue, &updateFIR, 1, HardwareLimits::FIRTaps / 2);
+			callback_setTrue, &updateFIR, 1, (HardwareLimits::FIRTaps + 1) / 2);
 	mQAMRolloff = new MenuValue<int32_t>("Excess\nbandwidth", &QAMRolloff, Unit::Fixed3,
 			callback_setTrue, &updateFIR, 0, 1000);
 	mQAMDiff = new MenuBool("Diff.\nencoding", &QAMdiff, ModulationChanged);

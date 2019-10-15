@@ -8,11 +8,12 @@ static constexpr uint32_t MaxFrequency = 2100000000;
 static constexpr int16_t MaxOutputLevel = 2000;
 static constexpr int16_t MinOutputLevel = -6000;
 
-static constexpr uint32_t FPGA_CLK = 100000000;
-static constexpr uint32_t MaxFIRRate = 12500000;
-static constexpr uint8_t FIRTaps = 32;
+static constexpr uint32_t FPGA_CLK = 200000000;
+static constexpr uint32_t FIRCLKPeriods = 6;
+static constexpr uint32_t MaxFIRRate = FPGA_CLK / FIRCLKPeriods;
+static constexpr uint8_t FIRTaps = 71;
 static constexpr uint8_t BitsModSrcPinc = 27;
-static constexpr uint8_t BitsModSrcExposed = 16;
+static constexpr uint8_t BitsModSrcExposed = 20;
 static constexpr uint8_t BitsQAMSampleratePinc = 32;
 static constexpr uint8_t BitsQAMSamplerateExposed = 32;
 static constexpr uint8_t BitsFMDDSPinc = 32;

@@ -45,7 +45,7 @@ entity ModSource is
 			  -- 1000: FIFO stream (PINC determines update rate)
 			  -- 1001-1111: reserved
            SRCTYPE : in  STD_LOGIC_VECTOR (3 downto 0);
-           PINC : in  STD_LOGIC_VECTOR (15 downto 0);
+           PINC : in  STD_LOGIC_VECTOR (19 downto 0);
            RESULT : out  STD_LOGIC_VECTOR (11 downto 0);
 			  NEW_SAMPLE : out STD_LOGIC;
 			  FIFO_IN : in STD_LOGIC_VECTOR (11 downto 0);
@@ -169,7 +169,7 @@ begin
 	
 	fifo_clear <= '0' when SRCTYPE = "1000" else '1';
 	
-	phase_inc <= "00000000000" & PINC;
+	phase_inc <= "0000000" & PINC;
 	
 	dds_enable <= '0' when SRCTYPE = "0000" or SRCTYPE = "0001" else '1';
 	prbs_reset <= '0' when SRCTYPE = "0111" else '1';

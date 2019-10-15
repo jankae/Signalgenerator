@@ -112,7 +112,8 @@ architecture Behavioral of top is
 		I_Q_Address : in STD_LOGIC_VECTOR (8 downto 0);
 		I_Q_Data : in STD_LOGIC_VECTOR (11 downto 0);
 		I_Q_Write : in STD_LOGIC_VECTOR (0 downto 0);
-		FIR_COEFF_WRITE : std_logic
+		FIR_COEFF_WRITE : std_logic;
+		FIR_COEFF_RELOAD : std_logic
 		);
 	END COMPONENT;
 	
@@ -124,7 +125,7 @@ architecture Behavioral of top is
 		CLK : IN std_logic;
 		RESET : IN std_logic;
 		SRCTYPE : IN std_logic_vector(3 downto 0);
-		PINC : IN std_logic_vector(15 downto 0);          
+		PINC : IN std_logic_vector(19 downto 0);          
 		RESULT : OUT std_logic_vector(11 downto 0);
 		NEW_SAMPLE : OUT std_logic;
 		FIFO_IN : in STD_LOGIC_VECTOR (11 downto 0);
@@ -161,8 +162,9 @@ architecture Behavioral of top is
 	
 	signal mod_write_I_Q : std_logic_vector(0 downto 0) := "0";
 	signal mod_write_FIR : std_logic;
+	signal mod_reload_FIR : std_logic;
 	-- modulation source settings
-	signal mod_src_pinc : std_logic_vector(15 downto 0);
+	signal mod_src_pinc : std_logic_vector(19 downto 0);
 	signal mod_src_type : std_logic_vector(3 downto 0);
 	signal mod_src_value : std_logic_vector(11 downto 0);
 	signal mod_src_new : std_logic;
@@ -260,7 +262,8 @@ your_instance_name : MainPLL
 		I_Q_Address => spi_ext_I_Q_address,
 		I_Q_Data => spi_ext_out(11 downto 0),
 		I_Q_Write => mod_write_I_Q,
-		FIR_COEFF_WRITE => mod_write_FIR
+		FIR_COEFF_WRITE => mod_write_FIR,
+		FIR_COEFF_RELOAD => mod_reload_FIR
 	);
 	
 	DORI <= '1';
@@ -278,6 +281,9 @@ your_instance_name : MainPLL
 			mod_write_I_Q <= "0";
 			mod_write_FIR <= '0';
 			spi_ext_I_Q_address <= std_logic_vector(unsigned(spi_ext_I_Q_address) + 1);
+		end if;
+		if mod_reload_FIR = '1' then
+			mod_reload_FIR <= '0';
 		end if;
 		
 -----------------------------------------------
@@ -297,10 +303,10 @@ your_instance_name : MainPLL
 							-- subsequent received data will be redirected to the FIFO
 							spi_ext_fifo_data <= '1';
 						elsif spi_ext_out(15 downto 9) = "1000000" then
-							LED(0) <= '1';
 							-- subsequent data is for FIR coefficients
 							spi_ext_I_Q_address <= "0000" & spi_ext_out(4 downto 0);
 							spi_ext_fir_data <= '1';
+							mod_reload_FIR <= '1';
 						else
 							-- subsequent data is for the I/Q lookup
 							spi_ext_I_Q_address <= spi_ext_out(8 downto 0);
@@ -346,10 +352,10 @@ your_instance_name : MainPLL
 									SW2_CTL <= spi_int_out(6 downto 4);
 									MOD_EN <= spi_int_out(7);
 									SW1_CTL <= spi_int_out(2 downto 0);
-									--LED <= spi_int_out(12 downto 8);
+									LED <= spi_int_out(12 downto 8);
 								-- modulation source phase increment
 								when "000000000000100" =>
-									mod_src_pinc <= spi_int_out;
+									mod_src_pinc <= mod_src_pinc(19 downto 16) & spi_int_out;
 								-- modulation setting1
 								when "000000000000101" =>
 									mod_setting1 <= spi_int_out;
@@ -360,6 +366,7 @@ your_instance_name : MainPLL
 								when "000000000000111" =>
 									mod_type <= spi_int_out(7 downto 0);
 									mod_src_type <= spi_int_out(11 downto 8);
+									mod_src_pinc <= spi_int_out(15 downto 12) & mod_src_pinc(15 downto 0);
 								-- modulation setting3
 								when "000000000001000" =>
 									mod_setting3 <= spi_int_out;
@@ -381,13 +388,13 @@ your_instance_name : MainPLL
 --				when "000000000000011" =>
 --					spi_int_in <= "0000" & Q_direct;
 				when "000000000000100" =>
-					spi_int_in <= mod_src_pinc;
+					spi_int_in <= mod_src_pinc(15 downto 0);
 				when "000000000000101" =>
 					spi_int_in <= mod_setting1;
 				when "000000000000110" =>
 					spi_int_in <= mod_setting2;
 				when "000000000000111" =>
-					spi_int_in <= "0000" & mod_src_type & mod_type;
+					spi_int_in <= mod_src_pinc(19 downto 16) & mod_src_type & mod_type;
 				when "000000000001000" =>
 					spi_int_in <= mod_setting3;
 				when others => spi_int_in <= (others => '0');

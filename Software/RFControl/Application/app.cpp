@@ -83,7 +83,7 @@ void app(void) {
 		if (new_modulation_data && RF::Stabilized()) {
 			// Update registers on FPGA
 			for (uint8_t i = 0; i < 8; i++) {
-				FPGA::WriteReg((FPGA::Reg) (i + (int) FPGA::Reg::MOD_DATA_L),
+				FPGA::WriteReg((FPGA::Reg) (i + (int) FPGA::Reg::MOD_REG0),
 						spi_current.modulation_registers[i]);
 			}
 			new_modulation_data = false;
