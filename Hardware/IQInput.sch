@@ -14917,7 +14917,7 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <part name="GND5" library="supply1" deviceset="GND" device=""/>
 <part name="K3" library="relay" deviceset="FTR-B4" device="G"/>
 <part name="K4" library="relay" deviceset="FTR-B4" device="G"/>
-<part name="R14" library="rcl" deviceset="R-EU_" device="R0603"/>
+<part name="R14" library="rcl" deviceset="R-EU_" device="R0603" value="10k"/>
 <part name="D3" library="diode" deviceset="BAV199" device=""/>
 <part name="D1" library="diode" deviceset="BAV199" device=""/>
 <part name="GND6" library="supply1" deviceset="GND" device=""/>
@@ -14950,7 +14950,7 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <part name="R26" library="rcl" deviceset="R-EU_" device="R0603" value="190k"/>
 <part name="R27" library="rcl" deviceset="R-EU_" device="R0603" value="60k"/>
 <part name="GND12" library="supply1" deviceset="GND" device=""/>
-<part name="R28" library="rcl" deviceset="R-EU_" device="R0603"/>
+<part name="R28" library="rcl" deviceset="R-EU_" device="R0603" value="10k"/>
 <part name="D2" library="diode" deviceset="BAV199" device=""/>
 <part name="D4" library="diode" deviceset="BAV199" device=""/>
 <part name="GND13" library="supply1" deviceset="GND" device=""/>
