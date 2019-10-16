@@ -14888,16 +14888,16 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <part name="P+2" library="supply1" deviceset="V+" device=""/>
 <part name="P-1" library="supply1" deviceset="V-" device=""/>
 <part name="P-3" library="supply1" deviceset="V-" device=""/>
-<part name="C1" library="rcl" deviceset="C-EU" device="C0603"/>
-<part name="R1" library="rcl" deviceset="R-EU_" device="R0603"/>
-<part name="R2" library="rcl" deviceset="R-EU_" device="R0603"/>
-<part name="C2" library="rcl" deviceset="C-EU" device="C0603"/>
-<part name="R3" library="rcl" deviceset="R-EU_" device="R0603"/>
-<part name="R4" library="rcl" deviceset="R-EU_" device="R0603"/>
-<part name="C3" library="rcl" deviceset="C-EU" device="C0603"/>
-<part name="C4" library="rcl" deviceset="C-EU" device="C0603"/>
-<part name="R5" library="rcl" deviceset="R-EU_" device="R0603"/>
-<part name="R6" library="rcl" deviceset="R-EU_" device="R0603"/>
+<part name="C1" library="rcl" deviceset="C-EU" device="C0603" value="100n"/>
+<part name="R1" library="rcl" deviceset="R-EU_" device="R0603" value="49R9"/>
+<part name="R2" library="rcl" deviceset="R-EU_" device="R0603" value="49R9"/>
+<part name="C2" library="rcl" deviceset="C-EU" device="C0603" value="100p"/>
+<part name="R3" library="rcl" deviceset="R-EU_" device="R0603" value="470"/>
+<part name="R4" library="rcl" deviceset="R-EU_" device="R0603" value="470"/>
+<part name="C3" library="rcl" deviceset="C-EU" device="C0603" value="DNP"/>
+<part name="C4" library="rcl" deviceset="C-EU" device="C0603" value="DNP"/>
+<part name="R5" library="rcl" deviceset="R-EU_" device="R0603" value="470"/>
+<part name="R6" library="rcl" deviceset="R-EU_" device="R0603" value="470"/>
 <part name="GND1" library="supply1" deviceset="GND" device=""/>
 <part name="K1" library="relay" deviceset="FTR-B4" device="G"/>
 <part name="X1" library="con-coax" deviceset="?227161*" device="1-" technology="-7" value="1-1337543-0"/>
@@ -14926,16 +14926,16 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <part name="IC3" library="rf" deviceset="AD8132" device=""/>
 <part name="P+3" library="supply1" deviceset="V+" device=""/>
 <part name="P-2" library="supply1" deviceset="V-" device=""/>
-<part name="C7" library="rcl" deviceset="C-EU" device="C0603"/>
-<part name="R15" library="rcl" deviceset="R-EU_" device="R0603"/>
-<part name="R16" library="rcl" deviceset="R-EU_" device="R0603"/>
-<part name="C8" library="rcl" deviceset="C-EU" device="C0603"/>
-<part name="R17" library="rcl" deviceset="R-EU_" device="R0603"/>
-<part name="R18" library="rcl" deviceset="R-EU_" device="R0603"/>
-<part name="C9" library="rcl" deviceset="C-EU" device="C0603"/>
-<part name="C10" library="rcl" deviceset="C-EU" device="C0603"/>
-<part name="R19" library="rcl" deviceset="R-EU_" device="R0603"/>
-<part name="R20" library="rcl" deviceset="R-EU_" device="R0603"/>
+<part name="C7" library="rcl" deviceset="C-EU" device="C0603" value="100n"/>
+<part name="R15" library="rcl" deviceset="R-EU_" device="R0603" value="49R9"/>
+<part name="R16" library="rcl" deviceset="R-EU_" device="R0603" value="49R9"/>
+<part name="C8" library="rcl" deviceset="C-EU" device="C0603" value="100p"/>
+<part name="R17" library="rcl" deviceset="R-EU_" device="R0603" value="470"/>
+<part name="R18" library="rcl" deviceset="R-EU_" device="R0603" value="470"/>
+<part name="C9" library="rcl" deviceset="C-EU" device="C0603" value="DNP"/>
+<part name="C10" library="rcl" deviceset="C-EU" device="C0603" value="DNP"/>
+<part name="R19" library="rcl" deviceset="R-EU_" device="R0603" value="470"/>
+<part name="R20" library="rcl" deviceset="R-EU_" device="R0603" value="470"/>
 <part name="GND8" library="supply1" deviceset="GND" device=""/>
 <part name="X3" library="con-coax" deviceset="?227161*" device="1-" technology="-7" value="1-1337543-0"/>
 <part name="C11" library="rcl" deviceset="C-EU" device="C1206" value="10u"/>
@@ -14992,10 +14992,10 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 <part name="P-4" library="supply1" deviceset="V-" device=""/>
 <part name="C19" library="rcl" deviceset="C-EU" device="C0603" value="1u"/>
 <part name="GND21" library="supply1" deviceset="GND" device=""/>
-<part name="L1" library="rcl" deviceset="L-EU" device="L2012C"/>
+<part name="L1" library="rcl" deviceset="L-EU" device="L2012C" value="Ferrite"/>
 <part name="C20" library="rcl" deviceset="C-EU" device="C1206" value="10u"/>
 <part name="C21" library="rcl" deviceset="C-EU" device="C1206" value="10u"/>
-<part name="L2" library="rcl" deviceset="L-EU" device="L2012C"/>
+<part name="L2" library="rcl" deviceset="L-EU" device="L2012C" value="Ferrite"/>
 <part name="C22" library="rcl" deviceset="C-EU" device="C1206" value="10u"/>
 <part name="C23" library="rcl" deviceset="C-EU" device="C1206" value="10u"/>
 <part name="P+5" library="supply1" deviceset="V+" device=""/>
@@ -15087,15 +15087,15 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 </instance>
 <instance part="C4" gate="G$1" x="180.34" y="121.92" smashed="yes" rot="R90">
 <attribute name="NAME" x="184.404" y="119.761" size="1.778" layer="95"/>
-<attribute name="VALUE" x="185.039" y="123.444" size="1.778" layer="96" rot="R90"/>
+<attribute name="VALUE" x="188.976" y="124.079" size="1.778" layer="96" rot="R180"/>
 </instance>
 <instance part="R5" gate="G$1" x="160.02" y="144.78" smashed="yes">
 <attribute name="NAME" x="156.21" y="146.2786" size="1.778" layer="95"/>
-<attribute name="VALUE" x="156.21" y="141.478" size="1.778" layer="96"/>
+<attribute name="VALUE" x="161.29" y="146.558" size="1.778" layer="96"/>
 </instance>
 <instance part="R6" gate="G$1" x="160.02" y="139.7" smashed="yes">
 <attribute name="NAME" x="156.21" y="141.1986" size="1.778" layer="95"/>
-<attribute name="VALUE" x="156.21" y="136.398" size="1.778" layer="96"/>
+<attribute name="VALUE" x="161.29" y="141.478" size="1.778" layer="96"/>
 </instance>
 <instance part="GND1" gate="1" x="200.66" y="127" smashed="yes">
 <attribute name="VALUE" x="198.12" y="124.46" size="1.778" layer="96"/>
@@ -15256,19 +15256,19 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 </instance>
 <instance part="C9" gate="G$1" x="180.34" y="114.3" smashed="yes" rot="R90">
 <attribute name="NAME" x="179.959" y="115.824" size="1.778" layer="95" rot="R90"/>
-<attribute name="VALUE" x="185.039" y="115.824" size="1.778" layer="96" rot="R90"/>
+<attribute name="VALUE" x="184.404" y="114.681" size="1.778" layer="96"/>
 </instance>
 <instance part="C10" gate="G$1" x="180.34" y="73.66" smashed="yes" rot="R90">
 <attribute name="NAME" x="184.404" y="71.501" size="1.778" layer="95"/>
-<attribute name="VALUE" x="185.039" y="75.184" size="1.778" layer="96" rot="R90"/>
+<attribute name="VALUE" x="184.404" y="74.041" size="1.778" layer="96"/>
 </instance>
 <instance part="R19" gate="G$1" x="160.02" y="96.52" smashed="yes">
 <attribute name="NAME" x="156.21" y="98.0186" size="1.778" layer="95"/>
-<attribute name="VALUE" x="156.21" y="93.218" size="1.778" layer="96"/>
+<attribute name="VALUE" x="161.29" y="98.298" size="1.778" layer="96"/>
 </instance>
 <instance part="R20" gate="G$1" x="160.02" y="91.44" smashed="yes">
 <attribute name="NAME" x="156.21" y="92.9386" size="1.778" layer="95"/>
-<attribute name="VALUE" x="156.21" y="88.138" size="1.778" layer="96"/>
+<attribute name="VALUE" x="161.29" y="93.218" size="1.778" layer="96"/>
 </instance>
 <instance part="GND8" gate="1" x="200.66" y="78.74" smashed="yes">
 <attribute name="VALUE" x="198.12" y="76.2" size="1.778" layer="96"/>
@@ -17049,6 +17049,10 @@ Extended by Federico Battaglin &lt;author&gt;&amp;lt;federico.rd@fdpinternationa
 </nets>
 </sheet>
 </sheets>
+<errors>
+<approved hash="104,2,185.42,35.56,IC6,VSS,GND,,,"/>
+<approved hash="104,2,185.42,86.36,IC6,VDD,+3V3,,,"/>
+</errors>
 </schematic>
 </drawing>
 <compatibility>
