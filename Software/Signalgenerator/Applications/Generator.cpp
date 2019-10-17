@@ -7,6 +7,7 @@
 #include "Persistence.hpp"
 #include "Constellation.hpp"
 #include "HardwareLimits.hpp"
+#include "FPGA.hpp"
 
 // main carrier settings
 static bool RFon = false;
@@ -52,6 +53,9 @@ static Label *lSrcBufSoft;
 static Label *lSrcBufHard;
 static ProgressBar *pSrcBufSoft;
 static ProgressBar *pSrcBufHard;
+
+static MenuBool *mRFOn;
+static MenuBool *mModOn;
 
 // Changeable modulation menu entries
 static Menu *mModulation;
@@ -200,6 +204,16 @@ static void ModulationChanged(void*, Widget*) {
 	}
 }
 
+void Generator::ToggleRF() {
+	RFon = !RFon;
+	mRFOn->requestRedrawFull();
+}
+void Generator::ToggleModulation() {
+	ModEnabled = !ModEnabled;
+	mModOn->requestRedrawFull();
+	ModulationChanged(nullptr, nullptr);
+}
+
 void Generator::Init() {
 	Stream::Init();
 
@@ -211,7 +225,8 @@ void Generator::Init() {
 	};
 
 	Menu *mainmenu = new Menu("", SIZE(70, DISPLAY_HEIGHT));
-	mainmenu->AddEntry(new MenuBool("Output", &RFon, nullptr));
+	mRFOn = new MenuBool("Output", &RFon, nullptr);
+	mainmenu->AddEntry(mRFOn);
 	mainmenu->AddEntry(
 			new MenuValue<uint32_t>("Frequency", &frequency, Unit::Frequency,
 					nullptr, nullptr, HardwareLimits::MinFrequency,
@@ -220,7 +235,8 @@ void Generator::Init() {
 			new MenuValue<int32_t>("Amplitude", &dbm, Unit::dbm, nullptr,
 					nullptr, HardwareLimits::MinOutputLevel,
 					HardwareLimits::MaxOutputLevel));
-	mainmenu->AddEntry(new MenuBool("Modulation", &ModEnabled, ModulationChanged));
+	mModOn = new MenuBool("Modulation", &ModEnabled, ModulationChanged);
+	mainmenu->AddEntry(mModOn);
 
 	mModulation = new Menu("Configure\nModulation", mainmenu->getSize());
 	mModulation->AddEntry(
@@ -366,14 +382,14 @@ void Generator::Init() {
 
 		if (editConstellation) {
 			QAMconst.Edit();
-			QAMconst.LoadToFPGA();
+			FPGA::SetConstellation(QAMconst);
 			editConstellation = false;
 			continue;
 		}
 		if (updateFIR) {
 			ModulationChanged(nullptr, nullptr);
 			float beta = (float) QAMRolloff / 1000;
-			Constellation::SetFIRinFPGA(QAMSPS, beta);
+			FPGA::SetFIRRaisedCosine(QAMSPS, beta);
 			updateFIR = false;
 			continue;
 		}

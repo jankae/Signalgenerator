@@ -21,6 +21,8 @@ public:
 	}
 	void LoadToFPGA();
 	static void SetFIRinFPGA(uint8_t sps, float beta);
+	bool GetScaledPoint(uint16_t point, uint16_t maxVal, int16_t &i,
+			int16_t &q);
 
 private:
 	void View();
@@ -28,5 +30,6 @@ private:
 	uint16_t usedPoints;
 	int16_t I[MaxPoints];
 	int16_t Q[MaxPoints];
+	uint16_t maxAmplitude;
 	Table<int16_t> *table;
 };

@@ -16,6 +16,7 @@ TaskHandle_t GUIHandle;
 #include "MenuChooser.hpp"
 #include "MenuValue.hpp"
 #include "Dialog/ItemChooserDialog.hpp"
+#include "Generator.hpp"
 
 static void guiThread(void) {
 	GUIHandle = xTaskGetCurrentTaskHandle();
@@ -42,14 +43,12 @@ static void guiThread(void) {
 					}
 					break;
 				case EVENT_BUTTON_CLICKED:
-					if(event.button == BUTTON_ONOFF) {
-						/* this is a special case button that is always relayed to the
-						 * App in control of the output stage */
-//						if (pushpull_GetControlHandle()) {
-//							xTaskNotify(pushpull_GetControlHandle(),
-//									SIGNAL_ONOFF_BUTTON,
-//									eSetBits);
-//						}
+					if (event.button == BUTTON_RF_ONOFF) {
+						Generator::ToggleRF();
+						break;
+					}
+					if (event.button == BUTTON_MOD_ONOFF) {
+						Generator::ToggleModulation();
 						break;
 					}
 					/* no break */
