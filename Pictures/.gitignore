@@ -1,2 +1,6 @@
 *.xcf
-Tex
+Tex/*.sty
+Tex/*.aux
+Tex/*.log
+Tex/*.synctex.gz
+Tex/*.dvi
