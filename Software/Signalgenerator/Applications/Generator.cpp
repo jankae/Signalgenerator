@@ -271,7 +271,8 @@ void Generator::Init() {
 	mainmenu->AddEntry(mModulation);
 
 	bool IntRef = true;
-	mainmenu->AddEntry(new MenuBool("IntRef", &IntRef, nullptr));
+	// No option to switch of internal reference anymore
+//	mainmenu->AddEntry(new MenuBool("IntRef", &IntRef, nullptr));
 
 	Menu *system = new Menu("System", mainmenu->getSize());
 	mainmenu->AddEntry(system);
@@ -332,12 +333,15 @@ void Generator::Init() {
 
 	// create and attach error labels
 	lUnlock = new Label("UNLOCK", Font_Big, COLOR_RED);
+	lUnlock->SetVisible(false);
 	c->attach(lUnlock, COORDS(5, 220));
 
 	lUnlevel = new Label("UNLEVEL", Font_Big, COLOR_RED);
+	lUnlevel->SetVisible(false);
 	c->attach(lUnlevel, COORDS(100, 220));
 
 	lCom = new Label("COMMUNICATION ERROR", Font_Big, COLOR_RED);
+	lCom->SetVisible(false);
 	c->attach(lCom, COORDS(5, 200));
 
 	// create and attach modulation widgets
@@ -364,8 +368,6 @@ void Generator::Init() {
 
 	c->requestRedrawFull();
 	gui_SetTopWidget(c);
-
-	vTaskDelay(1000);
 
 	while(1) {
 		uint32_t start = HAL_GetTick();

@@ -11,6 +11,7 @@
 #include "Generator.hpp"
 #include "Calibration.hpp"
 #include "Persistence.hpp"
+#include "SPIProtocol.hpp"
 
 extern uint8_t pushpull_SPI_OK;
 
@@ -45,6 +46,27 @@ static uint16_t get_3V3Rail(void) {
 	return 4915200UL / result[1];
 }
 
+static bool CheckForRFBoard(uint32_t timeout) {
+	extern SPI_HandleTypeDef hspi1;
+	Protocol::FrontToRF send;
+	Protocol::RFToFront recv;
+	memset(&send, 0, sizeof(send));
+	send.Status.UseIntRef = 1;
+
+	uint32_t starttime = HAL_GetTick();
+	do {
+		HAL_Delay(100);
+		SPI1_CS_RF_GPIO_Port->BSRR = SPI1_CS_RF_Pin << 16;
+		HAL_SPI_TransmitReceive(&hspi1, (uint8_t*) &send, (uint8_t*) &recv,
+				sizeof(send), 1000);
+		SPI1_CS_RF_GPIO_Port->BSRR = SPI1_CS_RF_Pin;
+		if (HAL_GetTick() - starttime > timeout) {
+			// failed to establish communication in time
+			return false;
+		}
+	} while (recv.MagicConstant != Protocol::MagicConstant);
+	return true;
+}
 
 static void display_TestResult(const char * const name, const char * const result,
 		TestResult_t res) {
@@ -62,6 +84,21 @@ static void display_TestResult(const char * const name, const char * const resul
 	}
 	display_String(200, line * 16, result);
 	line++;
+}
+
+static bool display_runLongerTest(const char *name,
+		bool (*test_function)(void)) {
+	// show indication that test is running
+	display_SetForeground(COLOR_WHITE);
+	display_String(0, line * 16, name);
+	// run test
+	bool success = test_function();
+	if (success) {
+		display_TestResult("", "OK", TEST_PASSED);
+	} else {
+		display_TestResult("", "FAILED", TEST_FAILED);
+	}
+	return success;
 }
 
 static void updateResult(TestResult_t *overall, TestResult_t res) {
@@ -150,19 +187,20 @@ void startup_Software(void) {
 
  	Calibration::Init();
 
-	switch(File::Init()) {
-	case -1:
-		display_TestResult("SD card:", "INT ERR", TEST_FAILED);
-		error = 1;
-		break;
-	case 0:
-		display_TestResult("SD card:", "MISSING", TEST_WARNING);
-		warning = 1;
-		break;
-	case 1:
-		display_TestResult("SD card:", "OK", TEST_PASSED);
-		break;
-	}
+ 	// No SD card handling for now
+//	switch(File::Init()) {
+//	case -1:
+//		display_TestResult("SD card:", "INT ERR", TEST_FAILED);
+//		error = 1;
+//		break;
+//	case 0:
+//		display_TestResult("SD card:", "MISSING", TEST_WARNING);
+//		warning = 1;
+//		break;
+//	case 1:
+//		display_TestResult("SD card:", "OK", TEST_PASSED);
+//		break;
+//	}
 
 	/* Initialize sampling of touch display */
 	if(input_Init()==pdPASS) {
@@ -187,6 +225,13 @@ void startup_Software(void) {
 		display_TestResult("GUI thread:", "STARTED", TEST_PASSED);
 	} else {
 		display_TestResult("GUI thread:", "ERROR", TEST_FAILED);
+		error = 1;
+	}
+
+	/* Check for RF board */
+	if (!display_runLongerTest("RF board:", []() -> bool {
+			return CheckForRFBoard(3000);
+		})) {
 		error = 1;
 	}
 
