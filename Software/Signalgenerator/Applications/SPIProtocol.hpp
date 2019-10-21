@@ -48,6 +48,7 @@ enum class ModulationType : uint8_t {
 	QAM8 = 6,
 	QAM16 = 7,
 	QAM32 = 8,
+	External = 9,
 };
 enum class SourceType : uint8_t {
 	Disabled = 0,

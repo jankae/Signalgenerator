@@ -24,7 +24,7 @@ enum class Result {
 using Callback = void(*)(void *ptr, Result r);
 
 Result MessageBox(const char *title, font_t font, const char *msg,
-		MsgBox type, void (*cb)(Result), uint8_t block);
+		MsgBox type, void (*cb)(Result) = nullptr, uint8_t block = 0);
 
 Result FileChooser(const char *title, char *result,
 		const char *dir, const char *filetype);

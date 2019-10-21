@@ -13,7 +13,7 @@
 class MenuBool : public MenuEntry {
 public:
 	MenuBool(const char *name, bool *value, void (*cb)(void*, Widget*) = nullptr,
-			void *ptr = nullptr);
+			void *ptr = nullptr, const char *off_string = "OFF", const char *on_string = "ON");
 
 private:
 	void draw(coords_t offset) override;
@@ -26,6 +26,7 @@ private:
 	static constexpr color_t ColorOn = COLOR(0, 192, 0);
 	static constexpr color_t ColorOff = COLOR(238, 0, 0);
 	static constexpr uint8_t MaxNameLength = 25;
+	static constexpr uint8_t MaxStringLength = 5;
 	static constexpr const font_t *fontName = &Font_Medium;
 	static constexpr const font_t *fontValue = &Font_Big;
 
@@ -33,6 +34,8 @@ private:
     void *cb_ptr;
     bool *value;
     char name[MaxNameLength + 1];
+    char on[MaxStringLength + 1];
+    char off[MaxStringLength + 1];
 };
 
 

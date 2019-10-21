@@ -17,7 +17,7 @@ static int32_t dbm = 0;
 // modulation settings
 static Protocol::ModulationType modType = Protocol::ModulationType::AM;
 static const char *modTypeNames[] { "AM", "FM", "FM USB", "FM LSB", "2QAM",
-		"4QAM", "8QAM", "16QAM", "32QAM", nullptr };
+		"4QAM", "8QAM", "16QAM", "32QAM", "External", nullptr };
 static int32_t FMDeviation = 75000;
 static int32_t AMDepth = 100000000;
 
@@ -26,6 +26,11 @@ static uint8_t QAMSPS = 4;
 static int32_t QAMRolloff = 350;
 static Constellation QAMconst;
 static bool QAMdiff = false;
+
+static bool ExtImpedance50 = true;
+static bool ExtCouplingAC = true;
+static int32_t ExtMaxLevel = 3000;
+static int32_t ExtMaxVoltage = 10000000;
 
 // modulation source settings
 static Protocol::SourceType modSourceType = Protocol::SourceType::Disabled;
@@ -69,6 +74,11 @@ static MenuEntry *mQAMSPS;
 static MenuEntry *mQAMRolloff;
 static MenuEntry *mQAMDiff;
 
+static MenuEntry *mExtImpedance;
+static MenuEntry *mExtCoupling;
+static MenuEntry *mExtMaxVoltage;
+static MenuEntry *mExtMaxLevel;
+
 static void ModulationChanged(void*, Widget*) {
 	if (ModEnabled) {
 		lModulation->setText(modTypeNames[(uint8_t) modType]);
@@ -108,6 +118,10 @@ static void ModulationChanged(void*, Widget*) {
 	mModulation->RemoveEntry(mQAMSPS);
 	mModulation->RemoveEntry(mQAMRolloff);
 	mModulation->RemoveEntry(mQAMDiff);
+	mModulation->RemoveEntry(mExtCoupling);
+	mModulation->RemoveEntry(mExtImpedance);
+	mModulation->RemoveEntry(mExtMaxLevel);
+	mModulation->RemoveEntry(mExtMaxVoltage);
 
 	char descr[50] = "";
 	char value[10];
@@ -158,10 +172,49 @@ static void ModulationChanged(void*, Widget*) {
 		Unit::StringFromValue(&descr[14], 5, QAMRolloff, Unit::Fixed3);
 		lModDescr2->setText(descr);
 		break;
+	case Protocol::ModulationType::External:
+		if(modSourceType != Protocol::SourceType::Disabled) {
+			Dialog::MessageBox("Warning", Font_Big,
+					"External modulation\n"
+					"active. Modulation\n"
+					"source has been\n"
+					"disabled.",
+					Dialog::MsgBox::OK);
+			modSourceType = Protocol::SourceType::Disabled;
+		}
+		snprintf(descr, sizeof(descr), "External,   ,    ");
+		if (ExtCouplingAC) {
+			memcpy(&descr[10], "AC", 2);
+		} else {
+			memcpy(&descr[10], "DC", 2);
+		}
+		if (ExtImpedance50) {
+			memcpy(&descr[14], "50R", 3);
+		} else {
+			memcpy(&descr[14], "1MR", 3);
+		}
+		lModDescr1->setText(descr);
+		strcpy(descr, "Fullscale: ");
+		if (ExtImpedance50) {
+			Unit::StringFromValue(&descr[11], 7, ExtMaxLevel, Unit::dbm);
+		} else {
+			Unit::StringFromValue(&descr[11], 5, ExtMaxVoltage, Unit::Voltage);
+		}
+		lModDescr2->setText(descr);
+		mModulation->AddEntry(mExtCoupling, -1);
+		mModulation->AddEntry(mExtImpedance, -1);
+		if (ExtImpedance50) {
+			mModulation->AddEntry(mExtMaxLevel, -1);
+			mExtMaxLevel->requestRedrawFull();
+		} else {
+			mModulation->AddEntry(mExtMaxVoltage, -1);
+			mExtMaxVoltage->requestRedrawFull();
+		}
+		break;
 	}
 	switch (modSourceType) {
 	case Protocol::SourceType::Disabled:
-		if (ModEnabled) {
+		if (ModEnabled && modType != Protocol::ModulationType::External) {
 			lModSrcDescr->setColor(COLOR_RED);
 		}
 		strncpy(descr, "Source disabled",
@@ -267,6 +320,16 @@ void Generator::Init() {
 	mQAMRolloff = new MenuValue<int32_t>("Excess\nbandwidth", &QAMRolloff, Unit::Fixed3,
 			callback_setTrue, &updateFIR, 0, 1000);
 	mQAMDiff = new MenuBool("Diff.\nencoding", &QAMdiff, ModulationChanged);
+
+	mExtImpedance = new MenuBool("Impedance", &ExtImpedance50,
+			ModulationChanged, nullptr, "1MR", "50R");
+	mExtCoupling = new MenuBool("Coupling", &ExtCouplingAC, ModulationChanged,
+			nullptr, "DC", "AC");
+	mExtMaxLevel = new MenuValue<int32_t>("Fullscale", &ExtMaxLevel,
+			Unit::dbm, ModulationChanged, nullptr, 0, 3000);
+	mExtMaxVoltage = new MenuValue<int32_t>("Fullscale", &ExtMaxVoltage,
+			Unit::Voltage, ModulationChanged, nullptr, 100000, 10000000);
+
 	mModulation->AddEntry(new MenuBack());
 	mainmenu->AddEntry(mModulation);
 
@@ -345,8 +408,8 @@ void Generator::Init() {
 	c->attach(lCom, COORDS(5, 200));
 
 	// create and attach modulation widgets
-	lModulation = new Label(6, Font_Big, Label::Orientation::CENTER, COLOR_DARKGREEN);
-	c->attach(lModulation, COORDS(24, 61));
+	lModulation = new Label(8, Font_Big, Label::Orientation::CENTER, COLOR_DARKGREEN);
+	c->attach(lModulation, COORDS(12, 61));
 
 	QAMconst = Constellation();
 

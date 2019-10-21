@@ -3,12 +3,16 @@
 #include "buttons.h"
 
 MenuBool::MenuBool(const char *name, bool *value, void (*cb)(void*, Widget*),
-		void *ptr) {
+		void *ptr, const char *off_string, const char *on_string) {
 	this->value = value;
 	strncpy(this->name, name, MaxNameLength);
 	this->name[MaxNameLength] = 0;
 	this->callback = cb;
 	this->cb_ptr = ptr;
+	strncpy(off, off_string, MaxStringLength);
+	strncpy(on, on_string, MaxStringLength);
+	on[MaxStringLength] = 0;
+	off[MaxStringLength] = 0;
 	selectable = false;
 }
 
@@ -21,11 +25,11 @@ void MenuBool::draw(coords_t offset) {
 	display_SetFont(*fontValue);
 	if (*value) {
 		display_SetForeground(ColorOn);
-		display_AutoCenterString("ON", COORDS(offset.x, offset.y + size.y / 2),
+		display_AutoCenterString(on, COORDS(offset.x, offset.y + size.y / 2),
 				COORDS(offset.x + size.x, offset.y + size.y));
 	} else {
 		display_SetForeground(ColorOff);
-		display_AutoCenterString("OFF", COORDS(offset.x, offset.y + size.y / 2),
+		display_AutoCenterString(off, COORDS(offset.x, offset.y + size.y / 2),
 				COORDS(offset.x + size.x, offset.y + size.y));
 	}
 }
