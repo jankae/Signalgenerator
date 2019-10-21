@@ -34,6 +34,7 @@ use IEEE.numeric_std.all;
 
 entity top is
     Port ( CLK : in  STD_LOGIC;
+			  RESET : in STD_LOGIC;
            LED : inout  STD_LOGIC_VECTOR (4 downto 0);
            SW1_CTL : inout  STD_LOGIC_VECTOR (2 downto 0);
            SW2_CTL : inout  STD_LOGIC_VECTOR (2 downto 0);
@@ -52,7 +53,13 @@ entity top is
            SPI_EXT_SCK : in  STD_LOGIC;
            SPI_EXT_CS : in  STD_LOGIC;
            SPI_EXT_MOSI : in  STD_LOGIC;
-           SPI_EXT_MISO : out  STD_LOGIC);
+           SPI_EXT_MISO : out  STD_LOGIC;
+			  ADC_SAMPLE_CLK : out STD_LOGIC;
+			  ADC_DATA : in STD_LOGIC_VECTOR(9 downto 0);
+			  ADC_DCLK : in STD_LOGIC;
+			  SCL : out STD_LOGIC;
+			  SDA : inout STD_LOGIC
+			  );
 end top;
 
 --FPGA register map:
@@ -102,6 +109,9 @@ architecture Behavioral of top is
 		CLK : IN std_logic;
 		RESET : IN std_logic;
 		SOURCE : IN std_logic_vector(11 downto 0);
+		ADC_SAMPLE_CLK : out STD_LOGIC;
+		ADC_DCLK : in  STD_LOGIC;
+      ADC_DATA : in  STD_LOGIC_VECTOR (9 downto 0);
 		MODTYPE : IN std_logic_vector(7 downto 0);
 		SETTING1 : IN std_logic_vector(15 downto 0);
 		SETTING2 : IN std_logic_vector(15 downto 0); 
@@ -167,11 +177,11 @@ architecture Behavioral of top is
 	signal mod_src_pinc : std_logic_vector(19 downto 0);
 	signal mod_src_type : std_logic_vector(3 downto 0);
 	signal mod_src_value : std_logic_vector(11 downto 0);
-	signal mod_src_new : std_logic;
 	
 	signal mod_src_write : std_logic := '0';
 	signal mod_src_fifo_level : std_logic_vector(7 downto 0);
 
+	signal pll_locked : std_logic;
 begin
 your_instance_name : MainPLL
   port map
@@ -180,7 +190,7 @@ your_instance_name : MainPLL
     -- Clock out ports
     CLK_OUT1 => CLK100,
     -- Status and control signals
-    LOCKED => open);
+    LOCKED => pll_locked);
 	 
 	 CLK100_INV <= not CLK100;
 	 
@@ -239,11 +249,11 @@ your_instance_name : MainPLL
 	GENERIC MAP (STREAM_DEPTH => 14)
 	PORT MAP(
 		CLK => CLK100,
-		RESET => '0',
+		RESET => RESET,
 		SRCTYPE => mod_src_type,
 		PINC => mod_src_pinc,
 		RESULT => mod_src_value,
-		NEW_SAMPLE => mod_src_new,
+		NEW_SAMPLE => open,
 		FIFO_IN => spi_ext_out(11 downto 0),
 		FIFO_WRITE => mod_src_write,
 		FIFO_LEVEL => mod_src_fifo_level
@@ -251,10 +261,13 @@ your_instance_name : MainPLL
 	
 	Modulator: Modulation PORT MAP(
 		CLK => CLK100,
-		RESET => '0',
+		RESET => RESET,
 		DAC_I => I,
 		DAC_Q => Q,
 		SOURCE => mod_src_value,
+		ADC_SAMPLE_CLK => ADC_SAMPLE_CLK,
+		ADC_DCLK => ADC_DCLK,
+		ADC_DATA => ADC_DATA,
 		MODTYPE => mod_type,
 		SETTING1 => mod_setting1,
 		SETTING2 => mod_setting2,
@@ -268,141 +281,171 @@ your_instance_name : MainPLL
 	
 	DORI <= '1';
 	SELIQ <= '0';
-	--SPI_EXT_MISO <= 'Z';
+	
+	LED(4) <= not pll_locked;
+	LED(3) <= RESET;
+	LED(2 downto 0) <= (others => '0');
+	
 	process(CLK100)
 	begin
 		if rising_edge(CLK100) then
-		
-		-- reset signals only valid for one cycle
-		if mod_src_write = '1' then
-			mod_src_write <= '0';
-		end if;
-		if mod_write_I_Q = "1" or mod_write_FIR = '1' then
-			mod_write_I_Q <= "0";
+		if(RESET = '1') then
+			MOD_EN <= '1';--signal is inverted, disables modulation IC
+			-- select lowest LP filter
+			SW1_CTL <= "101";
+			SW2_CTL <= "010";
+			-- set default values for all signals
+			first <= '1';
+			write_not_read <= '0';
+			mem_address <= (others => '0');
+			spi_int_in <= (others => '0');
+			spi_ext_in <= (others => '0');
+			spi_ext_first_word <= '1';
+			spi_ext_I_Q_address <= (others => '0');
+			spi_ext_fifo_data <= '0';
+			spi_ext_fir_data <= '0';
+			mod_type <= (others => '0');
+			mod_setting1 <= (others => '0');
+			mod_setting2 <= (others => '0');
+			mod_setting3 <= (others => '0');
+			mod_write_I_Q <= (others => '0');
 			mod_write_FIR <= '0';
-			spi_ext_I_Q_address <= std_logic_vector(unsigned(spi_ext_I_Q_address) + 1);
-		end if;
-		if mod_reload_FIR = '1' then
 			mod_reload_FIR <= '0';
-		end if;
-		
------------------------------------------------
--- START: External SPI handling
------------------------------------------------
-			if SPI_EXT_CS = '1' then
-				spi_ext_first_word <= '1';
-				spi_ext_fifo_data <= '0';
-				spi_ext_fir_data <= '0';
-			else
-				if spi_ext_complete = '1' then
-					if spi_ext_first_word = '1' then
-						spi_ext_first_word <= '0';
-						-- this is the first word, determine if transfer is
-						-- for modulation source FIFO or for I/Q lookup
-						if spi_ext_out = (spi_ext_out'range => '1') then
-							-- subsequent received data will be redirected to the FIFO
-							spi_ext_fifo_data <= '1';
-						elsif spi_ext_out(15 downto 9) = "1000000" then
-							-- subsequent data is for FIR coefficients
-							spi_ext_I_Q_address <= "0000" & spi_ext_out(4 downto 0);
-							spi_ext_fir_data <= '1';
-							mod_reload_FIR <= '1';
+			mod_src_pinc <= (others => '0');
+			mod_src_type <= (others => '0');
+			mod_src_write <= '0';
+		else
+			-- reset signals only valid for one cycle
+			if mod_src_write = '1' then
+				mod_src_write <= '0';
+			end if;
+			if mod_write_I_Q = "1" or mod_write_FIR = '1' then
+				mod_write_I_Q <= "0";
+				mod_write_FIR <= '0';
+				spi_ext_I_Q_address <= std_logic_vector(unsigned(spi_ext_I_Q_address) + 1);
+			end if;
+			if mod_reload_FIR = '1' then
+				mod_reload_FIR <= '0';
+			end if;
+			
+	-----------------------------------------------
+	-- START: External SPI handling
+	-----------------------------------------------
+				if SPI_EXT_CS = '1' then
+					spi_ext_first_word <= '1';
+					spi_ext_fifo_data <= '0';
+					spi_ext_fir_data <= '0';
+				else
+					if spi_ext_complete = '1' then
+						if spi_ext_first_word = '1' then
+							spi_ext_first_word <= '0';
+							-- this is the first word, determine if transfer is
+							-- for modulation source FIFO or for I/Q lookup
+							if spi_ext_out = (spi_ext_out'range => '1') then
+								-- subsequent received data will be redirected to the FIFO
+								spi_ext_fifo_data <= '1';
+							elsif spi_ext_out(15 downto 9) = "1000000" then
+								-- subsequent data is for FIR coefficients
+								spi_ext_I_Q_address <= "0000" & spi_ext_out(4 downto 0);
+								spi_ext_fir_data <= '1';
+								mod_reload_FIR <= '1';
+							else
+								-- subsequent data is for the I/Q lookup
+								spi_ext_I_Q_address <= spi_ext_out(8 downto 0);
+							end if;
 						else
-							-- subsequent data is for the I/Q lookup
-							spi_ext_I_Q_address <= spi_ext_out(8 downto 0);
-						end if;
-					else
-						-- not the first word
-						if spi_ext_fifo_data = '1' then
-							mod_src_write <= '1';
-						elsif spi_ext_fir_data = '1' then
-							mod_write_FIR <= '1';
-						else
-							mod_write_I_Q <= "1";
+							-- not the first word
+							if spi_ext_fifo_data = '1' then
+								mod_src_write <= '1';
+							elsif spi_ext_fir_data = '1' then
+								mod_write_FIR <= '1';
+							else
+								mod_write_I_Q <= "1";
+							end if;
 						end if;
 					end if;
 				end if;
-			end if;
-			if spi_ext_fifo_data = '1' then
-				spi_ext_in <= "00000000" & mod_src_fifo_level;
-			else
-				spi_ext_in <= "0000000" & spi_ext_I_Q_address;
-			end if;
------------------------------------------------
--- STOP: External SPI handling
------------------------------------------------
------------------------------------------------
--- START: Internal SPI handling
------------------------------------------------		
-			if SPI_INT_CS = '1' then
-				first <= '1';
-				mem_address <= "000000000000000";
-			else
-				if spi_int_complete = '1' then
-					if first = '1' then
-						write_not_read <= spi_int_out(15);
-						mem_address <= spi_int_out(14 downto 0);
-						first <= '0';
-					else
-						if write_not_read = '1' then
-							case mem_address is
-								when "000000000000000" =>
-									-- write to GPIO register
-									SW1_CTL <= spi_int_out(2 downto 0);
-									SW2_CTL <= spi_int_out(6 downto 4);
-									MOD_EN <= spi_int_out(7);
-									SW1_CTL <= spi_int_out(2 downto 0);
-									LED <= spi_int_out(12 downto 8);
-								-- modulation source phase increment
-								when "000000000000100" =>
-									mod_src_pinc <= mod_src_pinc(19 downto 16) & spi_int_out;
-								-- modulation setting1
-								when "000000000000101" =>
-									mod_setting1 <= spi_int_out;
-								-- modulation setting2
-								when "000000000000110" =>
-									mod_setting2 <= spi_int_out;
-								-- modulation and source types
-								when "000000000000111" =>
-									mod_type <= spi_int_out(7 downto 0);
-									mod_src_type <= spi_int_out(11 downto 8);
-									mod_src_pinc <= spi_int_out(15 downto 12) & mod_src_pinc(15 downto 0);
-								-- modulation setting3
-								when "000000000001000" =>
-									mod_setting3 <= spi_int_out;
-								when others =>
-							end case;
+				if spi_ext_fifo_data = '1' then
+					spi_ext_in <= "00000000" & mod_src_fifo_level;
+				else
+					spi_ext_in <= "0000000" & spi_ext_I_Q_address;
+				end if;
+	-----------------------------------------------
+	-- STOP: External SPI handling
+	-----------------------------------------------
+	-----------------------------------------------
+	-- START: Internal SPI handling
+	-----------------------------------------------		
+				if SPI_INT_CS = '1' then
+					first <= '1';
+					mem_address <= "000000000000000";
+				else
+					if spi_int_complete = '1' then
+						if first = '1' then
+							write_not_read <= spi_int_out(15);
+							mem_address <= spi_int_out(14 downto 0);
+							first <= '0';
+						else
+							if write_not_read = '1' then
+								case mem_address is
+									when "000000000000000" =>
+										-- write to GPIO register
+										SW1_CTL <= spi_int_out(2 downto 0);
+										SW2_CTL <= spi_int_out(6 downto 4);
+										MOD_EN <= spi_int_out(7);
+										SW1_CTL <= spi_int_out(2 downto 0);
+										--LED <= spi_int_out(12 downto 8);
+									-- modulation source phase increment
+									when "000000000000100" =>
+										mod_src_pinc <= mod_src_pinc(19 downto 16) & spi_int_out;
+									-- modulation setting1
+									when "000000000000101" =>
+										mod_setting1 <= spi_int_out;
+									-- modulation setting2
+									when "000000000000110" =>
+										mod_setting2 <= spi_int_out;
+									-- modulation and source types
+									when "000000000000111" =>
+										mod_type <= spi_int_out(7 downto 0);
+										mod_src_type <= spi_int_out(11 downto 8);
+										mod_src_pinc <= spi_int_out(15 downto 12) & mod_src_pinc(15 downto 0);
+									-- modulation setting3
+									when "000000000001000" =>
+										mod_setting3 <= spi_int_out;
+									when others =>
+								end case;
+							end if;
+							-- increment address
+							mem_address <= std_logic_vector(unsigned(mem_address) + 1);
 						end if;
-						-- increment address
-						mem_address <= std_logic_vector(unsigned(mem_address) + 1);
 					end if;
 				end if;
-			end if;
-			-- assign spi_in dependent on mem_address
-	--			spi_in <= '0' & mem_address;
-			case mem_address is
-				when "000000000000000" =>
-					spi_int_in <= "000" & LED(4 downto 0) & MOD_EN & SW2_CTL(2 downto 0) & "0" & SW1_CTL(2 downto 0);
---				when "000000000000010" =>
---					spi_int_in <= "0000" & I_direct;
---				when "000000000000011" =>
---					spi_int_in <= "0000" & Q_direct;
-				when "000000000000100" =>
-					spi_int_in <= mod_src_pinc(15 downto 0);
-				when "000000000000101" =>
-					spi_int_in <= mod_setting1;
-				when "000000000000110" =>
-					spi_int_in <= mod_setting2;
-				when "000000000000111" =>
-					spi_int_in <= mod_src_pinc(19 downto 16) & mod_src_type & mod_type;
-				when "000000000001000" =>
-					spi_int_in <= mod_setting3;
-				when others => spi_int_in <= (others => '0');
-			end case;
------------------------------------------------
--- STOP: Internal SPI handling
------------------------------------------------
+				-- assign spi_in dependent on mem_address
+		--			spi_in <= '0' & mem_address;
+				case mem_address is
+					when "000000000000000" =>
+						spi_int_in <= "000" & LED(4 downto 0) & MOD_EN & SW2_CTL(2 downto 0) & "0" & SW1_CTL(2 downto 0);
+	--				when "000000000000010" =>
+	--					spi_int_in <= "0000" & I_direct;
+	--				when "000000000000011" =>
+	--					spi_int_in <= "0000" & Q_direct;
+					when "000000000000100" =>
+						spi_int_in <= mod_src_pinc(15 downto 0);
+					when "000000000000101" =>
+						spi_int_in <= mod_setting1;
+					when "000000000000110" =>
+						spi_int_in <= mod_setting2;
+					when "000000000000111" =>
+						spi_int_in <= mod_src_pinc(19 downto 16) & mod_src_type & mod_type;
+					when "000000000001000" =>
+						spi_int_in <= mod_setting3;
+					when others => spi_int_in <= (others => '0');
+				end case;
+	-----------------------------------------------
+	-- STOP: Internal SPI handling
+	-----------------------------------------------
 
+			end if;
 		end if;
 	end process;
 
