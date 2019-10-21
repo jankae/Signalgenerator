@@ -27,7 +27,7 @@ static uint16_t ADC_Samples[samplelength];
 
 static RF::Status status;
 
-static Protocol::RFToFront *spi_status;
+static Protocol::RFToFront *spi_status = nullptr;
 
 // HMC1021 detector values
 constexpr float slope = 16.85f; // in mV/dbm
@@ -43,7 +43,7 @@ void RF::Init(Protocol::RFToFront *s) {
 	status.lo_unlocked = false;
 	status.synth_unlocked = false;
 	status.used_att = Attenuation::DB45;
-	InternalReference(false);
+	InternalReference(true);
 	HAL_ADCEx_Calibration_Start(&hadc);
 	HAL_ADC_Start_DMA(&hadc, (uint32_t*) ADC_Samples, samplelength);
 //	FPGA::SetDAC(0x0FFF, 0x0800);
@@ -488,9 +488,13 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc) {
 void RF::InternalReference(bool enabled) {
 	if (enabled) {
 		EN_INTREF_GPIO_Port->BSRR = EN_INTREF_Pin << 16;
-		spi_status->Status.IntRefON = 1;
+		if (spi_status) {
+			spi_status->Status.IntRefON = 1;
+		}
 	} else {
 		EN_INTREF_GPIO_Port->BSRR = EN_INTREF_Pin;
-		spi_status->Status.IntRefON = 0;
+		if (spi_status) {
+			spi_status->Status.IntRefON = 0;
+		}
 	}
 }

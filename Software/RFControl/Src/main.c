@@ -170,7 +170,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  HAL_RCC_MCOConfig(RCC_MCO, RCC_MCO1SOURCE_HSI, RCC_MCODIV_1);
 }
 
 /**
@@ -431,7 +430,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, EN_DIRECT_Pin|EN_INTREF_Pin|FPGA_CS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, ADF_CE_Pin|SYNTH_CE_Pin|ADF_LE_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, ADF_CE_Pin|FPGA_RESET_Pin|SYNTH_CE_Pin|ADF_LE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, MIX_EN_Pin|SYNTH_RF_EN_Pin|SYNTH_LE_Pin|DET_SCI3_Pin 
@@ -455,9 +454,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
   /*Configure GPIO pins : EN_DIRECT_Pin EN_INTREF_Pin ADF_CE_Pin FPGA_CS_Pin 
-                           SYNTH_CE_Pin ADF_LE_Pin */
+                           FPGA_RESET_Pin SYNTH_CE_Pin ADF_LE_Pin */
   GPIO_InitStruct.Pin = EN_DIRECT_Pin|EN_INTREF_Pin|ADF_CE_Pin|FPGA_CS_Pin 
-                          |SYNTH_CE_Pin|ADF_LE_Pin;
+                          |FPGA_RESET_Pin|SYNTH_CE_Pin|ADF_LE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -483,14 +482,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(SYNTH_MUX_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PA8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_8;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF0_MCO;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 }
 

@@ -27,7 +27,12 @@ static_assert(sizeof(Protocol::RFToFront) == 32);
 static_assert(sizeof(Protocol::FrontToRF) == 32);
 
 void app(void) {
+//	RF::InternalReference(true);
+	// keep FPGA in reset for now
+	FPGA_RESET_GPIO_Port->BSRR = FPGA_RESET_Pin;
+
 	log_init();
+	RF::InternalReference(true);
 	send.MagicConstant = Protocol::MagicConstant;
 
 	OffsetDAC.Set(MCP48X2::Channel::A, MCP48X2::MaxValue / 2, false);
@@ -35,7 +40,12 @@ void app(void) {
 
 	Protocol::FrontToRF spi_current;
 	memset(&spi_current, 0, sizeof(spi_current));
-	HAL_Delay(3000);
+	// Wait for FPGA to finish loading configuration
+	HAL_Delay(2000);
+	// Release FPGA reset
+	FPGA_RESET_GPIO_Port->BSRR = FPGA_RESET_Pin << 16;
+	HAL_Delay(2);
+
 	RF::Init(&send);
 
 	HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*) &send, (uint8_t*) &recv,

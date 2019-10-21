@@ -88,6 +88,8 @@ void Error_Handler(void);
 #define SYNTH_MUX_GPIO_Port GPIOB
 #define SYNTH_LE_Pin GPIO_PIN_11
 #define SYNTH_LE_GPIO_Port GPIOB
+#define FPGA_RESET_Pin GPIO_PIN_8
+#define FPGA_RESET_GPIO_Port GPIOA
 #define SYNTH_CE_Pin GPIO_PIN_11
 #define SYNTH_CE_GPIO_Port GPIOA
 #define SYNTH_LD_Pin GPIO_PIN_12
