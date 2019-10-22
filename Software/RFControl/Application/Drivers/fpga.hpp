@@ -17,10 +17,15 @@ enum class GPIO : uint16_t {
 	LED3 = 0x0400,
 	LED4 = 0x0800,
 	LED5 = 0x1000,
+	ADC_DC = 0x1000,
+	ADC_RANGE1 = 0x2000,
+	ADC_IMP1M = 0x4000,
+	ADC_RANGE2 = 0x8000,
 };
 
 enum class Reg : uint16_t {
 	GPIO = 0x0000,
+	EXT_ADC = 0x0001,
 //	DAC_I = 0x0002,		// direct write to I/Q DAC not supported by FPGA anymore
 //	DAC_Q = 0x0003,
 	MOD_REG0 = 0x0004,
@@ -35,9 +40,13 @@ inline GPIO operator|(GPIO a, GPIO b) {
 }
 
 void WriteReg(Reg reg, uint16_t val);
+uint16_t ReadStatus();
 void SetGPIO(GPIO g);
 void ResetGPIO(GPIO g);
 void UpdateGPIO();
+void ConfigureExtADC(uint16_t maxval, bool enableI, bool enableQ,
+		bool CouplingDC, bool Impedance1M, bool range1, bool range2);
+
 //void SetDAC(uint16_t i, uint16_t q);
 
 }

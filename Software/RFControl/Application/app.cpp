@@ -57,6 +57,7 @@ void app(void) {
 		new_data = false;
 		HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*) &send, (uint8_t*) &recv,
 					sizeof(spi_new));
+		send.Status.IQADCAvailable = FPGA::ReadStatus() & 0x0001;
 //		LOG(Log_System, LevelInfo,
 //				"SPI data, freq: %lu, dbm: %u, intref: 0x%02x",
 //				(uint32_t ) spi_new.frequency, spi_new.dbm,
@@ -67,6 +68,18 @@ void app(void) {
 		}
 		if (spi_new.Status.UseIntRef != spi_current.Status.UseIntRef) {
 			RF::InternalReference(spi_new.Status.UseIntRef);
+		}
+		if (spi_new.Status.ADCCouplingDC != spi_current.Status.ADCCouplingDC
+				|| spi_new.Status.ADCEnableI != spi_current.Status.ADCEnableI
+				|| spi_new.Status.ADCEnableQ != spi_current.Status.ADCEnableQ
+				|| spi_new.Status.ADCImp1M != spi_current.Status.ADCImp1M
+				|| spi_new.Status.ADCMax != spi_current.Status.ADCMax
+				|| spi_new.Status.ADCRange1 != spi_current.Status.ADCRange1
+				|| spi_new.Status.ADCRange2 != spi_current.Status.ADCRange2) {
+			FPGA::ConfigureExtADC(spi_new.Status.ADCMax,
+					spi_new.Status.ADCEnableI, spi_new.Status.ADCEnableQ,
+					spi_new.Status.ADCCouplingDC, spi_new.Status.ADCImp1M,
+					spi_new.Status.ADCRange1, spi_new.Status.ADCRange2);
 		}
 		if (spi_new.offset_I != spi_current.offset_I) {
 			uint16_t value = spi_new.offset_I / (UINT16_MAX / MCP48X2::MaxValue)

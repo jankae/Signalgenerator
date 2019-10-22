@@ -9,7 +9,13 @@ using FrontToRF = struct fronttorf {
 	int16_t dbm;
 	struct {
 		uint16_t UseIntRef :1;
-		uint16_t reserved :15;
+		uint16_t ADCCouplingDC :1;
+		uint16_t ADCImp1M :1;
+		uint16_t ADCRange1 :1;
+		uint16_t ADCRange2 :1;
+		uint16_t ADCEnableI :1;
+		uint16_t ADCEnableQ :1;
+		uint16_t ADCMax : 9;
 	} Status;
 	int16_t offset_I;
 	int16_t offset_Q;
@@ -31,7 +37,8 @@ using RFToFront = struct rftofront {
 		uint16_t n15dbm2 :1;
 		uint16_t n15dbm3 :1;
 		uint16_t AmplitudeUnlevel :1;
-		uint16_t reserved :3;
+		uint16_t IQADCAvailable :1;
+		uint16_t reserved :2;
 	} Status;
 	uint16_t reserved1;
 	uint32_t MagicConstant;
