@@ -131,8 +131,8 @@ NET "ADC_DATA[7]" LOC = P102;
 NET "ADC_DATA[8]" LOC = P104;
 NET "ADC_DATA[9]" LOC = P105;
 
-NET "SDA" IOSTANDARD = P87;
-NET "SCL" IOSTANDARD = P88;
+NET "SDA" LOC = P87;
+NET "SCL" LOC = P88;
 
 # PlanAhead Generated physical constraints 
 

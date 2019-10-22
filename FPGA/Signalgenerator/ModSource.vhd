@@ -50,7 +50,7 @@ entity ModSource is
 			  NEW_SAMPLE : out STD_LOGIC;
 			  FIFO_IN : in STD_LOGIC_VECTOR (11 downto 0);
 			  FIFO_WRITE : in STD_LOGIC;
-			  FIFO_LEVEL : out STD_LOGIC_VECTOR (7 downto 0)
+			  FIFO_LEVEL : out STD_LOGIC_VECTOR (STREAM_DEPTH-1 downto 0)
 			  );
 end ModSource;
 
@@ -116,7 +116,6 @@ architecture Behavioral of ModSource is
 	signal fifo_clear : std_logic;
 	signal fifo_out : std_logic_vector(11 downto 0);
 	signal fifo_read : std_logic;
-	signal fifo_level_int : std_logic_vector(STREAM_DEPTH-1 downto 0);
 begin
 
 	PRBS_Generator: PRBS
@@ -162,10 +161,8 @@ begin
 		WR => FIFO_WRITE,
 		RD => fifo_read,
 		CLEAR => fifo_clear,
-		LEVEL => fifo_level_int
+		LEVEL => FIFO_LEVEL
 	);
-	
-	FIFO_LEVEL <= fifo_level_int(STREAM_DEPTH-1 downto STREAM_DEPTH-8);
 	
 	fifo_clear <= '0' when SRCTYPE = "1000" else '1';
 	

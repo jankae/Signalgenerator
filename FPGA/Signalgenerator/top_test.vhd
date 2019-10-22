@@ -2,9 +2,9 @@
 -- Company: 
 -- Engineer:
 --
--- Create Date:   16:59:38 09/18/2019
+-- Create Date:   17:33:45 10/22/2019
 -- Design Name:   
--- Module Name:   /home/jan/Projekte/Signalgenerator/FPGA/Signalgenerator/ExtSPITest.vhd
+-- Module Name:   /home/jan/Projekte/Signalgenerator/FPGA/Signalgenerator/top_test.vhd
 -- Project Name:  Signalgenerator
 -- Target Device:  
 -- Tool versions:  
@@ -32,58 +32,62 @@ USE ieee.std_logic_1164.ALL;
 -- arithmetic functions with Signed or Unsigned values
 --USE ieee.numeric_std.ALL;
  
-ENTITY ExtSPITest IS
-END ExtSPITest;
+ENTITY top_test IS
+END top_test;
  
-ARCHITECTURE behavior OF ExtSPITest IS 
+ARCHITECTURE behavior OF top_test IS 
  
     -- Component Declaration for the Unit Under Test (UUT)
  
-	COMPONENT top
-	PORT(
-		CLK : IN std_logic;
-		RESET : IN std_logic;
-		SPI_INT_SCK : IN std_logic;
-		SPI_INT_CS : IN std_logic;
-		SPI_INT_MOSI : IN std_logic;
-		SPI_EXT_SCK : IN std_logic;
-		SPI_EXT_CS : IN std_logic;
-		SPI_EXT_MOSI : IN std_logic;
-		ADC_DATA : IN std_logic_vector(9 downto 0);
-		ADC_DCLK : IN std_logic;    
-		LED : INOUT std_logic_vector(4 downto 0);
-		SW1_CTL : INOUT std_logic_vector(2 downto 0);
-		SW2_CTL : INOUT std_logic_vector(2 downto 0);
-		MOD_EN : INOUT std_logic;
-		SDA : INOUT std_logic;      
-		DORI : OUT std_logic;
-		SELIQ : OUT std_logic;
-		I : OUT std_logic_vector(11 downto 0);
-		Q : OUT std_logic_vector(11 downto 0);
-		CLK_DAC_P : OUT std_logic;
-		CLK_DAC_N : OUT std_logic;
-		SPI_INT_MISO : OUT std_logic;
-		SPI_EXT_MISO : OUT std_logic;
-		ADC_SAMPLE_CLK : OUT std_logic;
-		SCL : OUT std_logic
-		);
-	END COMPONENT;    
+    COMPONENT top
+    PORT(
+         CLK : IN  std_logic;
+         RESET : IN  std_logic;
+         LED : INOUT  std_logic_vector(4 downto 0);
+         SW1_CTL : INOUT  std_logic_vector(2 downto 0);
+         SW2_CTL : INOUT  std_logic_vector(2 downto 0);
+         MOD_EN : INOUT  std_logic;
+         DORI : OUT  std_logic;
+         SELIQ : OUT  std_logic;
+         I : OUT  std_logic_vector(11 downto 0);
+         Q : OUT  std_logic_vector(11 downto 0);
+         CLK_DAC_P : OUT  std_logic;
+         CLK_DAC_N : OUT  std_logic;
+         SPI_INT_SCK : IN  std_logic;
+         SPI_INT_CS : IN  std_logic;
+         SPI_INT_MOSI : IN  std_logic;
+         SPI_INT_MISO : OUT  std_logic;
+         SPI_EXT_SCK : IN  std_logic;
+         SPI_EXT_CS : IN  std_logic;
+         SPI_EXT_MOSI : IN  std_logic;
+         SPI_EXT_MISO : OUT  std_logic;
+         ADC_SAMPLE_CLK : OUT  std_logic;
+         ADC_DATA : IN  std_logic_vector(9 downto 0);
+         ADC_DCLK : IN  std_logic;
+         SCL : OUT  std_logic;
+         SDA : INOUT  std_logic
+        );
+    END COMPONENT;
+    
 
    --Inputs
    signal CLK : std_logic := '0';
-   signal REF_CLK : std_logic := '0';
+   signal RESET : std_logic := '0';
    signal SPI_INT_SCK : std_logic := '0';
    signal SPI_INT_CS : std_logic := '0';
    signal SPI_INT_MOSI : std_logic := '0';
    signal SPI_EXT_SCK : std_logic := '0';
    signal SPI_EXT_CS : std_logic := '0';
    signal SPI_EXT_MOSI : std_logic := '0';
+   signal ADC_DATA : std_logic_vector(9 downto 0) := (others => '0');
+   signal ADC_DCLK : std_logic := '0';
 
 	--BiDirs
    signal LED : std_logic_vector(4 downto 0);
    signal SW1_CTL : std_logic_vector(2 downto 0);
    signal SW2_CTL : std_logic_vector(2 downto 0);
    signal MOD_EN : std_logic;
+   signal SDA : std_logic;
 
  	--Outputs
    signal DORI : std_logic;
@@ -94,14 +98,12 @@ ARCHITECTURE behavior OF ExtSPITest IS
    signal CLK_DAC_N : std_logic;
    signal SPI_INT_MISO : std_logic;
    signal SPI_EXT_MISO : std_logic;
+   signal ADC_SAMPLE_CLK : std_logic;
+   signal SCL : std_logic;
 
    -- Clock period definitions
-   constant CLK_period : time := 10 ns;
-   constant CLK_DAC_P_period : time := 10 ns;
-   constant CLK_DAC_N_period : time := 10 ns;
-   constant REF_CLK_period : time := 10 ns;
- 
-	constant SPI_CLK_period : time := 100ns;
+   constant CLK_period : time := 100 ns;
+ 	constant SPI_CLK_period : time := 100ns;
 	
 	signal data_signal : std_logic_vector(15 downto 0);
 BEGIN
@@ -109,6 +111,7 @@ BEGIN
 	-- Instantiate the Unit Under Test (UUT)
    uut: top PORT MAP (
           CLK => CLK,
+          RESET => RESET,
           LED => LED,
           SW1_CTL => SW1_CTL,
           SW2_CTL => SW2_CTL,
@@ -119,7 +122,6 @@ BEGIN
           Q => Q,
           CLK_DAC_P => CLK_DAC_P,
           CLK_DAC_N => CLK_DAC_N,
-          REF_CLK => REF_CLK,
           SPI_INT_SCK => SPI_INT_SCK,
           SPI_INT_CS => SPI_INT_CS,
           SPI_INT_MOSI => SPI_INT_MOSI,
@@ -127,9 +129,15 @@ BEGIN
           SPI_EXT_SCK => SPI_EXT_SCK,
           SPI_EXT_CS => SPI_EXT_CS,
           SPI_EXT_MOSI => SPI_EXT_MOSI,
-          SPI_EXT_MISO => SPI_EXT_MISO
+          SPI_EXT_MISO => SPI_EXT_MISO,
+          ADC_SAMPLE_CLK => ADC_SAMPLE_CLK,
+          ADC_DATA => ADC_DATA,
+          ADC_DCLK => ADC_DCLK,
+          SCL => SCL,
+          SDA => SDA
         );
 
+ 
    -- Clock process definitions
    CLK_process :process
    begin
@@ -137,30 +145,6 @@ BEGIN
 		wait for CLK_period/2;
 		CLK <= '1';
 		wait for CLK_period/2;
-   end process;
- 
-   CLK_DAC_P_process :process
-   begin
-		CLK_DAC_P <= '0';
-		wait for CLK_DAC_P_period/2;
-		CLK_DAC_P <= '1';
-		wait for CLK_DAC_P_period/2;
-   end process;
- 
-   CLK_DAC_N_process :process
-   begin
-		CLK_DAC_N <= '0';
-		wait for CLK_DAC_N_period/2;
-		CLK_DAC_N <= '1';
-		wait for CLK_DAC_N_period/2;
-   end process;
- 
-   REF_CLK_process :process
-   begin
-		REF_CLK <= '0';
-		wait for REF_CLK_period/2;
-		REF_CLK <= '1';
-		wait for REF_CLK_period/2;
    end process;
  
 
@@ -366,7 +350,9 @@ BEGIN
 		end procedure SPI_int;
    begin		
       -- hold reset state for 100 ns.
-      wait for 100 ns;	
+		RESET <= '1';
+      wait for 1500 ns;	
+		RESET <= '0';
 
       wait for CLK_period*10;
 

@@ -67,8 +67,8 @@ begin
 				clk_cnt <= 0;
 				state <= 0;
 				i2c_busy <= '0';
-				SCL <= '1';
-				SDA <= '1';
+				SCL <= 'Z';
+				SDA <= 'Z';
 				ACK <= '0';
 				generate_start <= '0';
 				generate_stop <= '0';
@@ -81,9 +81,9 @@ begin
 					if(generate_start = '1') then
 						case(state) is
 							when 0 =>
-								SDA <= '1';
+								SDA <= 'Z';
 							when 1 =>
-								SCL <= '1';
+								SCL <= 'Z';
 							when 2 =>
 								SDA <= '0';
 							when 3 =>
@@ -98,10 +98,10 @@ begin
 						case(state) is
 							when 0 =>
 								SDA <= '0';
-								SCL <= '1';
 							when 1 =>
-								SDA <= '1';
-								SCL <= '1';
+								SCL <= 'Z';
+							when 2 =>
+								SDA <= 'Z';
 							when others =>
 								i2c_busy <= '0';
 								generate_stop <= '0';
@@ -113,15 +113,23 @@ begin
 						case(state mod 4) is
 							when 0 =>
 								SCL <= '0';
-								SDA <= data_latched(8);
-								data_latched <= data_latched(7 downto 0) & '0';
+								if(data_latched(8) = '0') then
+									SDA <= '0';
+								else
+									SDA <= 'Z';
+								end if;
+								data_latched <= data_latched(7 downto 0) & '1';
 							when 1|2 =>
-								SCL <= '1';
+								SCL <= 'Z';
 							when 3 =>
 								SCL <= '0';
 						end case;
 						if(state = 34) then
-							ACK <= not SDA;
+							if(SDA = '0') then
+								ACK <= '1';
+							else
+								ACK <= '0';
+							end if;
 						elsif(state = 36) then
 							i2c_busy <= '0';
 							state <= 0;
@@ -141,7 +149,7 @@ begin
 					generate_stop <= '1';
 					i2c_busy <= '1';
 				elsif(WR = '1') then
-					data_latched <= DATA & '0';
+					data_latched <= DATA & '1';
 					i2c_busy <= '1';
 				end if;
 			end if;

@@ -39,9 +39,10 @@ entity Modulation is
            SOURCE : in  STD_LOGIC_VECTOR (11 downto 0);
 			  
 			  -- connections to external I/Q sample ADC
-			  ADC_SAMPLE_CLK : out STD_LOGIC;
-			  ADC_DCLK : in  STD_LOGIC;
-           ADC_DATA : in  STD_LOGIC_VECTOR (9 downto 0);
+			  EXT_I : in STD_LOGIC_VECTOR(9 downto 0);
+			  EXT_Q : in STD_LOGIC_VECTOR(9 downto 0);
+			  EXT_NEW_SAMPLE : in STD_LOGIC;
+			  EXT_ENABLE : out STD_LOGIC;
 			  
 			  	-- Modulation types:
 				-- 00000000 Modulation disabled
@@ -108,21 +109,7 @@ architecture Behavioral of Modulation is
 		doutb : OUT STD_LOGIC_VECTOR(23 DOWNTO 0)
 	);
 	END COMPONENT;
-	COMPONENT MAX19515
-	Generic (
-		SampleEveryNthCLK : integer
-	);
-	PORT(
-		CLK : IN  std_logic;
-		RESET : IN  std_logic;
-		SAMPLE_CLK : OUT  std_logic;
-		DCLK : IN  std_logic;
-		DATA : IN  std_logic_vector(9 downto 0);
-		OUT_A : OUT  std_logic_vector(9 downto 0);
-		OUT_B : OUT  std_logic_vector(9 downto 0);
-		NEW_SAMPLE : OUT  std_logic
-	);
-	END COMPONENT;
+
 --	COMPONENT FIR
 --	generic (
 --		Taps : integer;
@@ -154,6 +141,8 @@ architecture Behavioral of Modulation is
 		dout_2: out std_logic_vector(30 downto 0)
 	);
 	end component;
+	signal mod_type_buf : std_logic_vector(7 downto 0);
+	
 	signal mult_result : std_logic_vector(27 downto 0);
 	signal fm_sine : std_logic_vector(11 downto 0);
 	signal fm_cosine : std_logic_vector(11 downto 0);
@@ -164,7 +153,7 @@ architecture Behavioral of Modulation is
 	signal fm_dds_reset : std_logic;
 	
 	signal fm_pinc : std_logic_vector(31 downto 0);
-	signal I_Q_last : std_logic_vector(11 downto 0);
+	signal I_Q_last : std_logic_vector(7 downto 0);
 	signal I_Q_index : std_logic_vector(7 downto 0);
 	signal I_Q_lookup : std_logic_vector(23 downto 0);
 	
@@ -176,12 +165,6 @@ architecture Behavioral of Modulation is
 	signal QAM_FIR_I_output : std_logic_vector(30 downto 0);
 	signal QAM_FIR_Q_output : std_logic_vector(30 downto 0);
 --	signal QAM_FIR_ENABLED : std_logic;
-	
-	-- signals controlling external I/Q sampling
-	signal ext_I_Q_reset : std_logic;
-	signal ext_I_Q_new_sample : std_logic;
-	signal ext_I : std_logic_vector(9 downto 0);
-	signal ext_Q : std_logic_vector(9 downto 0);
 	
 --	signal COEFF_ARRAY : firarray(0 to FIR_TAPS-1);
 begin
@@ -215,21 +198,6 @@ begin
 		clkb => CLK,
 		addrb => I_Q_index,
 		doutb => I_Q_lookup
-	);
-	
-	SAMPLE_ADC: MAX19515
-	GENERIC MAP(
-		SampleEveryNthCLK => 6
-	)
-	PORT MAP (
-		CLK => CLK,
-		RESET => ext_I_Q_reset,
-		SAMPLE_CLK => ADC_SAMPLE_CLK,
-		DCLK => ADC_DCLK,
-		DATA => ADC_DATA,
-		OUT_A => ext_Q,
-		OUT_B => ext_I,
-		NEW_SAMPLE => ext_I_Q_new_sample
 	);
 	
 --	I_FIR: FIR
@@ -292,14 +260,15 @@ begin
 			QAM_SPS <= (others => '0');
 			QAM_DDS_last_sign <= '0';
 			QAM_FIR_NEW_SAMPLE <= '0';
-			ext_I_Q_reset <= '1';
+			EXT_ENABLE <= '0';
 		elsif rising_edge(CLK) then
 --			if(FIR_COEFF_WRITE = '1') then
 --				-- received a new FIR coefficient
 --				-- Address will be in I_Q_Address and data in I_Q_data
 --				COEFF_ARRAY(to_integer(unsigned(I_Q_Address))) <= signed(I_Q_data);
 --			end if;
-			case MODTYPE is
+			mod_type_buf <= MODTYPE;
+			case mod_type_buf is
 				-- modulation is disabled
 				when "00000000" =>
 					mult_enabled <= '0';
@@ -312,7 +281,7 @@ begin
 					QAM_DDS_last_sign <= '0';
 					QAM_FIR_NEW_SAMPLE <= '0';
 					QAM_SPS <= (others => '0');
-					ext_I_Q_reset <= '1';
+					EXT_ENABLE <= '0';
 				-- FM modulation
 				when "00000100" =>
 					mult_enabled <= '1';
@@ -320,7 +289,7 @@ begin
 					fm_pinc <= "0000" & mult_result;
 					DAC_I <= not fm_sine(11) & fm_sine(10 downto 0);
 					DAC_Q <= not fm_sine(11) & fm_sine(10 downto 0);
-					ext_I_Q_reset <= '1';
+					EXT_ENABLE <= '0';
 				-- FM lower sideband modulation
 				when "00000101" =>
 					mult_enabled <= '1';
@@ -328,7 +297,7 @@ begin
 					fm_pinc <= "0000" & mult_result;
 					DAC_I <= not fm_sine(11) & fm_sine(10 downto 0);
 					DAC_Q <= not fm_cosine(11) & fm_cosine(10 downto 0);
-					ext_I_Q_reset <= '1';
+					EXT_ENABLE <= '0';
 				-- FM upper sideband modulation
 				when "00000110" =>
 					mult_enabled <= '1';
@@ -336,7 +305,7 @@ begin
 					fm_pinc <= "0000" & mult_result;
 					DAC_I <= not fm_sine(11) & fm_sine(10 downto 0);
 					DAC_Q <= fm_cosine(11) & not fm_cosine(10 downto 0);
-					ext_I_Q_reset <= '1';
+					EXT_ENABLE <= '0';
 				-- AM modulation
 				when "00001000" =>
 					mult_enabled <= '1';
@@ -344,10 +313,10 @@ begin
 					fm_pinc <= (others => '0');
 					DAC_I <= std_logic_vector(to_unsigned(4095, 12) - unsigned(mult_result(27 downto 17)));
 					DAC_Q <= "100000000000";
-					ext_I_Q_reset <= '1';
+					EXT_ENABLE <= '0';
 				-- QAM modulation
 				when "00001100" | "00001101" =>
-					ext_I_Q_reset <= '1';
+					EXT_ENABLE <= '0';
 					mult_enabled <= '0';
 					fm_dds_enabled <= '1';
 					fm_pinc <= SETTING3 & SETTING2;
@@ -359,12 +328,12 @@ begin
 							QAM_FIR_Q_input <= I_Q_lookup(23 downto 12);
 							-- update index of next sample
 							-- set correct index in I/Q lookup RAM
-							if MODTYPE = "00001100" then
+							if mod_type_buf = "00001100" then
 								-- absolute modulation mode
 								I_Q_index <= SOURCE(7 downto 0) and SETTING1(7 downto 0);
 							else
 								-- differential modulation mode
-								I_Q_last <= std_logic_vector(unsigned(I_Q_last) + unsigned(SOURCE));
+								I_Q_last <= std_logic_vector(unsigned(I_Q_last) + unsigned(SOURCE(7 downto 0)));
 								I_Q_index <= I_Q_last(7 downto 0) and SETTING1(7 downto 0);
 							end if;
 							QAM_SPS <= unsigned(SETTING1(15 downto 8)) - 1;
@@ -385,10 +354,10 @@ begin
 				-- external modulation
 				when "00001110" =>
 					-- enable sampling of ADC, pass samples through FIR and send to DAC
-					ext_I_Q_reset <= '0';
-					QAM_FIR_I_input <= ext_I & "00";
-					QAM_FIR_Q_input <= ext_Q & "00";
-					QAM_FIR_NEW_SAMPLE <= ext_I_Q_new_sample;
+					EXT_ENABLE <= '1';
+					QAM_FIR_I_input <= EXT_I & "00";
+					QAM_FIR_Q_input <= EXT_Q & "00";
+					QAM_FIR_NEW_SAMPLE <= EXT_NEW_SAMPLE;
 					DAC_I <= not QAM_FIR_I_output(23) & QAM_FIR_I_output(22 downto 12);
 					DAC_Q <= not QAM_FIR_Q_output(23) & QAM_FIR_Q_output(22 downto 12);
 				when others =>

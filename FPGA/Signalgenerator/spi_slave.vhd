@@ -47,13 +47,13 @@ end spi_slave;
 
 architecture Behavioral of spi_slave is
 	signal miso_buffer : STD_LOGIC_VECTOR (W-1 downto 0);
-	signal mosi_buffer : STD_LOGIC_VECTOR (W-1 downto 0);
+	signal mosi_buffer : STD_LOGIC_VECTOR (W-2 downto 0);
 
 	signal data_valid : STD_LOGIC_VECTOR(2 downto 0);
 	signal data_synced : STD_LOGIC_VECTOR(2 downto 0);
 	signal data : STD_LOGIC_VECTOR(W-1 downto 0);
 	
-	signal bit_cnt : STD_LOGIC_VECTOR(W-1 downto 0);
+	signal bit_cnt : STD_LOGIC_VECTOR(W-2 downto 0);
 begin
 
 	process(CLK)
@@ -90,24 +90,27 @@ begin
 				if data_valid(0) = '1' and data_synced(2) = '1' then
 					data_valid(0) <= '0';
 				end if;
-				mosi_buffer <= mosi_buffer(W-2 downto 0) & MOSI;
+				mosi_buffer <= mosi_buffer(W-3 downto 0) & MOSI;
 			end if;
 		end if;
 	end process;
 	
-	slave_out: process(SPI_CLK, CS, BUF_IN)
+	slave_out: process(SPI_CLK, CS, BUF_IN, bit_cnt)
 	begin
 		if CS = '1' then
-			miso_buffer <= BUF_IN;
 			bit_cnt <= (others => '0');
-		elsif falling_edge(SPI_CLK) then
+			miso_buffer <= BUF_IN;
+		end if;
+		if falling_edge(SPI_CLK) then
 --			RISING_TOGGLE <= not RISING_TOGGLE;
-			if bit_cnt(W-2) = '1' then
-				bit_cnt <= (others => '0');
-				miso_buffer <= BUF_IN;
-			else
-				bit_cnt <= bit_cnt(W-2 downto 0) & '1';
-				miso_buffer <= miso_buffer(W-2 downto 0) & '0';
+			if CS = '0' then
+				if bit_cnt(W-2) = '0' then
+					bit_cnt <= bit_cnt(W-3 downto 0) & '1';
+					miso_buffer <= miso_buffer(W-2 downto 0) & '0';
+				else
+					bit_cnt <= (others => '0');
+					miso_buffer <= BUF_IN;
+				end if;
 			end if;
 		end if;
 	end process;

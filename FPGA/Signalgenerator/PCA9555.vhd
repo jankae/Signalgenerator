@@ -31,6 +31,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity PCA9555 is
 	 GENERIC(
+			CLK_FREQ : integer;
 			ADDRESS : std_logic_vector(6 downto 0)
 	 );
     Port ( CLK : in  STD_LOGIC;
@@ -44,7 +45,7 @@ end PCA9555;
 architecture Behavioral of PCA9555 is
 	signal configured : std_logic;
 	signal gpo_state : std_logic_vector(15 downto 0);
-	signal write_dest : std_logic_vector(2 downto 0);
+	signal write_dest : std_logic_vector(0 downto 0);
 	signal write_value : std_logic_vector(15 downto 0);
 	signal state : integer range 0 to 15;
 	signal busy : std_logic;
@@ -78,8 +79,8 @@ begin
 
 	I2C_Master: i2c
 	GENERIC MAP(
-		CLK_FREQ => 200000000,
-		I2C_FREQ => 1000000
+		CLK_FREQ => CLK_FREQ,
+		I2C_FREQ => 100000
 	)
 	PORT MAP(
 		CLK => CLK,
@@ -121,7 +122,7 @@ begin
 								i2c_data <= ADDRESS & '0';
 								i2c_write <= '1';
 							when 2 =>
-								i2c_data <= "00000" & write_dest;
+								i2c_data <= "00000" & write_dest & "10";
 								i2c_write <= '1';
 							when 3 =>
 								i2c_data <= write_value(7 downto 0);
@@ -133,9 +134,9 @@ begin
 								i2c_stop <= '1';
 							when others =>
 								busy <= '0';
-								if(write_dest = "110") then
+								if(write_dest = "1") then
 									configured <= '1';
-								elsif(write_dest = "010") then
+								elsif(write_dest = "0") then
 									UPDATED <= '1';
 									gpo_state <= GPO;
 								end if;
@@ -145,19 +146,21 @@ begin
 							configured <= '0';
 							busy <= '0';
 							UPDATED <= '0';
+							i2c_write <= '0';
+							i2c_stop <= '1';
 						end if;
 					end if;
 				else
 					if(configured = '0') then
-						-- configure pins as outputs
-						write_dest <= "110";
-						write_value <= (others=>'0');
+						-- configure pins 2-15 as outputs, pin 0-1 as input
+						write_dest <= "1";
+						write_value <= "0000000000000011";
 						busy <= '1';
 						state <= 0;
 					elsif (gpo_state /= GPO) then
 						-- update outputs
 						UPDATED <= '0';
-						write_dest <= "010";
+						write_dest <= "0";
 						write_value <= GPO;
 						busy <= '1';
 						state <= 0;

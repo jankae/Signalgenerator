@@ -45,7 +45,6 @@ entity top is
            Q : out  STD_LOGIC_VECTOR (11 downto 0);
            CLK_DAC_P : out  STD_LOGIC;
            CLK_DAC_N : out  STD_LOGIC;
-           REF_CLK : in  STD_LOGIC;
            SPI_INT_SCK : in  STD_LOGIC;
            SPI_INT_CS : in  STD_LOGIC;
            SPI_INT_MOSI : in  STD_LOGIC;
@@ -109,9 +108,10 @@ architecture Behavioral of top is
 		CLK : IN std_logic;
 		RESET : IN std_logic;
 		SOURCE : IN std_logic_vector(11 downto 0);
-		ADC_SAMPLE_CLK : out STD_LOGIC;
-		ADC_DCLK : in  STD_LOGIC;
-      ADC_DATA : in  STD_LOGIC_VECTOR (9 downto 0);
+		EXT_I : in STD_LOGIC_VECTOR(9 downto 0);
+		EXT_Q : in STD_LOGIC_VECTOR(9 downto 0);
+		EXT_NEW_SAMPLE : in STD_LOGIC;
+		EXT_ENABLE : out STD_LOGIC;
 		MODTYPE : IN std_logic_vector(7 downto 0);
 		SETTING1 : IN std_logic_vector(15 downto 0);
 		SETTING2 : IN std_logic_vector(15 downto 0); 
@@ -124,6 +124,37 @@ architecture Behavioral of top is
 		I_Q_Write : in STD_LOGIC_VECTOR (0 downto 0);
 		FIR_COEFF_WRITE : std_logic;
 		FIR_COEFF_RELOAD : std_logic
+		);
+	END COMPONENT;
+	
+	COMPONENT MAX19515
+	GENERIC(
+		SampleEveryNthCLK : integer
+	);
+	PORT(
+		CLK : IN std_logic;
+		RESET : IN std_logic;
+		DCLK : IN std_logic;
+		DATA : IN std_logic_vector(9 downto 0);          
+		SAMPLE_CLK : OUT std_logic;
+		OUT_A : OUT std_logic_vector(9 downto 0);
+		OUT_B : OUT std_logic_vector(9 downto 0);
+		NEW_SAMPLE : OUT std_logic
+		);
+	END COMPONENT;
+	
+	COMPONENT PCA9555
+	GENERIC(
+		CLK_FREQ : integer;
+		ADDRESS : std_logic_vector(6 downto 0)
+	);
+	PORT(
+		CLK : IN std_logic;
+		RESET : IN std_logic;
+		GPO : IN std_logic_vector(15 downto 0);    
+		SDA : INOUT std_logic;      
+		SCL : OUT std_logic;
+		UPDATED : OUT std_logic
 		);
 	END COMPONENT;
 	
@@ -140,7 +171,7 @@ architecture Behavioral of top is
 		NEW_SAMPLE : OUT std_logic;
 		FIFO_IN : in STD_LOGIC_VECTOR (11 downto 0);
 		FIFO_WRITE : in STD_LOGIC;
-		FIFO_LEVEL : out STD_LOGIC_VECTOR (7 downto 0)
+		FIFO_LEVEL : out STD_LOGIC_VECTOR (STREAM_DEPTH-1 downto 0)
 	);
 	END COMPONENT;
 	
@@ -173,15 +204,36 @@ architecture Behavioral of top is
 	signal mod_write_I_Q : std_logic_vector(0 downto 0) := "0";
 	signal mod_write_FIR : std_logic;
 	signal mod_reload_FIR : std_logic;
+	
+	signal mod_use_ext_adc : std_logic;
 	-- modulation source settings
 	signal mod_src_pinc : std_logic_vector(19 downto 0);
 	signal mod_src_type : std_logic_vector(3 downto 0);
 	signal mod_src_value : std_logic_vector(11 downto 0);
 	
 	signal mod_src_write : std_logic := '0';
-	signal mod_src_fifo_level : std_logic_vector(7 downto 0);
+	signal mod_src_fifo_level : std_logic_vector(13 downto 0);
 
 	signal pll_locked : std_logic;
+	
+	-- external ADC signals
+	signal EXT_ADC_SHUTDOWN : std_logic;
+	signal EXT_ADC_NEW_SAMPLE : std_logic;
+	signal EXT_ADC_CH_A : std_logic_vector(9 downto 0);
+	signal EXT_ADC_CH_B : std_logic_vector(9 downto 0);
+	
+	signal EXT_PORT_VALUES : std_logic_vector(15 downto 0);
+	signal EXT_PORT_UPDATED : std_logic;
+	
+	signal EXT_ADC_MAX : signed(9 downto 0);
+	signal EXT_ADC_ABS_I : signed(9 downto 0);
+	signal EXT_ADC_ABS_Q : signed(9 downto 0);
+	signal EXT_ADC_LED_I_ENABLE : std_logic;
+	signal EXT_ADC_LED_Q_ENABLE : std_logic;
+	signal EXT_ADC_I_OVERRANGE : std_logic;
+	signal EXT_ADC_Q_OVERRANGE : std_logic;
+	signal EXT_ADC_I_OVR_CNT : integer range 0 to 134217727;
+	signal EXT_ADC_Q_OVR_CNT : integer range 0 to 134217727;
 begin
 your_instance_name : MainPLL
   port map
@@ -265,9 +317,10 @@ your_instance_name : MainPLL
 		DAC_I => I,
 		DAC_Q => Q,
 		SOURCE => mod_src_value,
-		ADC_SAMPLE_CLK => ADC_SAMPLE_CLK,
-		ADC_DCLK => ADC_DCLK,
-		ADC_DATA => ADC_DATA,
+		EXT_I => EXT_ADC_CH_B,
+		EXT_Q => EXT_ADC_CH_A,
+		EXT_NEW_SAMPLE => EXT_ADC_NEW_SAMPLE,
+		EXT_ENABLE => mod_use_ext_adc,
 		MODTYPE => mod_type,
 		SETTING1 => mod_setting1,
 		SETTING2 => mod_setting2,
@@ -279,12 +332,53 @@ your_instance_name : MainPLL
 		FIR_COEFF_RELOAD => mod_reload_FIR
 	);
 	
+	EXT_ADC: MAX19515
+	GENERIC MAP (
+		SampleEveryNthCLK => 6
+	)
+	PORT MAP(
+		CLK => CLK100,
+		RESET => EXT_ADC_SHUTDOWN,
+		SAMPLE_CLK => ADC_SAMPLE_CLK,
+		DCLK => ADC_DCLK,
+		DATA => ADC_DATA,
+		OUT_A => EXT_ADC_CH_A,
+		OUT_B => EXT_ADC_CH_B,
+		NEW_SAMPLE => EXT_ADC_NEW_SAMPLE 
+	);
+	
+	PortExpander: PCA9555
+	GENERIC MAP(
+		CLK_FREQ => 200000000,
+		ADDRESS => "0100000"
+	)
+	PORT MAP(
+		CLK => CLK100,
+		RESET => RESET,
+		SCL => SCL,
+		SDA => SDA,
+		GPO => EXT_PORT_VALUES,
+		UPDATED => EXT_PORT_UPDATED
+	);
+	
 	DORI <= '1';
 	SELIQ <= '0';
 	
 	LED(4) <= not pll_locked;
 	LED(3) <= RESET;
 	LED(2 downto 0) <= (others => '0');
+	
+	EXT_ADC_SHUTDOWN <= not mod_use_ext_adc;
+	EXT_PORT_VALUES(11) <= EXT_ADC_SHUTDOWN;
+	EXT_PORT_VALUES(3) <= EXT_ADC_LED_I_ENABLE and not EXT_ADC_I_OVERRANGE;
+	EXT_PORT_VALUES(2) <= EXT_ADC_LED_I_ENABLE and EXT_ADC_I_OVERRANGE;
+	EXT_PORT_VALUES(5) <= EXT_ADC_LED_Q_ENABLE and not EXT_ADC_Q_OVERRANGE;
+	EXT_PORT_VALUES(4) <= EXT_ADC_LED_Q_ENABLE and EXT_ADC_Q_OVERRANGE;
+	-- set unused ports to 0
+	EXT_PORT_VALUES(1 downto 0) <= (others => '0');
+	EXT_PORT_VALUES(10 downto 6) <= (others => '0');
+	
+	spi_int_in <= "000000000000000" & EXT_PORT_UPDATED;
 	
 	process(CLK100)
 	begin
@@ -298,7 +392,7 @@ your_instance_name : MainPLL
 			first <= '1';
 			write_not_read <= '0';
 			mem_address <= (others => '0');
-			spi_int_in <= (others => '0');
+			--spi_int_in <= (others => '0');
 			spi_ext_in <= (others => '0');
 			spi_ext_first_word <= '1';
 			spi_ext_I_Q_address <= (others => '0');
@@ -314,7 +408,31 @@ your_instance_name : MainPLL
 			mod_src_pinc <= (others => '0');
 			mod_src_type <= (others => '0');
 			mod_src_write <= '0';
+			ext_adc_I_ovr_cnt <= 0;
+			ext_adc_Q_ovr_cnt <= 0;
+			ext_adc_max <= to_signed(511, ext_adc_max'length);
 		else
+			-- keep track of overrange on external ADC
+			EXT_ADC_ABS_I <= abs(signed(EXT_ADC_CH_B));
+			if(EXT_ADC_ABS_I>EXT_ADC_MAX) then
+				ext_adc_I_ovr_cnt <= 134217727;
+				EXT_ADC_I_OVERRANGE <= '1';
+			elsif	ext_adc_I_ovr_cnt > 0 then
+				ext_adc_I_ovr_cnt <= ext_adc_I_ovr_cnt - 1;
+			else
+				EXT_ADC_I_OVERRANGE <= '0';
+			end if;
+			
+			EXT_ADC_ABS_Q <= abs(signed(EXT_ADC_CH_A));
+			if(EXT_ADC_ABS_Q>EXT_ADC_MAX) then
+				ext_adc_Q_ovr_cnt <= 134217727;
+				EXT_ADC_Q_OVERRANGE <= '1';
+			elsif	ext_adc_Q_ovr_cnt > 0 then
+				ext_adc_Q_ovr_cnt <= ext_adc_Q_ovr_cnt - 1;
+			else
+				EXT_ADC_Q_OVERRANGE <= '0';
+			end if;
+		
 			-- reset signals only valid for one cycle
 			if mod_src_write = '1' then
 				mod_src_write <= '0';
@@ -346,7 +464,6 @@ your_instance_name : MainPLL
 								spi_ext_fifo_data <= '1';
 							elsif spi_ext_out(15 downto 9) = "1000000" then
 								-- subsequent data is for FIR coefficients
-								spi_ext_I_Q_address <= "0000" & spi_ext_out(4 downto 0);
 								spi_ext_fir_data <= '1';
 								mod_reload_FIR <= '1';
 							else
@@ -366,7 +483,7 @@ your_instance_name : MainPLL
 					end if;
 				end if;
 				if spi_ext_fifo_data = '1' then
-					spi_ext_in <= "00000000" & mod_src_fifo_level;
+					spi_ext_in <= "00" & mod_src_fifo_level;
 				else
 					spi_ext_in <= "0000000" & spi_ext_I_Q_address;
 				end if;
@@ -395,6 +512,12 @@ your_instance_name : MainPLL
 										MOD_EN <= spi_int_out(7);
 										SW1_CTL <= spi_int_out(2 downto 0);
 										--LED <= spi_int_out(12 downto 8);
+										EXT_PORT_VALUES(15 downto 12) <= spi_int_out(15 downto 12);
+									-- Ext ADC range and LED control
+									when "000000000000001" =>
+										EXT_ADC_LED_I_ENABLE <= spi_int_out(14);
+										EXT_ADC_LED_Q_ENABLE <= spi_int_out(15);
+										EXT_ADC_MAX <= signed(spi_int_out(9 downto 0));
 									-- modulation source phase increment
 									when "000000000000100" =>
 										mod_src_pinc <= mod_src_pinc(19 downto 16) & spi_int_out;
@@ -422,25 +545,25 @@ your_instance_name : MainPLL
 				end if;
 				-- assign spi_in dependent on mem_address
 		--			spi_in <= '0' & mem_address;
-				case mem_address is
-					when "000000000000000" =>
-						spi_int_in <= "000" & LED(4 downto 0) & MOD_EN & SW2_CTL(2 downto 0) & "0" & SW1_CTL(2 downto 0);
-	--				when "000000000000010" =>
-	--					spi_int_in <= "0000" & I_direct;
-	--				when "000000000000011" =>
-	--					spi_int_in <= "0000" & Q_direct;
-					when "000000000000100" =>
-						spi_int_in <= mod_src_pinc(15 downto 0);
-					when "000000000000101" =>
-						spi_int_in <= mod_setting1;
-					when "000000000000110" =>
-						spi_int_in <= mod_setting2;
-					when "000000000000111" =>
-						spi_int_in <= mod_src_pinc(19 downto 16) & mod_src_type & mod_type;
-					when "000000000001000" =>
-						spi_int_in <= mod_setting3;
-					when others => spi_int_in <= (others => '0');
-				end case;
+--				case mem_address is
+--					when "000000000000000" =>
+--						spi_int_in <= EXT_PORT_UPDATED & "00" & LED(4 downto 0) & MOD_EN & SW2_CTL(2 downto 0) & "0" & SW1_CTL(2 downto 0);
+--	--				when "000000000000010" =>
+--	--					spi_int_in <= "0000" & I_direct;
+--	--				when "000000000000011" =>
+--	--					spi_int_in <= "0000" & Q_direct;
+--					when "000000000000100" =>
+--						spi_int_in <= mod_src_pinc(15 downto 0);
+--					when "000000000000101" =>
+--						spi_int_in <= mod_setting1;
+--					when "000000000000110" =>
+--						spi_int_in <= mod_setting2;
+--					when "000000000000111" =>
+--						spi_int_in <= mod_src_pinc(19 downto 16) & mod_src_type & mod_type;
+--					when "000000000001000" =>
+--						spi_int_in <= mod_setting3;
+--					when others => spi_int_in <= (others => '0');
+--				end case;
 	-----------------------------------------------
 	-- STOP: Internal SPI handling
 	-----------------------------------------------

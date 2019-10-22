@@ -67,7 +67,7 @@ begin
 			if (Wr='1' and full='0') then
 				memory(to_integer(wrcnt)) <= unsigned(Din);
 				wrcnt <= wrcnt+1;
-				if (rdcnt = wrcnt) then
+				if (rdcnt = wrcnt + 2) then
 					full <= '1';
 				end if;
 				empty <= '0';
