@@ -83,6 +83,11 @@ using Modulation = struct modulation {
 			uint32_t SymbolsPerSecond;
 			bool differential;
 		} QAM;
+		struct {
+			bool ACCoupled;
+			bool Impedance50R;
+			uint32_t maxVoltage;
+		} External;
 	};
 	SourceType source;
 	union {
