@@ -86,6 +86,7 @@ architecture Behavioral of top is
 	  -- Clock out ports
 	  CLK_OUT1          : out    std_logic;
 	  -- Status and control signals
+	  RESET             : in     std_logic;
 	  LOCKED            : out    std_logic
 	 );
 	end component;
@@ -242,6 +243,7 @@ your_instance_name : MainPLL
     -- Clock out ports
     CLK_OUT1 => CLK100,
     -- Status and control signals
+	 RESET  => RESET,
     LOCKED => pll_locked);
 	 
 	 CLK100_INV <= not CLK100;
