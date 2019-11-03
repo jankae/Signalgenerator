@@ -230,10 +230,10 @@ void RF::Configure(uint64_t f, int16_t cdbm) {
 	LOG(Log_RF, LevelDebug, "Requested output level of %d.%02udbm", cdbm / 100,
 			abs(cdbm) % 100);
 
-	// disable modulation for now
-	for (uint8_t i = 0; i < 8; i++) {
-		FPGA::WriteReg((FPGA::Reg) (i + (int) FPGA::Reg::MOD_REG0), 0x0000);
-	}
+//	// disable modulation for now
+//	for (uint8_t i = 0; i < 8; i++) {
+//		FPGA::WriteReg((FPGA::Reg) (i + (int) FPGA::Reg::MOD_REG0), 0x0000);
+//	}
 
 	// turn on RF path
 	Synthesizer.Update();
@@ -244,7 +244,7 @@ void RF::Configure(uint64_t f, int16_t cdbm) {
 	spi_status->Status.MainPLLON = 1;
 	status.enabled = true;
 	LOG(Log_RF, LevelInfo, "Output enabled");
-	status.stabilized = false;
+	status.stabilized = true;//false;
 	status.stabilized_cnt = 0;
 }
 
@@ -382,7 +382,7 @@ static void NewADCSamples(uint16_t *data, uint16_t len) {
 #endif
 #ifdef AMP_CTRL_DIGITAL
 
-	if (!status.stabilized) {
+//	if (!status.stabilized) {
 		static uint32_t last_adjust = HAL_GetTick();
 		constexpr uint32_t adjust_delay = 10;
 		if (HAL_GetTick() - last_adjust >= adjust_delay) {
@@ -397,18 +397,23 @@ static void NewADCSamples(uint16_t *data, uint16_t len) {
 			int16_t cdbm = cdbm_det + 900;
 
 			int16_t cdbm_diff = status.requestedcdbm - cdbm;
-			if (cdbm_diff < 10) {
-				status.stabilized_cnt++;
+			if (cdbm_diff < 50) {
 				if (status.stabilized_cnt >= 10) {
 					status.stabilized = true;
 					LOG(Log_RF, LevelInfo, "Level stabilized");
 					status.unlevel = false;
 					spi_status->Status.AmplitudeUnlevel = 0;
+				} else {
+					status.stabilized_cnt++;
 				}
 			} else {
-				status.unlevel = true;
-				spi_status->Status.AmplitudeUnlevel = 1;
-				status.stabilized_cnt = 0;
+				if (status.stabilized_cnt == 0) {
+					status.unlevel = true;
+					spi_status->Status.AmplitudeUnlevel = 1;
+					status.stabilized_cnt = 0;
+				} else {
+					status.stabilized_cnt--;
+				}
 			}
 
 			// Variable attenuator has a slope of approximately -20db/V
@@ -466,7 +471,7 @@ static void NewADCSamples(uint16_t *data, uint16_t len) {
 			PowerDAC.Set(MCP48X2::Channel::B, status.used_variable_att * 2,
 					false);
 		}
-	}
+//	}
 #endif
 
 	// also check lock status in ADC interrupt
