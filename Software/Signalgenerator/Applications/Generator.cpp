@@ -8,6 +8,7 @@
 #include "Constellation.hpp"
 #include "HardwareLimits.hpp"
 #include "FPGA.hpp"
+#include <math.h>
 
 // main carrier settings
 static bool RFon = false;
@@ -466,6 +467,11 @@ void Generator::Init() {
 		if (calibrate_balance) {
 			Calibration::RunBalance();
 			calibrate_balance = false;
+
+			// balance calibration procedure changes QAM constellation
+			// and FIR in FPGA, reload
+			FPGA::SetConstellation(QAMconst);
+			updateFIR = true;
 			continue;
 		}
 		Protocol::FrontToRF send;
@@ -503,6 +509,19 @@ void Generator::Init() {
 				mod.QAM.SamplesPerSymbol = QAMSPS;
 				mod.QAM.SymbolsPerSecond = QAMSymbolrate;
 				mod.QAM.differential = QAMdiff;
+				break;
+			case Protocol::ModulationType::External:
+				mod.External.ACCoupled = ExtCouplingAC;
+				mod.External.Impedance50R = ExtImpedance50;
+				if (!ExtImpedance50) {
+					mod.External.maxVoltage = ExtMaxVoltage;
+				} else {
+					// convert from dbm to peak voltage
+					float power_mW = pow(10.0f, (float) ExtMaxLevel / 1000.0f);
+					float Veff = sqrt(power_mW / 1000 * 50);
+					float Vp = sqrt(2) * Veff;
+					mod.External.maxVoltage = Vp * 1000000;
+				}
 				break;
 			}
 			mod.source = modSourceType;

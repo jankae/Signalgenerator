@@ -19,7 +19,6 @@ public:
 	void SetUsedPoints(uint8_t used) {
 		usedPoints = used;
 	}
-	void LoadToFPGA();
 	static void SetFIRinFPGA(uint8_t sps, float beta);
 	bool GetScaledPoint(uint16_t point, uint16_t maxVal, int16_t &i,
 			int16_t &q);

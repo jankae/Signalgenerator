@@ -4,6 +4,8 @@
 #include "gui.hpp"
 #include "SPIProtocol.hpp"
 #include "Persistence.hpp"
+#include "FPGA.hpp"
+#include "Constellation.hpp"
 
 extern SPI_HandleTypeDef hspi1;
 
@@ -194,27 +196,33 @@ void Calibration::RunBalance() {
 	uint8_t new_step = 0;
 	bool done = false;
 
+	int32_t offset;
+
 	Window *w = new Window("Offset Calibration", Font_Big, COORDS(250, 150));
 	Container *c = new Container(w->getAvailableArea());
 	Label *lStep = new Label(20, Font_Big, Label::Orientation::CENTER);
 	Label *lUsage = new Label("Adjust knob to suppress carrier", Font_Medium);
 	Label *lValue = new Label(20, Font_Big, Label::Orientation::CENTER, COLOR_RED);
+	Entry<int32_t> *eValue = new Entry<int32_t>(&offset, nullptr, nullptr,
+			Font_Big, 8, Unit::Voltage);
+	eValue->setSelectable(false);
 	Button *bPrev = new Button("Prev", Font_Big, [](void *ptr, Widget *w) {
 		uint8_t *new_step = (uint8_t*) ptr;
 		(*new_step)--;
-	}, &new_step, COORDS(80, 40));
+	}, &new_step, COORDS(80, 35));
 	Button *bNext = new Button("Next", Font_Big, [](void *ptr, Widget *w) {
 		uint8_t *new_step = (uint8_t*) ptr;
 		(*new_step)++;
-	}, &new_step, COORDS(80, 40));
+	}, &new_step, COORDS(80, 35));
 	Button *bQuit = new Button("Quit", Font_Big, [](void *ptr, Widget *w) {
 		bool *done = (bool*) ptr;
 		*done = true;
-	}, &done, COORDS(80, 40));
+	}, &done, COORDS(80, 35));
 
 	c->attach(lStep, COORDS(4, 5));
 	c->attach(lUsage, COORDS(34, 25));
 	c->attach(lValue, COORDS(4, 40));
+	c->attach(eValue, COORDS(30, 60));
 
 	c->attach(bPrev, COORDS(2, c->getSize().y - bPrev->getSize().y - 2));
 	c->attach(bNext,
@@ -243,6 +251,11 @@ void Calibration::RunBalance() {
 
 	constexpr uint8_t last_step = maxPoints * 2 - 1;
 
+	Constellation dummyConst;
+	dummyConst.SetUsedPoints(2);
+	FPGA::SetConstellation(dummyConst);
+	FPGA::SetFIRRaisedCosine(8, 0.35f);
+
 	while(!done) {
 		if (new_step != step) {
 			step = new_step;
@@ -270,23 +283,33 @@ void Calibration::RunBalance() {
 			snprintf(buf, sizeof(buf), "%s, %s", freq, offset);
 			lValue->setText(buf);
 		}
+
+		uint8_t pointIndex = step / 2;
+		int64_t value = step & 0x01 ? BalancePoints[pointIndex].Q : BalancePoints[pointIndex].I;
+		offset = value * 50000 / INT16_MAX;
+		eValue->requestRedraw();
 		// send current setting to RFboard
 		Protocol::FrontToRF send;
 		Protocol::RFToFront recv;
 		memset(&send, 0, sizeof(send));
 		memset(&recv, 0, sizeof(recv));
 		send.Status.UseIntRef = 1;
-		uint8_t pointIndex = step / 2;
 		send.frequency = BalancePoints[pointIndex].freq;
 		send.dbm = CorrectAmplitude(BalancePoints[pointIndex].freq, 0);
 
 		send.offset_I = BalancePoints[pointIndex].I;
 		send.offset_Q = BalancePoints[pointIndex].Q;
-		// FM modulation with constant modulation source
-		send.modulation_registers[0] = 4095; // fixed value
-		send.modulation_registers[1] = UINT16_MAX; // maximum frequency deviation
-		send.modulation_registers[3] |= 0x04; // FM modulation
-		send.modulation_registers[3] |= (((uint8_t) 0x01) << 8); // fixed source
+		// QAM modulation with both I and Q parts set to zero
+		Protocol::Modulation mod;
+		mod.type = Protocol::ModulationType::QAM2;
+		mod.source = Protocol::SourceType::FixedValue;
+		mod.Fixed.value = 0;
+		mod.QAM.SamplesPerSymbol = 8;
+		mod.QAM.SymbolsPerSecond = 1000;
+		mod.QAM.differential = false;
+
+		Protocol::SetupModulation(send, mod);
+
 		SPI1_CS_RF_GPIO_Port->BSRR = SPI1_CS_RF_Pin << 16;
 		HAL_SPI_TransmitReceive(&hspi1, (uint8_t*) &send, (uint8_t*) &recv,
 				sizeof(send), 1000);

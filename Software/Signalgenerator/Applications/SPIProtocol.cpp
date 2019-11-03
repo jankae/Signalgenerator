@@ -62,7 +62,6 @@ void Protocol::SetupModulation(FrontToRF &data, Modulation mod) {
 		data.modulation_registers[4] |= (pinc >> 16) & 0xFFFF;
 	}
 		break;
-	}
 	case ModulationType::External:
 		data.Status.ADCCouplingDC = mod.External.ACCoupled ? false : true;
 		data.Status.ADCImp1M = mod.External.Impedance50R ? false : true;
@@ -89,6 +88,7 @@ void Protocol::SetupModulation(FrontToRF &data, Modulation mod) {
 		constexpr uint32_t ADCMaxValue = 511;
 		data.Status.ADCMax = maxADCVoltage * ADCMaxValue / ADCFullscale;
 		break;
+	}
 	data.modulation_registers[3] |= type;
 
 	switch(mod.type) {
