@@ -63,8 +63,11 @@ void Protocol::SetupModulation(FrontToRF &data, Modulation mod) {
 	}
 		break;
 	case ModulationType::External:
-		data.Status.ADCCouplingDC = mod.External.ACCoupled ? false : true;
-		data.Status.ADCImp1M = mod.External.Impedance50R ? false : true;
+		type = 0x0E;
+		data.Status.ADCEnableI = 1;
+		data.Status.ADCEnableQ = 1;
+		data.Status.ADCCouplingDC = mod.External.ACCoupled ? 0 : 1;
+		data.Status.ADCImp1M = mod.External.Impedance50R ? 0 : 1;
 		uint32_t maxADCVoltage;
 		// Fullscale ADC input is 1.5V, two voltage dividers are available:
 		// Range1 attenuates the signal to one fourth, Range2 to 3/50

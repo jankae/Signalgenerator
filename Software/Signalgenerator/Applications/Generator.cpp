@@ -454,8 +454,13 @@ void Generator::Init() {
 		}
 		if (updateFIR) {
 			ModulationChanged(nullptr, nullptr);
-			float beta = (float) QAMRolloff / 1000;
-			FPGA::SetFIRRaisedCosine(QAMSPS, beta);
+			if (modType == Protocol::ModulationType::External) {
+				// TODO set proper FIR
+				FPGA::SetFIRRaisedCosine(1, 1.0f);
+			} else {
+				float beta = (float) QAMRolloff / 1000;
+				FPGA::SetFIRRaisedCosine(QAMSPS, beta);
+			}
 			updateFIR = false;
 			continue;
 		}
@@ -491,6 +496,7 @@ void Generator::Init() {
 		send.offset_Q = balance.Q;
 		if (ModEnabled) {
 			Protocol::Modulation mod;
+			static auto lastType = Protocol::ModulationType::AM;
 			mod.type = modType;
 			switch(modType) {
 			case Protocol::ModulationType::AM:
@@ -511,6 +517,9 @@ void Generator::Init() {
 				mod.QAM.differential = QAMdiff;
 				break;
 			case Protocol::ModulationType::External:
+				if (lastType != Protocol::ModulationType::External) {
+					updateFIR = true;
+				}
 				mod.External.ACCoupled = ExtCouplingAC;
 				mod.External.Impedance50R = ExtImpedance50;
 				if (!ExtImpedance50) {
@@ -531,6 +540,8 @@ void Generator::Init() {
 				mod.Periodic.frequency = modSourceFreq;
 			}
 			Protocol::SetupModulation(send, mod);
+
+			lastType = modType;
 		}
 		SPI1_CS_RF_GPIO_Port->BSRR = SPI1_CS_RF_Pin << 16;
 		HAL_SPI_TransmitReceive(&hspi1, (uint8_t*) &send, (uint8_t*) &recv,

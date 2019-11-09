@@ -138,7 +138,7 @@ begin
 									configured <= '1';
 								elsif(write_dest = "0") then
 									UPDATED <= '1';
-									gpo_state <= GPO;
+									gpo_state <= write_value;
 								end if;
 						end case;
 						if(state > 1 and i2c_ack = '0') then
