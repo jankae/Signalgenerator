@@ -3151,7 +3151,7 @@ design rules under a new name.</description>
 <attribute name="NAME" x="26.135" y="14.665" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="26.135" y="17.405" size="1.27" layer="27" rot="R180"/>
 </element>
-<element name="C10" library="rcl" package="C0603" value="DNP" x="36" y="21" smashed="yes" rot="R270">
+<element name="C10" library="rcl" package="C0603" value="33p" x="36" y="21" smashed="yes" rot="R270">
 <attribute name="NAME" x="45.5" y="9.4" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="34.095" y="21.635" size="1.27" layer="27" rot="R270"/>
 </element>
@@ -3235,11 +3235,11 @@ design rules under a new name.</description>
 <attribute name="NAME" x="26.665" y="9.765" size="1.016" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="27.905" y="7.365" size="1.27" layer="27" rot="R90"/>
 </element>
-<element name="C3" library="rcl" package="C0603" value="DNP" x="34" y="21" smashed="yes" rot="R270">
+<element name="C3" library="rcl" package="C0603" value="33p" x="34" y="21" smashed="yes" rot="R270">
 <attribute name="NAME" x="42.8" y="9.2" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="32.095" y="21.635" size="1.27" layer="27" rot="R270"/>
 </element>
-<element name="C4" library="rcl" package="C0603" value="DNP" x="24" y="21" smashed="yes" rot="R270">
+<element name="C4" library="rcl" package="C0603" value="33p" x="24" y="21" smashed="yes" rot="R270">
 <attribute name="NAME" x="22.135" y="21.435" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="22.095" y="21.635" size="1.27" layer="27" rot="R270"/>
 </element>
@@ -3259,7 +3259,7 @@ design rules under a new name.</description>
 <attribute name="NAME" x="41.685" y="16.345" size="1.016" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="41.685" y="18.985" size="1.27" layer="27" rot="R180"/>
 </element>
-<element name="C9" library="rcl" package="C0603" value="DNP" x="46" y="21" smashed="yes" rot="R270">
+<element name="C9" library="rcl" package="C0603" value="33p" x="46" y="21" smashed="yes" rot="R270">
 <attribute name="NAME" x="48.235" y="21.735" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="44.095" y="21.635" size="1.27" layer="27" rot="R270"/>
 </element>
@@ -3364,19 +3364,19 @@ design rules under a new name.</description>
 <attribute name="NAME" x="19.57" y="41.77" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="15.96" y="41.67" size="1.27" layer="27" rot="R270"/>
 </element>
-<element name="R11" library="rcl" package="R0603" value="750k" x="20.6" y="36.3" smashed="yes" rot="R270">
+<element name="R11" library="rcl" package="R0603" value="750k||18p" x="20.6" y="36.3" smashed="yes" rot="R270">
 <attribute name="NAME" x="20.065" y="37.935" size="1.016" layer="25" font="vector"/>
 <attribute name="VALUE" x="18.695" y="36.935" size="1.27" layer="27" rot="R270"/>
 </element>
-<element name="R12" library="rcl" package="R0603" value="190k" x="20.6" y="43.8" smashed="yes" rot="R270">
+<element name="R12" library="rcl" package="R0603" value="190k||68p" x="20.6" y="43.8" smashed="yes" rot="R270">
 <attribute name="NAME" x="18.835" y="46.235" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="18.695" y="44.435" size="1.27" layer="27" rot="R270"/>
 </element>
-<element name="R13" library="rcl" package="R0603" value="60k" x="20.6" y="47.5" smashed="yes" rot="R270">
+<element name="R13" library="rcl" package="R0603" value="60k||220p" x="20.6" y="47.5" smashed="yes" rot="R270">
 <attribute name="NAME" x="17.735" y="48.735" size="1.016" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="18.695" y="48.135" size="1.27" layer="27" rot="R270"/>
 </element>
-<element name="R14" library="rcl" package="R0603" value="10k" x="32.2" y="32.4" smashed="yes">
+<element name="R14" library="rcl" package="R0603" value="1k" x="32.2" y="32.4" smashed="yes">
 <attribute name="NAME" x="33.665" y="31.235" size="0.8128" layer="25" font="vector"/>
 <attribute name="VALUE" x="31.565" y="30.495" size="1.27" layer="27"/>
 </element>
@@ -3424,19 +3424,19 @@ design rules under a new name.</description>
 <attribute name="NAME" x="14.73" y="15.23" size="1.016" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="18.54" y="15.23" size="1.27" layer="27" rot="R90"/>
 </element>
-<element name="R25" library="rcl" package="R0603" value="750k" x="32" y="37" smashed="yes" rot="R270">
+<element name="R25" library="rcl" package="R0603" value="750k||18p" x="32" y="37" smashed="yes" rot="R270">
 <attribute name="NAME" x="31.435" y="40.535" size="0.8128" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="30.095" y="37.635" size="1.27" layer="27" rot="R270"/>
 </element>
-<element name="R26" library="rcl" package="R0603" value="190k" x="34.3" y="40" smashed="yes" rot="R180">
+<element name="R26" library="rcl" package="R0603" value="190k||68p" x="34.3" y="40" smashed="yes" rot="R180">
 <attribute name="NAME" x="37.135" y="41.565" size="0.8128" layer="25" font="vector" rot="R180"/>
 <attribute name="VALUE" x="34.935" y="41.905" size="1.27" layer="27" rot="R180"/>
 </element>
-<element name="R27" library="rcl" package="R0603" value="60k" x="40" y="41" smashed="yes" rot="R270">
+<element name="R27" library="rcl" package="R0603" value="60k||220p" x="40" y="41" smashed="yes" rot="R270">
 <attribute name="NAME" x="38.435" y="42.035" size="0.8128" layer="25" font="vector" rot="R270"/>
 <attribute name="VALUE" x="38.095" y="41.635" size="1.27" layer="27" rot="R270"/>
 </element>
-<element name="R28" library="rcl" package="R0603" value="10k" x="32.2" y="34.4" smashed="yes">
+<element name="R28" library="rcl" package="R0603" value="1k" x="32.2" y="34.4" smashed="yes">
 <attribute name="NAME" x="33.7" y="35.2" size="0.8128" layer="25" font="vector" rot="R90"/>
 <attribute name="VALUE" x="31.565" y="32.495" size="1.27" layer="27"/>
 </element>
