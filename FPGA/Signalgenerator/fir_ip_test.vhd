@@ -73,6 +73,8 @@ ARCHITECTURE behavior OF fir_ip_test IS
    signal rfd : std_logic;
    signal rdy : std_logic;
    signal dout_1 : std_logic_vector(30 downto 0);
+	
+	signal dac : std_logic_vector(11 downto 0);
    signal dout_2 : std_logic_vector(30 downto 0);
 
    -- Clock period definitions
@@ -106,6 +108,7 @@ BEGIN
 		wait for clk_period/2;
    end process;
  
+	dac <= dout_1(22 downto 11);
 
    -- Stimulus process
    stim_proc: process
@@ -130,8 +133,12 @@ BEGIN
 
 		wait for clk_period*10;
 		-- excite filter
-		din_1 <= "011111111111";
+		din_1 <= "100000000000";
 		nd <= '1';
+		wait for clk_period*6;
+		din_1 <= "011111111111";
+		wait for clk_period*6;
+		din_1 <= "000000000001";
 		wait for clk_period;
 		din_1 <= "000000000000";
 		nd <= '0';

@@ -344,8 +344,8 @@ begin
 					end if;
 					QAM_DDS_last_sign <= fm_sine(11);
 
-					DAC_I <= signed(QAM_FIR_I_output(23 downto 12));
-					DAC_Q <= signed(QAM_FIR_Q_output(23 downto 12));
+					DAC_I <= signed(QAM_FIR_I_output(22 downto 11));
+					DAC_Q <= signed(QAM_FIR_Q_output(22 downto 11));
 				-- external modulation
 				when "00001110" =>
 					-- enable sampling of ADC, pass samples through FIR and send to DAC
@@ -353,8 +353,8 @@ begin
 					QAM_FIR_I_input <= EXT_I & "00";
 					QAM_FIR_Q_input <= EXT_Q & "00";
 					QAM_FIR_NEW_SAMPLE <= EXT_NEW_SAMPLE;
-					DAC_I <= signed(QAM_FIR_I_output(23 downto 12));
-					DAC_Q <= signed(QAM_FIR_Q_output(23 downto 12));
+					DAC_I <= signed(QAM_FIR_I_output(22 downto 11));
+					DAC_Q <= signed(QAM_FIR_Q_output(22 downto 11));
 				when others =>
 					
 			end case;
