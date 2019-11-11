@@ -386,7 +386,7 @@ your_instance_name : MainPLL
 	EXT_PORT_VALUES(1 downto 0) <= (others => '0');
 	EXT_PORT_VALUES(10 downto 6) <= (others => '0');
 	
-	spi_int_in <= EXT_ADC_CH_A & "00000" & EXT_PORT_UPDATED;
+	spi_int_in <= "0000000000000" & EXT_ADC_Q_OVERRANGE & EXT_ADC_I_OVERRANGE & EXT_PORT_UPDATED;
 	
 	process(CLK100)
 	begin

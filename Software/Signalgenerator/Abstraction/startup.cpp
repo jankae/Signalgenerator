@@ -68,6 +68,28 @@ static bool CheckForRFBoard(uint32_t timeout) {
 	return true;
 }
 
+static bool CheckForIQInput(uint32_t timeout) {
+	extern SPI_HandleTypeDef hspi1;
+	Protocol::FrontToRF send;
+	Protocol::RFToFront recv;
+	memset(&send, 0, sizeof(send));
+	send.Status.UseIntRef = 1;
+
+	uint32_t starttime = HAL_GetTick();
+	do {
+		HAL_Delay(100);
+		SPI1_CS_RF_GPIO_Port->BSRR = SPI1_CS_RF_Pin << 16;
+		HAL_SPI_TransmitReceive(&hspi1, (uint8_t*) &send, (uint8_t*) &recv,
+				sizeof(send), 1000);
+		SPI1_CS_RF_GPIO_Port->BSRR = SPI1_CS_RF_Pin;
+		if (HAL_GetTick() - starttime > timeout) {
+			// failed to detect board in time
+			return false;
+		}
+	} while (!recv.Status.IQADCAvailable);
+	return true;
+}
+
 static void display_TestResult(const char * const name, const char * const result,
 		TestResult_t res) {
 	display_SetForeground(COLOR_WHITE);
@@ -233,6 +255,10 @@ void startup_Software(void) {
 			return CheckForRFBoard(3000);
 		})) {
 		error = 1;
+	} else {
+		display_runLongerTest("IQ input board", []() -> bool {
+			return CheckForIQInput(500);
+		});
 	}
 
 	if (error) {

@@ -421,6 +421,10 @@ void Generator::Init() {
 	lCom->SetVisible(false);
 	c->attach(lCom, COORDS(5, 200));
 
+	auto lOverload = new Label("ADC OVERLOAD", Font_Big, COLOR_RED);
+	lOverload->SetVisible(false);
+	c->attach(lOverload, COORDS(5, 180));
+
 	// create and attach modulation widgets
 	lModulation = new Label(8, Font_Big, Label::Orientation::CENTER,
 			COLOR_DARKGREEN);
@@ -498,6 +502,7 @@ void Generator::Init() {
 		memset(&send, 0, sizeof(send));
 		memset(&recv, 0, sizeof(recv));
 		send.Status.UseIntRef = IntRef ? 1 : 0;
+		send.Status.ADCMax = 511;
 		if (RFon) {
 			send.frequency = frequency;
 			send.dbm = Calibration::CorrectAmplitude(frequency, dbm);
@@ -590,6 +595,11 @@ void Generator::Init() {
 			lUnlock->SetVisible(true);
 		} else {
 			lUnlock->SetVisible(false);
+		}
+		if (recv.Status.IADCOverload || recv.Status.QADCOverload) {
+			lOverload->SetVisible(true);
+		} else {
+			lOverload->SetVisible(false);
 		}
 	}
 }

@@ -40,7 +40,14 @@ inline GPIO operator|(GPIO a, GPIO b) {
 }
 
 void WriteReg(Reg reg, uint16_t val);
-uint16_t ReadStatus();
+
+using Status = struct status {
+	uint16_t IQADCAvailable :1;
+	uint16_t IADCOverload :1;
+	uint16_t QADCOverload :1;
+};
+
+Status ReadStatus();
 void SetGPIO(GPIO g);
 void ResetGPIO(GPIO g);
 void UpdateGPIO();

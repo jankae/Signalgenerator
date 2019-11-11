@@ -38,9 +38,10 @@ using RFToFront = struct rftofront {
 		uint16_t n15dbm3 :1;
 		uint16_t AmplitudeUnlevel :1;
 		uint16_t IQADCAvailable :1;
-		uint16_t reserved :2;
+		uint16_t IADCOverload :1;
+		uint16_t QADCOverload :1;
 	} Status;
-	int16_t Ext_I;
+	uint16_t reserved;
 	uint32_t MagicConstant;
 	uint8_t reserved2[24];
 } __attribute__((packed, aligned(8)));;

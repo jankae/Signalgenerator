@@ -17,7 +17,7 @@ void FPGA::WriteReg(Reg reg, uint16_t val) {
 	LOG(Log_FPGA, LevelDebug, "Wrote 0x%04x to register 0x%04x", val, (int) reg);
 }
 
-uint16_t FPGA::ReadStatus() {
+FPGA::Status FPGA::ReadStatus() {
 	uint16_t val;
 	FPGA_CS_GPIO_Port->BSRR = FPGA_CS_Pin << 16;
 	uint8_t send[4] = { 0x00, 0x00, 0x00, 0x00 };
@@ -26,7 +26,17 @@ uint16_t FPGA::ReadStatus() {
 	val = (uint16_t) recv[2] << 8 | recv[3];
 	FPGA_CS_GPIO_Port->BSRR = FPGA_CS_Pin;
 	LOG(Log_FPGA, LevelDebug, "Read 0x%04x from FPGA status", val);
-	return val;
+	Status ret = {0};
+	if (val & 0x0001) {
+		ret.IQADCAvailable = 1;
+	}
+	if (val & 0x0002) {
+		ret.IADCOverload = 1;
+	}
+	if (val & 0x0004) {
+		ret.QADCOverload = 1;
+	}
+	return ret;
 }
 
 void FPGA::SetGPIO(GPIO g) {

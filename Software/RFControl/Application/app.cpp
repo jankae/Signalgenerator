@@ -57,11 +57,10 @@ void app(void) {
 		new_data = false;
 		HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*) &send, (uint8_t*) &recv,
 					sizeof(spi_new));
-		uint16_t FPGA_status = FPGA::ReadStatus();
-		send.Status.IQADCAvailable = FPGA_status & 0x0001;
-		int16_t Ext_I = (FPGA_status & 0xFFC0) >> 6;
-		struct {signed int x:10;} s;
-		send.Ext_I = s.x = Ext_I;
+		auto FPGA_status = FPGA::ReadStatus();
+		send.Status.IQADCAvailable = FPGA_status.IQADCAvailable;
+		send.Status.IADCOverload = FPGA_status.IADCOverload;
+		send.Status.QADCOverload = FPGA_status.QADCOverload;
 
 //		LOG(Log_System, LevelInfo,
 //				"SPI data, freq: %lu, dbm: %u, intref: 0x%02x",
