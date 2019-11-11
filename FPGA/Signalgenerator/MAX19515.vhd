@@ -22,7 +22,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
+use IEEE.NUMERIC_STD.ALL;
 
 -- Uncomment the following library declaration if instantiating
 -- any Xilinx primitives in this code.
@@ -72,7 +72,7 @@ begin
 					if(DCLK = '1') then
 						buf_A <= DATA;
 					else
-						OUT_B <= DATA;
+						OUT_B <= std_logic_vector(-signed(DATA));
 						OUT_A <= buf_A;
 						-- both channels sampled, sample is complete
 						NEW_SAMPLE <= '1';

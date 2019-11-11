@@ -34,8 +34,8 @@ use work.types.all;
 entity Modulation is
     Port ( CLK : in  STD_LOGIC;
            RESET : in  STD_LOGIC;
-           DAC_I : out  STD_LOGIC_VECTOR (11 downto 0);
-           DAC_Q : out  STD_LOGIC_VECTOR (11 downto 0);
+           DAC_I : out  signed (11 downto 0);
+           DAC_Q : out  signed (11 downto 0);
            SOURCE : in  STD_LOGIC_VECTOR (11 downto 0);
 			  
 			  -- connections to external I/Q sample ADC
@@ -47,8 +47,6 @@ entity Modulation is
 			  	-- Modulation types:
 				-- 00000000 Modulation disabled
 				-- 00000100 FM modulation
-				-- 00000101 FM modulation, lower sideband
-				-- 00000110 FM modulation, upper sideband
 				-- 00001000 AM modulation
 				-- 00001100 QAM modulation
 				-- 00001101 QAM modulation, differential
@@ -61,6 +59,7 @@ entity Modulation is
 			  --				Samples per Symbol (higher 8 bits)
            SETTING1 : in  STD_LOGIC_VECTOR (15 downto 0);
 			  -- Setting2:
+			  --		FM: phase offset between I and Q
 			  --		QAM: Samplerate pinc (lower word)
            SETTING2 : in  STD_LOGIC_VECTOR (15 downto 0);
 			  --		QAM: Samplerate pinc (upper word)
@@ -84,7 +83,7 @@ architecture Behavioral of Modulation is
 		clk : IN STD_LOGIC;
 		sclr : IN STD_LOGIC;
 		pinc_in : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
-		cosine : OUT STD_LOGIC_VECTOR(11 DOWNTO 0);
+		poff_in : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
 		sine : OUT STD_LOGIC_VECTOR(11 DOWNTO 0)
 	);
 	END COMPONENT;
@@ -153,6 +152,7 @@ architecture Behavioral of Modulation is
 	signal fm_dds_reset : std_logic;
 	
 	signal fm_pinc : std_logic_vector(31 downto 0);
+	signal fm_phase_offset : std_logic_vector(31 downto 0);
 	signal I_Q_last : std_logic_vector(7 downto 0);
 	signal I_Q_index : std_logic_vector(7 downto 0);
 	signal I_Q_lookup : std_logic_vector(23 downto 0);
@@ -169,14 +169,24 @@ architecture Behavioral of Modulation is
 --	signal COEFF_ARRAY : firarray(0 to FIR_TAPS-1);
 begin
 
-	FM_DDS : DDS
+	FM_DDS_I : DDS
 	PORT MAP (
 		ce => fm_dds_enabled,
 		clk => CLK,
 		sclr => fm_dds_reset,
 		pinc_in => fm_pinc,
-		cosine => fm_cosine,
+		poff_in => (others => '0'),
 		sine => fm_sine
+	);
+	
+	FM_DDS_Q : DDS
+	PORT MAP (
+		ce => fm_dds_enabled,
+		clk => CLK,
+		sclr => fm_dds_reset,
+		pinc_in => fm_pinc,
+		poff_in => fm_phase_offset,
+		sine => fm_cosine
 	);
 
 	AM_FM_Mult : ModMult
@@ -246,14 +256,15 @@ begin
 	
 	fm_dds_reset <= not fm_dds_enabled;
 	mult_reset <= not mult_enabled;
+	fm_phase_offset <= SETTING2 & "0000000000000000";
 
 	process(CLK, RESET)
 	begin
 		if(RESET = '1') then
 			mult_enabled <= '0';
 			fm_dds_enabled <= '0';
-			DAC_I <= "100000000000";
-			DAC_Q <= "100000000000";
+			DAC_I <= (others => '0');
+			DAC_Q <= (others => '0');
 			fm_pinc <= (others => '0');
 			I_Q_last <= (others => '0');
 			I_Q_index <= (others => '0');
@@ -274,8 +285,8 @@ begin
 					mult_enabled <= '0';
 					fm_dds_enabled <= '0';
 					fm_pinc <= (others => '0');
-					DAC_I <= "111111111111";
-					DAC_Q <= "100000000000";
+					DAC_I <= "011111111111";
+					DAC_Q <= "000000000000";
 					I_Q_last <= (others => '0');
 					QAM_SPS <= (others => '0');
 					QAM_DDS_last_sign <= '0';
@@ -287,32 +298,16 @@ begin
 					mult_enabled <= '1';
 					fm_dds_enabled <= '1';
 					fm_pinc <= "0000" & mult_result;
-					DAC_I <= not fm_sine(11) & fm_sine(10 downto 0);
-					DAC_Q <= not fm_sine(11) & fm_sine(10 downto 0);
-					EXT_ENABLE <= '0';
-				-- FM lower sideband modulation
-				when "00000101" =>
-					mult_enabled <= '1';
-					fm_dds_enabled <= '1';
-					fm_pinc <= "0000" & mult_result;
-					DAC_I <= not fm_sine(11) & fm_sine(10 downto 0);
-					DAC_Q <= not fm_cosine(11) & fm_cosine(10 downto 0);
-					EXT_ENABLE <= '0';
-				-- FM upper sideband modulation
-				when "00000110" =>
-					mult_enabled <= '1';
-					fm_dds_enabled <= '1';
-					fm_pinc <= "0000" & mult_result;
-					DAC_I <= not fm_sine(11) & fm_sine(10 downto 0);
-					DAC_Q <= fm_cosine(11) & not fm_cosine(10 downto 0);
+					DAC_I <= signed(fm_sine);
+					DAC_Q <= signed(fm_cosine);
 					EXT_ENABLE <= '0';
 				-- AM modulation
 				when "00001000" =>
 					mult_enabled <= '1';
 					fm_dds_enabled <= '0';
 					fm_pinc <= (others => '0');
-					DAC_I <= std_logic_vector(to_unsigned(4095, 12) - unsigned(mult_result(27 downto 17)));
-					DAC_Q <= "100000000000";
+					DAC_I <= signed(to_unsigned(2047, 12) - unsigned(mult_result(27 downto 17)));
+					DAC_Q <= (others => '0');
 					EXT_ENABLE <= '0';
 				-- QAM modulation
 				when "00001100" | "00001101" =>
@@ -349,8 +344,8 @@ begin
 					end if;
 					QAM_DDS_last_sign <= fm_sine(11);
 
-					DAC_I <= not QAM_FIR_I_output(23) & QAM_FIR_I_output(22 downto 12);
-					DAC_Q <= not QAM_FIR_Q_output(23) & QAM_FIR_Q_output(22 downto 12);
+					DAC_I <= signed(QAM_FIR_I_output(23 downto 12));
+					DAC_Q <= signed(QAM_FIR_Q_output(23 downto 12));
 				-- external modulation
 				when "00001110" =>
 					-- enable sampling of ADC, pass samples through FIR and send to DAC
@@ -358,8 +353,8 @@ begin
 					QAM_FIR_I_input <= EXT_I & "00";
 					QAM_FIR_Q_input <= EXT_Q & "00";
 					QAM_FIR_NEW_SAMPLE <= EXT_NEW_SAMPLE;
-					DAC_I <= not QAM_FIR_I_output(23) & QAM_FIR_I_output(22 downto 12);
-					DAC_Q <= not QAM_FIR_Q_output(23) & QAM_FIR_Q_output(22 downto 12);
+					DAC_I <= signed(QAM_FIR_I_output(23 downto 12));
+					DAC_Q <= signed(QAM_FIR_Q_output(23 downto 12));
 				when others =>
 					
 			end case;

@@ -39,7 +39,7 @@ const uint32_t matrix[BUTTONS_ROWS][BUTTONS_COLUMNS] = {
 		{BUTTON_1,			BUTTON_2,			BUTTON_3,			BUTTON_SIGN},
 		{BUTTON_4,			BUTTON_5,			BUTTON_6,			BUTTON_0},
 		{BUTTON_7,			BUTTON_8,			BUTTON_9,			BUTTON_DOT},
-		{BUTTON_UNIT1,		BUTTON_MOD_ONOFF,		BUTTON_RF_ONOFF,		0},
+		{BUTTON_ENTER,		BUTTON_MOD_ONOFF,		BUTTON_RF_ONOFF,		0},
 };
 
 const int8_t encTable[16] = { 0, 0, 1, 0, 0, 0, 0, -1, -1, 0, 0, 0, 0, 1, 0, 0 };

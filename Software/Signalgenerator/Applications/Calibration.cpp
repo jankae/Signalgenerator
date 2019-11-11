@@ -41,24 +41,31 @@ static constexpr AmplitudePoint defaultAmplitudeCalibration[maxPoints] = {
 		{2000000000, -2000, 0},
 };
 
+#define CAL_ZERO_BALANCE	-4832
+#define CAL_MAX_NEG_BALANCE 10500
+
 static constexpr BalancePoint defaultBalanceCalibration[maxPoints] = {
-		{10000000, 0, 0},
-		{100000000, 0, 0},
-		{200000000, 0, 0},
-		{500000000, 0, 0},
-		{750000000, 0, 0},
-		{1000000000, 0, 0},
-		{1250000000, 0, 0},
-		{1500000000, 0, 0},
-		{1750000000, 0, 0},
-		{2000000000, 0, 0},
+		{10000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
+		{100000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
+		{200000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
+		{500000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
+		{750000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
+		{1000000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
+		{1250000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
+		{1500000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
+		{1750000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
+		{2000000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
 };
 
 void Calibration::Init() {
-	memcpy(AmplitudePoints, defaultAmplitudeCalibration, sizeof(AmplitudePoints));
-	memcpy(BalancePoints, defaultBalanceCalibration, sizeof(BalancePoints));
+	DefaultAmplitude();
+	DefaultBalance();
 	Persistence::Add(AmplitudePoints, sizeof(AmplitudePoints));
 	Persistence::Add(BalancePoints, sizeof(BalancePoints));
+}
+
+void Calibration::DefaultAmplitude() {
+	memcpy(AmplitudePoints, defaultAmplitudeCalibration, sizeof(AmplitudePoints));
 }
 
 void Calibration::RunAmplitude() {
@@ -191,6 +198,10 @@ int16_t Calibration::CorrectAmplitude(uint32_t freq, int16_t dbm) {
 	return common_Map(dbm, ideal_low, ideal_high, low, high);
 }
 
+void Calibration::DefaultBalance() {
+	memcpy(BalancePoints, defaultBalanceCalibration, sizeof(BalancePoints));
+}
+
 void Calibration::RunBalance() {
 	uint8_t step = 1;
 	uint8_t new_step = 0;
@@ -286,7 +297,8 @@ void Calibration::RunBalance() {
 
 		uint8_t pointIndex = step / 2;
 		int64_t value = step & 0x01 ? BalancePoints[pointIndex].Q : BalancePoints[pointIndex].I;
-		offset = value * 50000 / INT16_MAX;
+		value -= CAL_ZERO_BALANCE;
+		offset = value * CAL_MAX_NEG_BALANCE / (INT16_MAX + CAL_ZERO_BALANCE);
 		eValue->requestRedraw();
 		// send current setting to RFboard
 		Protocol::FrontToRF send;
@@ -344,3 +356,5 @@ Calibration::IQOffset Calibration::CorrectBalance(uint32_t freq) {
 
 	return ret;
 }
+
+

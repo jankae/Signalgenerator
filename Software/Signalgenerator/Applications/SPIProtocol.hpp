@@ -40,7 +40,7 @@ using RFToFront = struct rftofront {
 		uint16_t IQADCAvailable :1;
 		uint16_t reserved :2;
 	} Status;
-	uint16_t reserved1;
+	int16_t Ext_I;
 	uint32_t MagicConstant;
 	uint8_t reserved2[24];
 } __attribute__((packed, aligned(8)));;
@@ -77,6 +77,7 @@ using Modulation = struct modulation {
 		} AM;
 		struct {
 			uint32_t deviation; // Unit::Frequency
+			uint16_t phase_offset; // 0 to 360 phase difference between I and Q
 		} FM;
 		struct {
 			uint8_t SamplesPerSymbol;

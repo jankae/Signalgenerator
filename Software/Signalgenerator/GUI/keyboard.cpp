@@ -153,7 +153,7 @@ void Keyboard::input(GUIEvent_t *ev) {
 		requestRedraw();
 		break;
 	case EVENT_BUTTON_CLICKED:
-		if (ev->button & (BUTTON_UNIT1 | BUTTON_ENCODER)) {
+		if (ev->button & (BUTTON_ENTER | BUTTON_ENCODER)) {
 			sendChar();
 		} else if (BUTTON_IS_DIGIT(ev->button)) {
 			/* send this digit directly */

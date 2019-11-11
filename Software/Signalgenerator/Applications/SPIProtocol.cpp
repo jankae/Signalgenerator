@@ -31,15 +31,18 @@ void Protocol::SetupModulation(FrontToRF &data, Modulation mod) {
 	switch(mod.type) {
 	case ModulationType::AM:
 		type = 0x08;
+		// 0: 0% depth, 65535: 100% depth
+		data.modulation_registers[1] |= common_Map(mod.AM.depth, 0, Unit::maxPercent, 0, UINT16_MAX);
 		break;
 	case ModulationType::FM:
-		type = 0x04;
-		break;
 	case ModulationType::FM_USB:
-		type = 0x06;
-		break;
 	case ModulationType::FM_LSB:
-		type = 0x05;
+		type = 0x04;
+		// 0: 0 deviation, 65535: 6248378Hz deviation
+		data.modulation_registers[1] |= common_Map(mod.FM.deviation, 0,
+				HardwareLimits::MaxFMDeviation, 0,
+				HardwareLimits::MaxFMDeviationSetting);
+		data.modulation_registers[2] = mod.FM.phase_offset;
 		break;
 	case ModulationType::QAM2:
 	case ModulationType::QAM4:
@@ -69,9 +72,9 @@ void Protocol::SetupModulation(FrontToRF &data, Modulation mod) {
 		data.Status.ADCCouplingDC = mod.External.ACCoupled ? 0 : 1;
 		data.Status.ADCImp1M = mod.External.Impedance50R ? 0 : 1;
 		uint32_t maxADCVoltage;
-		// Fullscale ADC input is 1.5V, two voltage dividers are available:
+		// Fullscale ADC input is 0.75V, two voltage dividers are available:
 		// Range1 attenuates the signal to one fourth, Range2 to 3/50
-		constexpr uint32_t ADCFullscale = 1500000;
+		constexpr uint32_t ADCFullscale = 750000;
 		if (mod.External.maxVoltage > ADCFullscale * 4) {
 			// needs range with maximum attenuation
 			data.Status.ADCRange1 = 0;
@@ -96,16 +99,10 @@ void Protocol::SetupModulation(FrontToRF &data, Modulation mod) {
 
 	switch(mod.type) {
 	case ModulationType::AM:
-		// 0: 0% depth, 65535: 100% depth
-		data.modulation_registers[1] |= common_Map(mod.AM.depth, 0, Unit::maxPercent, 0, UINT16_MAX);
 		break;
 	case ModulationType::FM:
 	case ModulationType::FM_USB:
 	case ModulationType::FM_LSB:
-		// 0: 0 deviation, 65535: 6248378Hz deviation
-		data.modulation_registers[1] |= common_Map(mod.FM.deviation, 0,
-				HardwareLimits::MaxFMDeviation, 0,
-				HardwareLimits::MaxFMDeviationSetting);
 		break;
 	// in QAM modulation, settings1 determines bitmask of bits per symbol
 	case ModulationType::QAM2:

@@ -53,7 +53,7 @@ void Checkbox::draw(coords_t offset) {
 void Checkbox::input(GUIEvent_t *ev) {
 	switch(ev->type) {
 	case EVENT_BUTTON_CLICKED:
-		if(ev->button!=BUTTON_UNIT1 && ev->button != BUTTON_ENCODER) {
+		if(ev->button!=BUTTON_ENTER && ev->button != BUTTON_ENCODER) {
 			break;
 		}
 		/* no break */

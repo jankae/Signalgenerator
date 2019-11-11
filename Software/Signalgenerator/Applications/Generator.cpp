@@ -94,13 +94,11 @@ static void ModulationChanged(void*, Widget*) {
 	}
 
 	// Check if QAM modulation settings are valid
-	if(QAMSPS * QAMSymbolrate > HardwareLimits::MaxFIRRate) {
-		Dialog::MessageBox("WARNING", Font_Big,
-				"Symbolrate not achievable\n"
+	if (QAMSPS * QAMSymbolrate > HardwareLimits::MaxFIRRate) {
+		Dialog::MessageBox("WARNING", Font_Big, "Symbolrate not achievable\n"
 				"with selected samples per\n"
 				"symbol. Value has been\n"
-				"changed accordingly.", Dialog::MsgBox::OK,
-				nullptr, false);
+				"changed accordingly.", Dialog::MsgBox::OK, nullptr, false);
 		QAMSymbolrate = HardwareLimits::MaxFIRRate / QAMSPS;
 	}
 
@@ -174,13 +172,11 @@ static void ModulationChanged(void*, Widget*) {
 		lModDescr2->setText(descr);
 		break;
 	case Protocol::ModulationType::External:
-		if(modSourceType != Protocol::SourceType::Disabled) {
-			Dialog::MessageBox("Warning", Font_Big,
-					"External modulation\n"
+		if (modSourceType != Protocol::SourceType::Disabled) {
+			Dialog::MessageBox("Warning", Font_Big, "External modulation\n"
 					"active. Modulation\n"
 					"source has been\n"
-					"disabled.",
-					Dialog::MsgBox::OK);
+					"disabled.", Dialog::MsgBox::OK);
 			modSourceType = Protocol::SourceType::Disabled;
 		}
 		snprintf(descr, sizeof(descr), "External,   ,    ");
@@ -218,13 +214,11 @@ static void ModulationChanged(void*, Widget*) {
 		if (ModEnabled && modType != Protocol::ModulationType::External) {
 			lModSrcDescr->setColor(COLOR_RED);
 		}
-		strncpy(descr, "Source disabled",
-				sizeof(descr));
+		strncpy(descr, "Source disabled", sizeof(descr));
 		break;
 	case Protocol::SourceType::FixedValue:
 		mModulation->AddEntry(mModSrcValue, 1);
-		snprintf(descr, sizeof(descr), "Fixed value(%lu)",
-				modSourceValue);
+		snprintf(descr, sizeof(descr), "Fixed value(%lu)", modSourceValue);
 		break;
 	case Protocol::SourceType::RampDown:
 	case Protocol::SourceType::RampUp:
@@ -297,7 +291,8 @@ void Generator::Init() {
 			new MenuChooser("Source", modSrcTypeNames,
 					(uint8_t*) &modSourceType, ModulationChanged, nullptr));
 	mModulation->AddEntry(
-			new MenuChooser("Type", modTypeNames, (uint8_t*)&modType, ModulationChanged));
+			new MenuChooser("Type", modTypeNames, (uint8_t*) &modType,
+					ModulationChanged));
 	mModSrcFreq = new MenuValue<int32_t>("Src Freq", &modSourceFreq,
 			Unit::Frequency, ModulationChanged, nullptr, 0,
 			HardwareLimits::MaxModSrcFreq);
@@ -310,24 +305,24 @@ void Generator::Init() {
 			Unit::Frequency, ModulationChanged, nullptr, 0,
 			HardwareLimits::MaxFMDeviation);
 	bool editConstellation = false;
-	mQAMConstellation = new MenuAction("Edit Con-\nstellation", callback_setTrue,
-			&editConstellation);
+	mQAMConstellation = new MenuAction("Edit Con-\nstellation",
+			callback_setTrue, &editConstellation);
 	mQAMSymbolrate = new MenuValue<uint32_t>("Symbolrate", &QAMSymbolrate,
 			Unit::SampleRate, ModulationChanged, nullptr, 0,
 			HardwareLimits::MaxFIRRate);
 	bool updateFIR = true;
 	mQAMSPS = new MenuValue<uint8_t>("Samples\nper symbol", &QAMSPS, Unit::None,
 			callback_setTrue, &updateFIR, 1, (HardwareLimits::FIRTaps + 1) / 2);
-	mQAMRolloff = new MenuValue<int32_t>("Excess\nbandwidth", &QAMRolloff, Unit::Fixed3,
-			callback_setTrue, &updateFIR, 0, 1000);
+	mQAMRolloff = new MenuValue<int32_t>("Excess\nbandwidth", &QAMRolloff,
+			Unit::Fixed3, callback_setTrue, &updateFIR, 0, 1000);
 	mQAMDiff = new MenuBool("Diff.\nencoding", &QAMdiff, ModulationChanged);
 
 	mExtImpedance = new MenuBool("Impedance", &ExtImpedance50,
 			ModulationChanged, nullptr, "1MR", "50R");
 	mExtCoupling = new MenuBool("Coupling", &ExtCouplingAC, ModulationChanged,
 			nullptr, "DC", "AC");
-	mExtMaxLevel = new MenuValue<int32_t>("Fullscale", &ExtMaxLevel,
-			Unit::dbm, ModulationChanged, nullptr, 0, 3000);
+	mExtMaxLevel = new MenuValue<int32_t>("Fullscale", &ExtMaxLevel, Unit::dbm,
+			ModulationChanged, nullptr, 0, 3000);
 	mExtMaxVoltage = new MenuValue<int32_t>("Fullscale", &ExtMaxVoltage,
 			Unit::Voltage, ModulationChanged, nullptr, 100000, 10000000);
 
@@ -352,18 +347,20 @@ void Generator::Init() {
 	system->AddEntry(
 			new MenuAction("Cal balance", callback_setTrue,
 					&calibrate_balance));
-	system->AddEntry(new MenuAction("Reset Cal", [](void *ptr, Widget *w) {
-		Dialog::MessageBox("Confirm reset", Font_Big,
-				"Really reset\nall calibration\nvalues?",
-				Dialog::MsgBox::ABORT_OK, [](Dialog::Result res) {
-					if(res == Dialog::Result::OK) {
-						Persistence::Init();
-						touch_Init();
-						Calibration::Init();
-						Persistence::Save();
-					}
-				}, false);
-	}, nullptr));
+	system->AddEntry(
+			new MenuAction("Reset Cal",
+					[](void *ptr, Widget *w) {
+						Dialog::MessageBox("Confirm reset", Font_Big,
+								"Really reset\nall calibration\nvalues?",
+								Dialog::MsgBox::ABORT_OK,
+								[](Dialog::Result res) {
+									if (res == Dialog::Result::OK) {
+										Calibration::DefaultAmplitude();
+										Calibration::DefaultBalance();
+										Persistence::Save();
+									}
+								}, false);
+					}, nullptr));
 
 	system->AddEntry(new MenuBack());
 
@@ -372,14 +369,14 @@ void Generator::Init() {
 
 	// create and attach frequency and amplitude display
 	auto sFreq = new SevenSegment<uint32_t>(&frequency, 12, 3, 11, 6,
-			COLOR_BLUE, true, HardwareLimits::MinFrequency,
+	COLOR_BLUE, true, HardwareLimits::MinFrequency,
 			HardwareLimits::MaxFrequency);
-	c->attach(sFreq, COORDS(0,5));
+	c->attach(sFreq, COORDS(0, 5));
 	c->attach(new Label("MHz", Font_Big, COLOR_BLUE), COORDS(200, 20));
 
 	auto sdbm = new SevenSegment<int32_t>(&dbm, 12, 3, 5, 2, COLOR_BLUE, true,
 			HardwareLimits::MinOutputLevel, HardwareLimits::MaxOutputLevel);
-	c->attach(sdbm, COORDS(108,45));
+	c->attach(sdbm, COORDS(108, 45));
 	c->attach(new Label("dbm", Font_Big, COLOR_BLUE), COORDS(200, 60));
 
 	lRFon = new Label("RF ON", Font_Big, COLOR_DARKGREEN);
@@ -392,7 +389,8 @@ void Generator::Init() {
 	lModDescr2 = new Label(20, Font_Big, Label::Orientation::LEFT, COLOR_BLACK);
 	c->attach(lModDescr2, COORDS(5, 110));
 
-	lModSrcDescr = new Label(20, Font_Big, Label::Orientation::LEFT, COLOR_BLACK);
+	lModSrcDescr = new Label(20, Font_Big, Label::Orientation::LEFT,
+			COLOR_BLACK);
 	c->attach(lModSrcDescr, COORDS(5, 140));
 
 	// create and attach error labels
@@ -409,7 +407,8 @@ void Generator::Init() {
 	c->attach(lCom, COORDS(5, 200));
 
 	// create and attach modulation widgets
-	lModulation = new Label(8, Font_Big, Label::Orientation::CENTER, COLOR_DARKGREEN);
+	lModulation = new Label(8, Font_Big, Label::Orientation::CENTER,
+			COLOR_DARKGREEN);
 	c->attach(lModulation, COORDS(12, 61));
 
 	QAMconst = Constellation();
@@ -433,7 +432,7 @@ void Generator::Init() {
 	c->requestRedrawFull();
 	gui_SetTopWidget(c);
 
-	while(1) {
+	while (1) {
 		uint32_t start = HAL_GetTick();
 		constexpr uint32_t delay = 100;
 		if (ModEnabled && modSourceType == Protocol::SourceType::Stream) {
@@ -498,14 +497,21 @@ void Generator::Init() {
 			Protocol::Modulation mod;
 			static auto lastType = Protocol::ModulationType::AM;
 			mod.type = modType;
-			switch(modType) {
+			switch (modType) {
 			case Protocol::ModulationType::AM:
 				mod.AM.depth = AMDepth;
 				break;
 			case Protocol::ModulationType::FM:
+				mod.FM.deviation = FMDeviation;
+				mod.FM.phase_offset = 0;
+				break;
 			case Protocol::ModulationType::FM_USB:
+				mod.FM.deviation = FMDeviation;
+				mod.FM.phase_offset = 49152;
+				break;
 			case Protocol::ModulationType::FM_LSB:
 				mod.FM.deviation = FMDeviation;
+				mod.FM.phase_offset = 16384;
 				break;
 			case Protocol::ModulationType::QAM2:
 			case Protocol::ModulationType::QAM4:
@@ -534,7 +540,7 @@ void Generator::Init() {
 				break;
 			}
 			mod.source = modSourceType;
-			if(modSourceType == Protocol::SourceType::FixedValue) {
+			if (modSourceType == Protocol::SourceType::FixedValue) {
 				mod.Fixed.value = modSourceValue;
 			} else {
 				mod.Periodic.frequency = modSourceFreq;
@@ -558,7 +564,7 @@ void Generator::Init() {
 		} else {
 			lRFon->SetVisible(false);
 		}
-		if(recv.Status.AmplitudeUnlevel) {
+		if (recv.Status.AmplitudeUnlevel) {
 			lUnlevel->SetVisible(true);
 		} else {
 			lUnlevel->SetVisible(false);

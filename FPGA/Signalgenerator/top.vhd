@@ -117,8 +117,8 @@ architecture Behavioral of top is
 		SETTING1 : IN std_logic_vector(15 downto 0);
 		SETTING2 : IN std_logic_vector(15 downto 0); 
 	   SETTING3 : in STD_LOGIC_VECTOR (15 downto 0);		
-		DAC_I : OUT std_logic_vector(11 downto 0);
-		DAC_Q : OUT std_logic_vector(11 downto 0);
+		DAC_I : OUT signed(11 downto 0);
+		DAC_Q : OUT signed(11 downto 0);
 		
 		I_Q_Address : in STD_LOGIC_VECTOR (8 downto 0);
 		I_Q_Data : in STD_LOGIC_VECTOR (11 downto 0);
@@ -180,6 +180,9 @@ architecture Behavioral of top is
 	signal CLK100_INV : std_logic;
 	signal DAC_CLK : std_logic;
 	
+	signal dac_I_signed : signed(11 downto 0);
+	signal dac_Q_signed : signed(11 downto 0);
+	
 	signal first : std_logic := '0';
 	signal write_not_read : std_logic := '0';
 	signal mem_address : std_logic_vector(14 downto 0) := (others => '0');
@@ -226,9 +229,9 @@ architecture Behavioral of top is
 	signal EXT_PORT_VALUES : std_logic_vector(15 downto 0);
 	signal EXT_PORT_UPDATED : std_logic;
 	
-	signal EXT_ADC_MAX : signed(9 downto 0);
-	signal EXT_ADC_ABS_I : signed(9 downto 0);
-	signal EXT_ADC_ABS_Q : signed(9 downto 0);
+	signal EXT_ADC_MAX : unsigned(9 downto 0);
+	signal EXT_ADC_ABS_I : unsigned(9 downto 0);
+	signal EXT_ADC_ABS_Q : unsigned(9 downto 0);
 	signal EXT_ADC_LED_I_ENABLE : std_logic;
 	signal EXT_ADC_LED_Q_ENABLE : std_logic;
 	signal EXT_ADC_I_OVERRANGE : std_logic;
@@ -316,8 +319,8 @@ your_instance_name : MainPLL
 	Modulator: Modulation PORT MAP(
 		CLK => CLK100,
 		RESET => RESET,
-		DAC_I => I,
-		DAC_Q => Q,
+		DAC_I => dac_I_signed,
+		DAC_Q => dac_Q_signed,
 		SOURCE => mod_src_value,
 		EXT_I => EXT_ADC_CH_B,
 		EXT_Q => EXT_ADC_CH_A,
@@ -363,6 +366,9 @@ your_instance_name : MainPLL
 		UPDATED => EXT_PORT_UPDATED
 	);
 	
+	I <= std_logic(dac_I_signed(11)) & not std_logic_vector(dac_I_signed(10 downto 0));
+	Q <= std_logic(dac_Q_signed(11)) & not std_logic_vector(dac_Q_signed(10 downto 0));
+	
 	DORI <= '1';
 	SELIQ <= '0';
 	
@@ -380,7 +386,7 @@ your_instance_name : MainPLL
 	EXT_PORT_VALUES(1 downto 0) <= (others => '0');
 	EXT_PORT_VALUES(10 downto 6) <= (others => '0');
 	
-	spi_int_in <= "000000000000000" & EXT_PORT_UPDATED;
+	spi_int_in <= EXT_ADC_CH_A & "00000" & EXT_PORT_UPDATED;
 	
 	process(CLK100)
 	begin
@@ -412,10 +418,14 @@ your_instance_name : MainPLL
 			mod_src_write <= '0';
 			ext_adc_I_ovr_cnt <= 0;
 			ext_adc_Q_ovr_cnt <= 0;
-			ext_adc_max <= to_signed(511, ext_adc_max'length);
+			ext_adc_max <= to_unsigned(511, ext_adc_max'length);
 		else
 			-- keep track of overrange on external ADC
-			EXT_ADC_ABS_I <= abs(signed(EXT_ADC_CH_B));
+			if(EXT_ADC_CH_B = "1000000000") then
+				EXT_ADC_ABS_I <= "1000000000";
+			else
+				EXT_ADC_ABS_I <= unsigned(abs(signed(EXT_ADC_CH_B)));
+			end if;
 			if(EXT_ADC_ABS_I>EXT_ADC_MAX) then
 				ext_adc_I_ovr_cnt <= 134217727;
 				EXT_ADC_I_OVERRANGE <= '1';
@@ -425,7 +435,11 @@ your_instance_name : MainPLL
 				EXT_ADC_I_OVERRANGE <= '0';
 			end if;
 			
-			EXT_ADC_ABS_Q <= abs(signed(EXT_ADC_CH_A));
+			if(EXT_ADC_CH_A = "1000000000") then
+				EXT_ADC_ABS_Q <= "1000000000";
+			else
+				EXT_ADC_ABS_Q <= unsigned(abs(signed(EXT_ADC_CH_A)));
+			end if;
 			if(EXT_ADC_ABS_Q>EXT_ADC_MAX) then
 				ext_adc_Q_ovr_cnt <= 134217727;
 				EXT_ADC_Q_OVERRANGE <= '1';
@@ -519,7 +533,7 @@ your_instance_name : MainPLL
 									when "000000000000001" =>
 										EXT_ADC_LED_I_ENABLE <= spi_int_out(14);
 										EXT_ADC_LED_Q_ENABLE <= spi_int_out(15);
-										EXT_ADC_MAX <= signed(spi_int_out(9 downto 0));
+										EXT_ADC_MAX <= unsigned(spi_int_out(9 downto 0));
 									-- modulation source phase increment
 									when "000000000000100" =>
 										mod_src_pinc <= mod_src_pinc(19 downto 16) & spi_int_out;
