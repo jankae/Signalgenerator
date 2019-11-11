@@ -1,0 +1,183 @@
+* AD8132 SPICE Macro-model
+* Description: Amplifier
+* Generic Desc: 325 MHz differential amplifier
+* Developed by: EPS
+* Revision History: 08/10/2012 - Updated to new header style
+* 3.0 (11/2001)        
+* Copyright 2002, 2012 by Analog Devices, Inc.
+*
+* Refer to http://www.analog.com/Analog_Root/static/techSupport/designTools/spiceModels/license/spice_general.html for License Statement.  Use of this model
+* indicates your acceptance with the terms and provisions in the License
+* Statement.
+*
+* BEGIN Notes:
+*
+* Not Modeled:
+*     inoise, is not included in this version
+*     distortion is not characterized
+*     cmrr is not  characterized in this version.
+*
+* Parameters modeled include:
+*     closed loop gain and phase vs bandwidth
+*     output current and voltage limiting
+*     offset voltage (is  non-static, will  vary with gain)
+*     ibias (again, is static, will not vary with vcm)
+*     slew rate and step response performance
+*     (slew rate is based on 10-90% of step response)
+*     current on output will be reflected to the supplies 
+*     vnoise is included in this version
+*     Vocm is variable and include input typical offset
+*
+* END Notes
+*
+* Node assignments
+*                non-inverting input
+*                |  inverting input
+*                |  | positive supply
+*                |  | |  negative supply
+*                |  | |  |  output negative
+*                |  | |  |  |   output positve
+*                |  | |  |  |   |   vocm input
+*                |  | |  |  |   |   |
+.SUBCKT ad8132   3a 9 99 50 71 71b 110
+
+***** INPUT STAGE *****
+
+***** positive input left side *****
+
+I1 99 5 .4E-3
+Q1 50 2 5 QX
+Hos    3a 2 POLY(1) Vmeas 1.5E-3 1 
+
+*** rail clipping ***
+Dlim+ 14 14b dx
+Vlim+ 99 14b 1.95
+Dlim 14c 14 dx
+Vlim 14c  50 1.95
+Dlim- 13b 13 DX
+Vlim- 13b 50 1.95
+Dlim-B 13 13C dx
+Vlim-B 99 13C 1.95
+
+*** Vocm input rail clipping ***
+
+DOCMa 100 100A dx
+VOCMa 99 100A 2.28
+DOCMb 100b 100 DX
+VOCMb 100b 50 2.28
+
+***** negative input right side *****
+
+I2 99 6 .4E-3
+Q2 50 9 6 QX
+
+***** Input capacitance/impedance *****
+
+Cin 3a 9 1p
+
+***** POLE, ZERO STAGE *****
+
+c1 14 13 340p
+c2 13 97 120p
+c3 14 97 120p
+G1 13 14  5 6  1
+r11 13 97 1.25k
+r12 14 97 1.25k
+
+***** pole zero stage(POSITIVE SIDE) *******
+
+gp1 97 75 14 97 1
+RP1 75 97 1
+CP1 75 97 .38E-9
+
+***** pole zero stage(NEGATIVE SIDE) *******
+
+gp2 97 76 13 97 1
+RP2 76 97 1
+CP2 76 97 .38E-9
+
+***** OUTPUT STAGE *****
+
+********** Output Stage(positive side) *************
+
+D17 76 84 DX
+VO1  84 70 .177V
+VO2  70 85 .177V
+D16 85 76  DX
+G30 70 99c 99 76  91E-3
+G31 98c 70 76 50  91E-3
+RO30 70 99c 11
+RO31 98c 70 11
+VIOUT1 99 99c 0V
+VIOUT2 50 98c 0V
+VIOUT3 70 71 0V
+
+********** Output Stage(negative side) *************
+D17b 75 84b DX
+VO1b  84b 70b .177V
+VO2b  70b 85b .177V
+D16b 85b 75  DX
+G30b 70b 99d 99 75  91E-3
+G31b 98d 70b 75 50  91E-3
+RO30b 70b 99d 11
+RO31b 98d 70b 11
+VIOUTB1 99 99d 0V
+VIOUTB2 98d 50 0V
+VIOUTB3 70b 71b 0V
+
+********* Vocm stage *************************
+
+Gocm_a 97 75 100 97 1
+Gocm_b 97 76 100 97 1
+Rocm1 99 110 60k
+Rocm2 110 50 60k
+Gocm 97 100 110 97 1
+Rocm 97 100 1
+
+
+******** current mirror to supplies positive side *********
+
+FO1 0 99 poly(2) VIOUT1 VI1 -19.803E-3 1 -1
+FO2 0 50 poly(2) VIOUT2 VI2 -19.803E-3 1 -1
+FO3 0 400 VIOUT1 1
+VI1 401 0 0
+VI2 0 402 0
+DM1 400 401 DX
+DM2 402 400 DX 
+
+******** current mirror to supplies negative side *********
+
+FO1B 0 99 poly(2) VIOUTB1 VIB1 -19.803E-3 1 -1
+FO2B 0 50 poly(2) VIOUTB2 VIB2 -19.803E-3 1 -1
+FO3B 0 400B VIOUTB1 1
+VIB1 401B 0 0
+VIB2 0 402B 0
+DMB1 400B 401B DX
+DMB2 402B 400B DX
+
+Isy1 0 99 29.72m
+Isy2 0 50 29.91m
+
+******* referece statge ********
+
+Eref 97 0 poly(2) 99 0 50 0 0 0.5 0.5
+
+* NOISE STAGE
+
+
+DN1 151 152 DNOI1
+VN1 151 97 0.62
+VMEAS 152 97 0
+Rnoise1 152 97 2.65e-4
+
+
+.MODEL DNOI1 D(KF=.25e-11 af=.1)
+.MODEL QX PNP (BF=228.57 Is=1E-15)
+.MODEL DX D(IS=1E-15)
+.ENDS
+
+
+
+
+
+
