@@ -19,6 +19,7 @@ static constexpr uint8_t BitsQAMSamplerateExposed = 32;
 static constexpr uint8_t BitsFMDDSPinc = 32;
 static constexpr uint16_t MaxSrcValue = 4095;
 static constexpr uint16_t MaxFMDeviationSetting = 65535;
+static constexpr uint32_t ExtSamplerate = MaxFIRRate;
 
 static constexpr uint32_t MaxModSrcFreq = ((uint64_t) FPGA_CLK
 		* ((1ULL << BitsModSrcExposed) - 1)) / (1ULL << BitsModSrcPinc);

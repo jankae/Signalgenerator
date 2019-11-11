@@ -32,6 +32,10 @@ static bool ExtImpedance50 = true;
 static bool ExtCouplingAC = true;
 static int32_t ExtMaxLevel = 3000;
 static int32_t ExtMaxVoltage = 10000000;
+static int32_t ExtCutoff = 5000000;
+static int32_t ExtBeta = 8000;
+
+bool updateFIR = false;
 
 // modulation source settings
 static Protocol::SourceType modSourceType = Protocol::SourceType::Disabled;
@@ -79,6 +83,8 @@ static MenuEntry *mExtImpedance;
 static MenuEntry *mExtCoupling;
 static MenuEntry *mExtMaxVoltage;
 static MenuEntry *mExtMaxLevel;
+static MenuEntry *mExtCutoff;
+static MenuEntry *mExtBeta;
 
 static void ModulationChanged(void*, Widget*) {
 	if (ModEnabled) {
@@ -121,6 +127,8 @@ static void ModulationChanged(void*, Widget*) {
 	mModulation->RemoveEntry(mExtImpedance);
 	mModulation->RemoveEntry(mExtMaxLevel);
 	mModulation->RemoveEntry(mExtMaxVoltage);
+	mModulation->RemoveEntry(mExtCutoff);
+	mModulation->RemoveEntry(mExtBeta);
 
 	char descr[50] = "";
 	char value[10];
@@ -152,6 +160,7 @@ static void ModulationChanged(void*, Widget*) {
 	case Protocol::ModulationType::QAM8:
 	case Protocol::ModulationType::QAM16:
 	case Protocol::ModulationType::QAM32:
+		updateFIR = true;
 		QAMconst.SetUsedPoints(strtol(modTypeNames[(int) modType], nullptr, 0));
 		mModulation->AddEntry(mQAMConstellation, -1);
 		mModulation->AddEntry(mQAMSymbolrate, -1);
@@ -172,6 +181,7 @@ static void ModulationChanged(void*, Widget*) {
 		lModDescr2->setText(descr);
 		break;
 	case Protocol::ModulationType::External:
+		updateFIR = true;
 		if (modSourceType != Protocol::SourceType::Disabled) {
 			Dialog::MessageBox("Warning", Font_Big, "External modulation\n"
 					"active. Modulation\n"
@@ -207,6 +217,8 @@ static void ModulationChanged(void*, Widget*) {
 			mModulation->AddEntry(mExtMaxVoltage, -1);
 			mExtMaxVoltage->requestRedrawFull();
 		}
+		mModulation->AddEntry(mExtCutoff, -1);
+		mModulation->AddEntry(mExtBeta, -1);
 		break;
 	}
 	switch (modSourceType) {
@@ -310,7 +322,6 @@ void Generator::Init() {
 	mQAMSymbolrate = new MenuValue<uint32_t>("Symbolrate", &QAMSymbolrate,
 			Unit::SampleRate, ModulationChanged, nullptr, 0,
 			HardwareLimits::MaxFIRRate);
-	bool updateFIR = true;
 	mQAMSPS = new MenuValue<uint8_t>("Samples\nper symbol", &QAMSPS, Unit::None,
 			callback_setTrue, &updateFIR, 1, (HardwareLimits::FIRTaps + 1) / 2);
 	mQAMRolloff = new MenuValue<int32_t>("Excess\nbandwidth", &QAMRolloff,
@@ -325,6 +336,10 @@ void Generator::Init() {
 			ModulationChanged, nullptr, 0, 3000);
 	mExtMaxVoltage = new MenuValue<int32_t>("Fullscale", &ExtMaxVoltage,
 			Unit::Voltage, ModulationChanged, nullptr, 100000, 10000000);
+	mExtCutoff = new MenuValue<int32_t>("Bandwidth", &ExtCutoff,
+			Unit::Frequency, callback_setTrue, &updateFIR, 500000, 10000000);
+	mExtBeta = new MenuValue<int32_t>("Beta\n(Kaiser)", &ExtBeta, Unit::Fixed3,
+			callback_setTrue, &updateFIR, 1000, 16000);
 
 	mModulation->AddEntry(new MenuBack());
 	mainmenu->AddEntry(mModulation);
@@ -454,8 +469,8 @@ void Generator::Init() {
 		if (updateFIR) {
 			ModulationChanged(nullptr, nullptr);
 			if (modType == Protocol::ModulationType::External) {
-				// TODO set proper FIR
-				FPGA::SetFIRRaisedCosine(1, 1.0f);
+				FPGA::SetFIRLowpass(ExtCutoff, HardwareLimits::ExtSamplerate,
+						(float) ExtBeta / 1000);
 			} else {
 				float beta = (float) QAMRolloff / 1000;
 				FPGA::SetFIRRaisedCosine(QAMSPS, beta);

@@ -257,7 +257,7 @@ bool Constellation::GetScaledPoint(uint16_t point, uint16_t maxVal, int16_t &i,
 	if(point >= usedPoints) {
 		return false;
 	}
-	i = (int32_t) I[i] * maxVal / maxAmplitude;
-	q = (int32_t) Q[i] * maxVal / maxAmplitude;
+	i = (int32_t) I[point] * maxVal / maxAmplitude;
+	q = (int32_t) Q[point] * maxVal / maxAmplitude;
 	return true;
 }

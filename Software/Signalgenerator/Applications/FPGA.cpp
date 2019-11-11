@@ -5,6 +5,9 @@
 #include "main.h"
 #include <math.h>
 
+
+static constexpr float PI = 3.1415926535f;
+
 extern SPI_HandleTypeDef hspi1;
 
 static uint16_t htons(uint16_t h) {
@@ -39,10 +42,22 @@ void FPGA::SetConstellation(Constellation &c) {
 	SPI1_CS_FPGA_GPIO_Port->BSRR = SPI1_CS_FPGA_Pin;
 }
 
+static void loadFIR(int16_t *taps) {
+	// start loading data to address 0
+	uint16_t data = htons(0x8000);
+	SPI1_CS_FPGA_GPIO_Port->BSRR = SPI1_CS_FPGA_Pin << 16;
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) &data, 2, 100);
+	// Transmit coefficients in the correct order to the FPGA
+	for (uint8_t i = 0; i < (HardwareLimits::FIRTaps + 1) / 2; i++) {
+		int16_t transmit = htons(taps[FIRTapOrder[i]]);
+		HAL_SPI_Transmit(&hspi1, (uint8_t*) &transmit, 2, 100);
+	}
+	SPI1_CS_FPGA_GPIO_Port->BSRR = SPI1_CS_FPGA_Pin;
+}
+
 void FPGA::SetFIRRaisedCosine(uint8_t sps, float beta) {
 	int16_t FIRdata[(HardwareLimits::FIRTaps + 1) / 2];
 	static constexpr int16_t MaxAmplitude = 1400; // TODO adjust to scale (keep in mind possible overflow in FPGA FIR addition!)
-	static constexpr float PI = 3.1415926535f;
 	for (uint8_t i = 0; i < (HardwareLimits::FIRTaps + 1) / 2; i++) {
 		int8_t t = i - (HardwareLimits::FIRTaps + 1) / 2 + 1;
 		float h_t;
@@ -56,15 +71,54 @@ void FPGA::SetFIRRaisedCosine(uint8_t sps, float beta) {
 					/ (1 - (2 * beta * t / sps) * (2 * beta * t / sps));
 		}
 		printf("FIR tap %d: %f\n", i, h_t);
-		FIRdata[i] = htons(h_t * MaxAmplitude);
+		FIRdata[i] = h_t * MaxAmplitude;
 	}
-	// start loading data to address 0
-	uint16_t data = htons(0x8000);
-	SPI1_CS_FPGA_GPIO_Port->BSRR = SPI1_CS_FPGA_Pin << 16;
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) &data, 2, 100);
-	// Transmit coefficients in the correct order to the FPGA
+	loadFIR(FIRdata);
+}
+
+static double Bessel(double x) {
+	double Sum = 0.0, XtoIpower;
+	int i, j, Factorial;
+	for (i = 1; i < 10; i++) {
+		XtoIpower = pow(x / 2.0, (double) i);
+		Factorial = 1;
+		for (j = 1; j <= i; j++)
+			Factorial *= j;
+		Sum += pow(XtoIpower / (double) Factorial, 2.0);
+	}
+	return (1.0 + Sum);
+}
+
+
+void FPGA::SetFIRLowpass(uint32_t fc, uint32_t fs, float beta) {
+	int16_t FIRdata[(HardwareLimits::FIRTaps + 1) / 2];
+	const float omegaC = (float) fc / fs;
+	static float coefficients[(HardwareLimits::FIRTaps + 1) / 2];
+	static constexpr int16_t MaxAmplitude = 2047;
+	float sum = 0.0f;
 	for (uint8_t i = 0; i < (HardwareLimits::FIRTaps + 1) / 2; i++) {
-		HAL_SPI_Transmit(&hspi1, (uint8_t*) &FIRdata[FIRTapOrder[i]], 2, 100);
+		int8_t arg = i - (HardwareLimits::FIRTaps + 1) / 2 + 1;
+		if (arg == 0) {
+			coefficients[i] = omegaC;
+			sum += coefficients[i];
+		} else {
+			coefficients[i] = std::sin(omegaC * 2 * arg * PI) / (2 * arg * PI);
+			sum += 2*coefficients[i];
+		}
+
+		// apply kaiser window
+		float k_arg = sqrt(1.0f - pow(2.0f * arg / HardwareLimits::FIRTaps, 2.0f));
+		float kaiser = Bessel(k_arg * beta) / Bessel(beta);
+
+		printf("FIR tap %d: %f %f %f\n", i, coefficients[i], kaiser,
+				coefficients[i] * kaiser);
+		coefficients[i] *= kaiser;
 	}
-	SPI1_CS_FPGA_GPIO_Port->BSRR = SPI1_CS_FPGA_Pin;
+
+	printf("Normalizing by scaling with %f\n", 1.0f/sum);
+	// normalize
+	for (uint8_t i = 0; i < (HardwareLimits::FIRTaps + 1) / 2; i++) {
+		FIRdata[i] = coefficients[i] / sum * MaxAmplitude;
+	}
+	loadFIR(FIRdata);
 }
