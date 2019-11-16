@@ -106,23 +106,20 @@ void Window::draw(coords_t offset) {
 			title);
 }
 
-//void Window::input(GUIEvent_t *ev) {
-//	switch (ev->type) {
-//	case EVENT_TOUCH_RELEASED:
-//		if (ev->pos.y <= font.height + 3) {
-//			/* mark event as handled */
-//			ev->type = EVENT_NONE;
-//			if (ev->pos.x <= font.height + 3) {
-//				/* clicked into window close area, close this window */
-//				GUIEvent_t ev = { .type = EVENT_WINDOW_CLOSE, .w = w };
-//				gui_SendEvent(&ev);
-//			}
-//		}
-//		break;
-//	default:
-//		break;
-//	}
-//}
+void Window::input(GUIEvent_t *ev) {
+	switch (ev->type) {
+	case EVENT_BUTTON_CLICKED:
+		if (ev->button & BUTTON_ESC) {
+			/* mark event as handled */
+			ev->type = EVENT_NONE;
+			/* close this window */
+			delete this;
+		}
+		break;
+	default:
+		break;
+	}
+}
 
 void Window::drawChildren(coords_t offset) {
 	if (firstChild) {

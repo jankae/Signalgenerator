@@ -9,7 +9,7 @@
 
 extern SPI_HandleTypeDef hspi1;
 
-static constexpr int16_t ideal_low = -2000;
+static constexpr int16_t ideal_low = -4000;
 static constexpr int16_t ideal_high = 0;
 using AmplitudePoint = struct {
 	uint32_t freq;
@@ -23,22 +23,27 @@ using BalancePoint = struct {
 	int16_t Q;
 };
 
+using SkewPoint = struct {
+	uint32_t freq;
+	int16_t skew;
+};
+
 static constexpr uint8_t maxPoints = 10;
 static AmplitudePoint AmplitudePoints[maxPoints];
-
 static BalancePoint BalancePoints[maxPoints];
+static SkewPoint SkewPoints[maxPoints];
 
 static constexpr AmplitudePoint defaultAmplitudeCalibration[maxPoints] = {
-		{10000000, -2000, 0},
-		{100000000, -2000, 0},
-		{200000000, -2000, 0},
-		{500000000, -2000, 0},
-		{750000000, -2000, 0},
-		{1000000000, -2000, 0},
-		{1250000000, -2000, 0},
-		{1500000000, -2000, 0},
-		{1750000000, -2000, 0},
-		{2000000000, -2000, 0},
+		{10000000, ideal_low, 0},
+		{100000000, ideal_low, 0},
+		{200000000, ideal_low, 0},
+		{500000000, ideal_low, 0},
+		{750000000, ideal_low, 0},
+		{1000000000, ideal_low, 0},
+		{1250000000, ideal_low, 0},
+		{1500000000, ideal_low, 0},
+		{1750000000, ideal_low, 0},
+		{2000000000, ideal_low, 0},
 };
 
 #define CAL_ZERO_BALANCE	-4832
@@ -46,8 +51,8 @@ static constexpr AmplitudePoint defaultAmplitudeCalibration[maxPoints] = {
 
 static constexpr BalancePoint defaultBalanceCalibration[maxPoints] = {
 		{10000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
-		{100000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
-		{200000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
+		{249999999, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
+		{250000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
 		{500000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
 		{750000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
 		{1000000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
@@ -57,11 +62,26 @@ static constexpr BalancePoint defaultBalanceCalibration[maxPoints] = {
 		{2000000000, CAL_ZERO_BALANCE, CAL_ZERO_BALANCE},
 };
 
+static constexpr SkewPoint defaultSkewCalibration[maxPoints] = {
+		{10000000, 0},
+		{249999999, 0},
+		{250000000, 0},
+		{500000000, 0},
+		{750000000, 0},
+		{1000000000, 0},
+		{1250000000, 0},
+		{1500000000,  0},
+		{1750000000, 0},
+		{2000000000, 0},
+};
+
 void Calibration::Init() {
 	DefaultAmplitude();
 	DefaultBalance();
+	DefaultSkew();
 	Persistence::Add(AmplitudePoints, sizeof(AmplitudePoints));
 	Persistence::Add(BalancePoints, sizeof(BalancePoints));
+	Persistence::Add(SkewPoints, sizeof(SkewPoints));
 }
 
 void Calibration::DefaultAmplitude() {
@@ -86,7 +106,7 @@ void Calibration::RunAmplitude() {
 		uint8_t *new_step = (uint8_t*) ptr;
 		(*new_step)++;
 	}, &new_step, COORDS(80, 40));
-	Button *bQuit = new Button("Quit", Font_Big, [](void *ptr, Widget *w) {
+	Button *bSave = new Button("Save", Font_Big, [](void *ptr, Widget *w) {
 		bool *done = (bool*) ptr;
 		*done = true;
 	}, &done, COORDS(80, 40));
@@ -99,9 +119,9 @@ void Calibration::RunAmplitude() {
 	c->attach(bNext,
 			COORDS((c->getSize().x - bNext->getSize().x) / 2,
 					c->getSize().y - bNext->getSize().y - 2));
-	c->attach(bQuit,
-			COORDS(c->getSize().x - bQuit->getSize().x - 2,
-					c->getSize().y - bQuit->getSize().y - 2));
+	c->attach(bSave,
+			COORDS(c->getSize().x - bSave->getSize().x - 2,
+					c->getSize().y - bSave->getSize().y - 2));
 
 	EventCatcher *e = new EventCatcher(c, [](GUIEvent_t *const ev) -> bool {
 		// only capture encoder movements
@@ -225,7 +245,7 @@ void Calibration::RunBalance() {
 		uint8_t *new_step = (uint8_t*) ptr;
 		(*new_step)++;
 	}, &new_step, COORDS(80, 35));
-	Button *bQuit = new Button("Quit", Font_Big, [](void *ptr, Widget *w) {
+	Button *bSave = new Button("Save", Font_Big, [](void *ptr, Widget *w) {
 		bool *done = (bool*) ptr;
 		*done = true;
 	}, &done, COORDS(80, 35));
@@ -239,9 +259,9 @@ void Calibration::RunBalance() {
 	c->attach(bNext,
 			COORDS((c->getSize().x - bNext->getSize().x) / 2,
 					c->getSize().y - bNext->getSize().y - 2));
-	c->attach(bQuit,
-			COORDS(c->getSize().x - bQuit->getSize().x - 2,
-					c->getSize().y - bQuit->getSize().y - 2));
+	c->attach(bSave,
+			COORDS(c->getSize().x - bSave->getSize().x - 2,
+					c->getSize().y - bSave->getSize().y - 2));
 
 	EventCatcher *e = new EventCatcher(c, [](GUIEvent_t *const ev) -> bool {
 		// only capture encoder movements
@@ -357,4 +377,204 @@ Calibration::IQOffset Calibration::CorrectBalance(uint32_t freq) {
 	return ret;
 }
 
+void Calibration::DefaultSkew() {
+	memcpy(SkewPoints, defaultSkewCalibration, sizeof(SkewPoints));
+}
 
+void Calibration::RunSkew() {
+	uint8_t step = 1;
+	uint8_t new_step = 0;
+	bool done = false;
+
+	int32_t skew;
+
+	Window *w = new Window("Skew Calibration", Font_Big, COORDS(250, 150));
+	Container *c = new Container(w->getAvailableArea());
+	Label *lStep = new Label(20, Font_Big, Label::Orientation::CENTER);
+	Label *lUsage = new Label("Adjust knob to suppress sideband", Font_Medium);
+	Label *lValue = new Label(20, Font_Big, Label::Orientation::CENTER, COLOR_RED);
+	Entry<int32_t> *eValue = new Entry<int32_t>(&skew, nullptr, nullptr,
+			Font_Big, 8, Unit::Degree);
+	eValue->setSelectable(false);
+	Button *bPrev = new Button("Prev", Font_Big, [](void *ptr, Widget *w) {
+		uint8_t *new_step = (uint8_t*) ptr;
+		(*new_step)--;
+	}, &new_step, COORDS(80, 35));
+	Button *bNext = new Button("Next", Font_Big, [](void *ptr, Widget *w) {
+		uint8_t *new_step = (uint8_t*) ptr;
+		(*new_step)++;
+	}, &new_step, COORDS(80, 35));
+	Button *bSave = new Button("Save", Font_Big, [](void *ptr, Widget *w) {
+		bool *done = (bool*) ptr;
+		*done = true;
+	}, &done, COORDS(80, 35));
+
+	c->attach(lStep, COORDS(4, 5));
+	c->attach(lUsage, COORDS(34, 25));
+	c->attach(lValue, COORDS(4, 40));
+	c->attach(eValue, COORDS(30, 60));
+
+	c->attach(bPrev, COORDS(2, c->getSize().y - bPrev->getSize().y - 2));
+	c->attach(bNext,
+			COORDS((c->getSize().x - bNext->getSize().x) / 2,
+					c->getSize().y - bNext->getSize().y - 2));
+	c->attach(bSave,
+			COORDS(c->getSize().x - bSave->getSize().x - 2,
+					c->getSize().y - bSave->getSize().y - 2));
+
+	EventCatcher *e = new EventCatcher(c, [](GUIEvent_t *const ev) -> bool {
+		// only capture encoder movements
+		if(ev->type == EVENT_ENCODER_MOVED) {
+			return true;
+		} else {
+			return false;
+		}
+	}, [](void *ptr, Widget *source, GUIEvent_t *ev){
+		uint8_t *step = (uint8_t*) ptr;
+		SkewPoints[*step].skew += ev->movement;
+	}, &step);
+
+	w->setMainWidget(e);
+	bNext->select();
+
+	constexpr uint8_t last_step = maxPoints - 1;
+
+	while(!done) {
+		if (new_step != step) {
+			step = new_step;
+
+			// update button states
+			if (step == 0) {
+				bPrev->setSelectable(false);
+			} else {
+				bPrev->setSelectable(true);
+			}
+			if (step >= last_step) {
+				bNext->setSelectable(false);
+			} else {
+				bNext->setSelectable(true);
+			}
+			// update label text
+			char buf[21];
+			snprintf(buf, sizeof(buf), "Step %d/%d", step + 1, last_step + 1);
+			lStep->setText(buf);
+			char freq[10];
+			Unit::StringFromValue(freq, 8, SkewPoints[step].freq,
+					Unit::Frequency);
+			snprintf(buf, sizeof(buf), "%s", freq);
+			lValue->setText(buf);
+		}
+
+		skew = common_Map(SkewPoints[step].skew, 0, UINT16_MAX + 1, 0, 360000);
+		eValue->requestRedraw();
+		// send current setting to RFboard
+		Protocol::FrontToRF send;
+		Protocol::RFToFront recv;
+		memset(&send, 0, sizeof(send));
+		memset(&recv, 0, sizeof(recv));
+		send.Status.UseIntRef = 1;
+		send.frequency = SkewPoints[step].freq;
+		send.dbm = CorrectAmplitude(SkewPoints[step].freq, 0);
+
+		auto balance = Calibration::CorrectBalance(SkewPoints[step].freq);
+		send.offset_I = balance.I;
+		send.offset_Q = balance.Q;
+		// QAM modulation with both I and Q parts set to zero
+		Protocol::Modulation mod;
+		mod.type = Protocol::ModulationType::FM_USB;
+		mod.FM.deviation = 1000000;
+		mod.FM.phase_offset = 49152 + SkewPoints[step].skew;
+		mod.source = Protocol::SourceType::FixedValue;
+		mod.Fixed.value = 4095;
+
+		Protocol::SetupModulation(send, mod);
+
+		SPI1_CS_RF_GPIO_Port->BSRR = SPI1_CS_RF_Pin << 16;
+		HAL_SPI_TransmitReceive(&hspi1, (uint8_t*) &send, (uint8_t*) &recv,
+				sizeof(send), 1000);
+		SPI1_CS_RF_GPIO_Port->BSRR = SPI1_CS_RF_Pin;
+		vTaskDelay(100);
+	}
+	delete w;
+	if(!Persistence::Save()) {
+		Dialog::MessageBox("ERROR", Font_Big, "Failed to save\balance calibration",
+				Dialog::MsgBox::OK, nullptr, false);
+	}
+}
+
+int16_t Calibration::CorrectSkew(uint32_t freq) {
+	uint8_t i = 0;
+	for (; i < maxPoints; i++) {
+		if (freq <= SkewPoints[i].freq) {
+			break;
+		}
+	}
+	int16_t ret;
+	if (i == 0) {
+		ret = SkewPoints[0].skew;
+	} else {
+		// interpolate between AmplitudePoints
+		ret = common_Map(freq, SkewPoints[i - 1].freq, SkewPoints[i].freq,
+				SkewPoints[i - 1].skew, SkewPoints[i].skew);
+	}
+
+	return ret;
+}
+
+void Calibration::ResetPopup() {
+	Window *w = new Window("Reset Calibration", Font_Big, SIZE(150, 180));
+	auto c = new Container(w->getAvailableArea());
+
+	bool resetAmplitude = false;
+	auto cAmplitude = new Checkbox(&resetAmplitude, nullptr, SIZE(20,20));
+	bool resetBalance = false;
+	auto cBalance = new Checkbox(&resetBalance, nullptr, SIZE(20,20));
+	bool resetSkew = false;
+	auto cSkew = new Checkbox(&resetSkew, nullptr, SIZE(20,20));
+	auto lAmplitude = new Label("Amplitude", Font_Big);
+	auto lBalance = new Label("Balance", Font_Big);
+	auto lSkew = new Label("Skew", Font_Big);
+
+	c->attach(cAmplitude, COORDS(5, 5));
+	c->attach(lAmplitude, COORDS(30, 7));
+	c->attach(cBalance, COORDS(5, 35));
+	c->attach(lBalance, COORDS(30, 37));
+	c->attach(cSkew, COORDS(5, 65));
+	c->attach(lSkew, COORDS(30, 67));
+
+	bool abort = false, reset = false;
+
+	auto callback_setTrue = [](void *ptr, Widget*) {
+		bool *flag = (bool*) ptr;
+		*flag = true;
+	};
+
+	Button *bAbort = new Button("Abort", Font_Big, callback_setTrue, &abort,
+			COORDS(c->getSize().x / 2 - 10, 35));
+	Button *bReset = new Button("Reset", Font_Big, callback_setTrue, &reset,
+			COORDS(c->getSize().x / 2 - 10, 35));
+
+	c->attach(bAbort, COORDS(2, c->getSize().y - bAbort->getSize().y - 2));
+	c->attach(bReset,
+			COORDS(c->getSize().x - bReset->getSize().x - 2,
+					c->getSize().y - bReset->getSize().y - 2));
+
+	w->setMainWidget(c);
+
+	while(!abort && !reset) {
+		vTaskDelay(100);
+	}
+	if (reset) {
+		if (resetAmplitude) {
+			DefaultAmplitude();
+		}
+		if (resetBalance) {
+			DefaultBalance();
+		}
+		if (resetSkew) {
+			DefaultSkew();
+		}
+		Persistence::Save();
+	}
+	delete w;
+}

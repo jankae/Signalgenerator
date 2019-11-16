@@ -23,7 +23,7 @@ public:
 
 private:
 	void draw(coords_t offset) override;
-//	void input(GUIEvent_t *ev) override;
+	void input(GUIEvent_t *ev) override;
 	void drawChildren(coords_t offset) override;
 
 	Widget::Type getType() override { return Widget::Type::Window; };

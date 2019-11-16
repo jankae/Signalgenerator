@@ -18,4 +18,10 @@ void DefaultBalance();
 void RunBalance();
 IQOffset CorrectBalance(uint32_t freq);
 
+void DefaultSkew();
+void RunSkew();
+int16_t CorrectSkew(uint32_t freq);
+
+void ResetPopup();
+
 }

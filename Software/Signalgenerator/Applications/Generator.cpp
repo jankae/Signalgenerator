@@ -8,6 +8,7 @@
 #include "Constellation.hpp"
 #include "HardwareLimits.hpp"
 #include "FPGA.hpp"
+#include "System.hpp"
 #include <math.h>
 
 // main carrier settings
@@ -362,20 +363,16 @@ void Generator::Init() {
 	system->AddEntry(
 			new MenuAction("Cal balance", callback_setTrue,
 					&calibrate_balance));
+	bool calibrate_skew = false;
 	system->AddEntry(
-			new MenuAction("Reset Cal",
-					[](void *ptr, Widget *w) {
-						Dialog::MessageBox("Confirm reset", Font_Big,
-								"Really reset\nall calibration\nvalues?",
-								Dialog::MsgBox::ABORT_OK,
-								[](Dialog::Result res) {
-									if (res == Dialog::Result::OK) {
-										Calibration::DefaultAmplitude();
-										Calibration::DefaultBalance();
-										Persistence::Save();
-									}
-								}, false);
-					}, nullptr));
+			new MenuAction("Cal skew", callback_setTrue,
+					&calibrate_skew));
+	bool calibrate_reset = false;
+	system->AddEntry(
+			new MenuAction("Reset Cal", callback_setTrue, &calibrate_reset));
+	system->AddEntry(new MenuAction("View Font", [](void *ptr, Widget *w) {
+		System::ViewFont();
+	}, nullptr));
 
 	system->AddEntry(new MenuBack());
 
@@ -497,6 +494,16 @@ void Generator::Init() {
 			updateFIR = true;
 			continue;
 		}
+		if (calibrate_skew) {
+			Calibration::RunSkew();
+			calibrate_skew = false;
+			continue;
+		}
+		if (calibrate_reset) {
+			Calibration::ResetPopup();
+			calibrate_reset = false;
+			continue;
+		}
 		Protocol::FrontToRF send;
 		Protocol::RFToFront recv;
 		memset(&send, 0, sizeof(send));
@@ -523,15 +530,15 @@ void Generator::Init() {
 				break;
 			case Protocol::ModulationType::FM:
 				mod.FM.deviation = FMDeviation;
-				mod.FM.phase_offset = 0;
+				mod.FM.phase_offset = Calibration::CorrectSkew(frequency);
 				break;
 			case Protocol::ModulationType::FM_USB:
 				mod.FM.deviation = FMDeviation;
-				mod.FM.phase_offset = 49152;
+				mod.FM.phase_offset = 49152 + Calibration::CorrectSkew(frequency);
 				break;
 			case Protocol::ModulationType::FM_LSB:
 				mod.FM.deviation = FMDeviation;
-				mod.FM.phase_offset = 16384;
+				mod.FM.phase_offset = 16384 + Calibration::CorrectSkew(frequency);
 				break;
 			case Protocol::ModulationType::QAM2:
 			case Protocol::ModulationType::QAM4:

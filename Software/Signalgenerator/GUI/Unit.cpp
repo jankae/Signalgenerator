@@ -62,6 +62,8 @@ static const Unit::unit Msps = {"MS/s", 1000000};
 static const Unit::unit none = {"", 1};
 static const Unit::unit fixed3 = {"", 1000};
 
+static const Unit::unit degree = {"\xF8", 1000};
+
 const Unit::unit *Unit::Current[] = { &uA, &mA, &A, nullptr };
 const Unit::unit *Unit::Voltage[] = { &uV, &mV, &V, nullptr };
 const Unit::unit *Unit::Power[] = { &uW, &mW, &W, nullptr };
@@ -81,6 +83,7 @@ const Unit::unit *Unit::Hex[] = {nullptr };
 const Unit::unit *Unit::Frequency[] = { &kHz, &MHz, &GHz, nullptr };
 const Unit::unit *Unit::dbm[] = {&dbms, nullptr };
 const Unit::unit *Unit::SampleRate[] = {&sps, &ksps, &Msps, nullptr };
+const Unit::unit *Unit::Degree[] = {&degree, nullptr };
 
 const int32_t Unit::null = 0;
 const int32_t Unit::maxPercent = 100000000;
