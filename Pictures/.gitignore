@@ -4,3 +4,5 @@ Tex/*.aux
 Tex/*.log
 Tex/*.synctex.gz
 Tex/*.dvi
+IMG_*.JPG
+
