@@ -1,6 +1,6 @@
 # RF Section
 How does the synthesizer generate its signal? First, a blockdiagram of the RF section:
-![Blockdiagram of RF generation](../../Signalgenerator/Pictures/blockRF.svg)
+![Blockdiagram of RF generation](../Pictures/blockRF.svg)
 The signal starts all the way on the left with the main PLL (MAX2871) which generates a sine wave with a frequency range of 250MHz to 2.1GHz. At the next stage some modulation is applied to the signal. In this case a HMC1097 I/Q modulator is used, which contains both mixers as well as the +/-45° phase shift of the carrier. The I/Q inputs are fed by a DAC which gets its signal from an FPGA. This configuration allows to generate pretty much any modulation desired.
 After the modulation the signal is passed through a filter bank. Why is that necessary? The MAX2871 doesn't have a VCO covering the whole frequency range. Instead it divides down the VCO for lower output frequencies. This means there are a lot of harmonics still present in the signal. A filter is required that removes these harmonics. As the signal frequency can be changed instead of one filter a whole filter bank is needed.
 How many filters are required? Assuming ideal lowpass filters, each filter could cover a frequency range of f to just below 2*f. Any wider and the second harmonic at f would also pass through. For this snythesizer this would mean four filters:
