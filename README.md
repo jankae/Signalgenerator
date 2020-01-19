@@ -1,6 +1,6 @@
 # Signalgenerator
 
-![Generator](../Pictures/Generator.jpg)
+![Generator](Pictures/Generator.jpg)
 
 ## What is it?
 A homemade RF signal generator with these features:
