@@ -39,7 +39,7 @@ For a high level overview see the description of the [RF generation](Documentati
 For the effect of RF shielding see [these](Documentation/Shielding.md) measurements.
 
 ## More Pictures:
-The inside:
+The inside: (I reused the frontpanel PCB from [this](https://github.com/jankae/battery-sim) project)
 ![](Pictures/Back.jpg)
 The external modulation input PCB:
 ![](Pictures/IQinput.jpg)
