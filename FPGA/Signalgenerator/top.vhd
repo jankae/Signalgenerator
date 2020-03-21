@@ -62,21 +62,38 @@ entity top is
 end top;
 
 --FPGA register map:
---0x0000: GPIO register:
+--0x0010: GPIO register:
 --	[0-2]: SW1_CTL
 --	[4-6]: SW2_CTL
 --	[7]: Modulator enabled
---	[8-12]: LEDs
---0x0001: reserved
---0x0002: DAC I direct:
---	[0-11]: I DAC value if modulation disabled
---0x0003: DAC Q direct:
---	[0-11]: Q DAC value if modulation disabled
---0x0004: Modulation source phase increment
---0x0005: Modulation setting1
---0x0007: Modulation CTRL:
+--	[12-15]: Ext Port Values (I2C GPIO expander on external modulation input)
+--0x0000: Modulation CTRL:
 --	[0-7]: Modulation type
---	[11-8]: Source type
+--	[8-11]: Source type
+-- [12-15]: Modulation source phase increment (4 MSBs)
+--0x0001: Modulation source phase increment (16 LSBs)
+--0x0002: Modulation setting1
+--0x0003: Modulation setting2
+--0x0004: Modulation setting3
+--0x0008: External modulation I offset/enable
+-- [0-9]: I Offset value
+-- [15]: I input enable
+--0x0009: External modulation I scaling
+-- [0-9]: I Multiplicator
+-- [12-15]: I Rightshift
+--0x000A: External modulation Q offset/enable
+-- [0-9]: Q Offset value
+-- [15]: Q input enable
+--0x000B: External modulation Q scaling
+-- [0-9]: Q Multiplicator
+-- [12-15]: Q Rightshift
+
+
+
+--SPI status word (returned on every SPI transfer on internal SPI bus)
+-- [0]: External I2C port expander up to date
+-- [1]: I input clipped
+-- [2]: Q input clipped 
 
 architecture Behavioral of top is
 	component MainPLL
@@ -144,6 +161,27 @@ architecture Behavioral of top is
 		);
 	END COMPONENT;
 	
+	COMPONENT ADCScaling
+	PORT(
+		CLK : IN std_logic;
+		RESET : IN std_logic;
+		ADC_I : IN std_logic_vector(9 downto 0);
+		ADC_Q : IN std_logic_vector(9 downto 0);
+		NEW_IN : IN std_logic;
+		OFFSET_I : IN std_logic_vector(9 downto 0);
+		OFFSET_Q : IN std_logic_vector(9 downto 0);
+		MULT_I : IN std_logic_vector(9 downto 0);
+		MULT_Q : IN std_logic_vector(9 downto 0);
+		SHIFT_I : IN std_logic_vector(3 downto 0);
+		SHIFT_Q : IN std_logic_vector(3 downto 0);          
+		OUT_I : OUT std_logic_vector(9 downto 0);
+		OUT_Q : OUT std_logic_vector(9 downto 0);
+		NEW_OUT : OUT std_logic;
+		CLIPPED_I : OUT std_logic;
+		CLIPPED_Q : OUT std_logic
+		);
+	END COMPONENT;
+	
 	COMPONENT PCA9555
 	GENERIC(
 		CLK_FREQ : integer;
@@ -172,7 +210,10 @@ architecture Behavioral of top is
 		NEW_SAMPLE : OUT std_logic;
 		FIFO_IN : in STD_LOGIC_VECTOR (11 downto 0);
 		FIFO_WRITE : in STD_LOGIC;
-		FIFO_LEVEL : out STD_LOGIC_VECTOR (STREAM_DEPTH-1 downto 0)
+		FIFO_LEVEL : out STD_LOGIC_VECTOR (STREAM_DEPTH-1 downto 0);
+		EXT_I : in STD_LOGIC_VECTOR (9 downto 0);
+		EXT_Q : in STD_LOGIC_VECTOR (9 downto 0);
+		EXT_NEW_SAMPLE : in STD_LOGIC
 	);
 	END COMPONENT;
 	
@@ -209,7 +250,6 @@ architecture Behavioral of top is
 	signal mod_write_FIR : std_logic;
 	signal mod_reload_FIR : std_logic;
 	
-	signal mod_use_ext_adc : std_logic;
 	-- modulation source settings
 	signal mod_src_pinc : std_logic_vector(19 downto 0);
 	signal mod_src_type : std_logic_vector(3 downto 0);
@@ -229,15 +269,27 @@ architecture Behavioral of top is
 	signal EXT_PORT_VALUES : std_logic_vector(15 downto 0);
 	signal EXT_PORT_UPDATED : std_logic;
 	
-	signal EXT_ADC_MAX : unsigned(9 downto 0);
 	signal EXT_ADC_ABS_I : unsigned(9 downto 0);
 	signal EXT_ADC_ABS_Q : unsigned(9 downto 0);
-	signal EXT_ADC_LED_I_ENABLE : std_logic;
-	signal EXT_ADC_LED_Q_ENABLE : std_logic;
+	signal EXT_ADC_I_ENABLE : std_logic;
+	signal EXT_ADC_Q_ENABLE : std_logic;
 	signal EXT_ADC_I_OVERRANGE : std_logic;
 	signal EXT_ADC_Q_OVERRANGE : std_logic;
 	signal EXT_ADC_I_OVR_CNT : integer range 0 to 134217727;
 	signal EXT_ADC_Q_OVR_CNT : integer range 0 to 134217727;
+	
+	-- external ADC scaling signals
+	signal ADC_I_OFFSET : std_logic_vector(9 downto 0);
+	signal ADC_I_MULT : std_logic_vector(9 downto 0);
+	signal ADC_I_SHIFT : std_logic_vector(3 downto 0);
+	signal ADC_I_SCALED : std_logic_vector(9 downto 0);
+	signal ADC_Q_OFFSET : std_logic_vector(9 downto 0);
+	signal ADC_Q_MULT : std_logic_vector(9 downto 0);
+	signal ADC_Q_SHIFT : std_logic_vector(3 downto 0);
+	signal ADC_Q_SCALED : std_logic_vector(9 downto 0);
+	signal ADC_SCALED_NEW_SAMPLE : std_logic;
+	signal ADC_I_CLIPPED : std_logic;
+	signal ADC_Q_CLIPPED : std_logic;
 begin
 your_instance_name : MainPLL
   port map
@@ -313,7 +365,10 @@ your_instance_name : MainPLL
 		NEW_SAMPLE => open,
 		FIFO_IN => spi_ext_out(11 downto 0),
 		FIFO_WRITE => mod_src_write,
-		FIFO_LEVEL => mod_src_fifo_level
+		FIFO_LEVEL => mod_src_fifo_level,
+		EXT_I => ADC_I_SCALED,
+		EXT_Q => ADC_Q_SCALED,
+		EXT_NEW_SAMPLE => ADC_SCALED_NEW_SAMPLE
 	);
 	
 	Modulator: Modulation PORT MAP(
@@ -322,10 +377,10 @@ your_instance_name : MainPLL
 		DAC_I => dac_I_signed,
 		DAC_Q => dac_Q_signed,
 		SOURCE => mod_src_value,
-		EXT_I => EXT_ADC_CH_B,
-		EXT_Q => EXT_ADC_CH_A,
-		EXT_NEW_SAMPLE => EXT_ADC_NEW_SAMPLE,
-		EXT_ENABLE => mod_use_ext_adc,
+		EXT_I => ADC_I_SCALED,
+		EXT_Q => ADC_Q_SCALED,
+		EXT_NEW_SAMPLE => ADC_SCALED_NEW_SAMPLE,
+		EXT_ENABLE => open,
 		MODTYPE => mod_type,
 		SETTING1 => mod_setting1,
 		SETTING2 => mod_setting2,
@@ -352,6 +407,26 @@ your_instance_name : MainPLL
 		NEW_SAMPLE => EXT_ADC_NEW_SAMPLE 
 	);
 	
+	EXT_ADCScaling: ADCScaling
+	PORT MAP(
+		CLK => CLK100,
+		RESET => EXT_ADC_SHUTDOWN,
+		ADC_I => EXT_ADC_CH_B,
+		ADC_Q => EXT_ADC_CH_A,
+		NEW_IN => EXT_ADC_NEW_SAMPLE,
+		OFFSET_I => ADC_I_OFFSET,
+		OFFSET_Q => ADC_Q_OFFSET,
+		MULT_I => ADC_I_MULT,
+		MULT_Q => ADC_Q_MULT,
+		SHIFT_I => ADC_I_SHIFT,
+		SHIFT_Q => ADC_Q_SHIFT,
+		OUT_I => ADC_I_SCALED,
+		OUT_Q => ADC_Q_SCALED,
+		NEW_OUT => ADC_SCALED_NEW_SAMPLE,
+		CLIPPED_I => ADC_I_CLIPPED,
+		CLIPPED_Q => ADC_Q_CLIPPED
+	);
+	
 	PortExpander: PCA9555
 	GENERIC MAP(
 		CLK_FREQ => 200000000,
@@ -376,12 +451,12 @@ your_instance_name : MainPLL
 	LED(3) <= RESET;
 	LED(2 downto 0) <= (others => '0');
 	
-	EXT_ADC_SHUTDOWN <= not mod_use_ext_adc;
+	EXT_ADC_SHUTDOWN <= not EXT_ADC_I_ENABLE and not EXT_ADC_Q_ENABLE;
 	EXT_PORT_VALUES(11) <= EXT_ADC_SHUTDOWN;
-	EXT_PORT_VALUES(3) <= EXT_ADC_LED_I_ENABLE and not EXT_ADC_I_OVERRANGE;
-	EXT_PORT_VALUES(2) <= EXT_ADC_LED_I_ENABLE and EXT_ADC_I_OVERRANGE;
-	EXT_PORT_VALUES(5) <= EXT_ADC_LED_Q_ENABLE and not EXT_ADC_Q_OVERRANGE;
-	EXT_PORT_VALUES(4) <= EXT_ADC_LED_Q_ENABLE and EXT_ADC_Q_OVERRANGE;
+	EXT_PORT_VALUES(3) <= EXT_ADC_I_ENABLE and not EXT_ADC_I_OVERRANGE;
+	EXT_PORT_VALUES(2) <= EXT_ADC_I_ENABLE and EXT_ADC_I_OVERRANGE;
+	EXT_PORT_VALUES(5) <= EXT_ADC_Q_ENABLE and not EXT_ADC_Q_OVERRANGE;
+	EXT_PORT_VALUES(4) <= EXT_ADC_Q_ENABLE and EXT_ADC_Q_OVERRANGE;
 	-- set unused ports to 0
 	EXT_PORT_VALUES(1 downto 0) <= (others => '0');
 	EXT_PORT_VALUES(10 downto 6) <= (others => '0');
@@ -418,15 +493,17 @@ your_instance_name : MainPLL
 			mod_src_write <= '0';
 			ext_adc_I_ovr_cnt <= 0;
 			ext_adc_Q_ovr_cnt <= 0;
-			ext_adc_max <= to_unsigned(511, ext_adc_max'length);
+			ADC_I_OFFSET <= (others => '0');
+			ADC_I_MULT <= (others => '0');
+			ADC_I_SHIFT <= (others => '0');
+			EXT_ADC_I_ENABLE <= '0';
+			ADC_Q_OFFSET <= (others => '0');
+			ADC_Q_MULT <= (others => '0');
+			ADC_Q_SHIFT <= (others => '0');
+			EXT_ADC_Q_ENABLE <= '0';
 		else
 			-- keep track of overrange on external ADC
-			if(EXT_ADC_CH_B = "1000000000") then
-				EXT_ADC_ABS_I <= "1000000000";
-			else
-				EXT_ADC_ABS_I <= unsigned(abs(signed(EXT_ADC_CH_B)));
-			end if;
-			if(EXT_ADC_ABS_I>EXT_ADC_MAX) then
+			if(ADC_I_CLIPPED='1') then
 				ext_adc_I_ovr_cnt <= 134217727;
 				EXT_ADC_I_OVERRANGE <= '1';
 			elsif	ext_adc_I_ovr_cnt > 0 then
@@ -435,12 +512,7 @@ your_instance_name : MainPLL
 				EXT_ADC_I_OVERRANGE <= '0';
 			end if;
 			
-			if(EXT_ADC_CH_A = "1000000000") then
-				EXT_ADC_ABS_Q <= "1000000000";
-			else
-				EXT_ADC_ABS_Q <= unsigned(abs(signed(EXT_ADC_CH_A)));
-			end if;
-			if(EXT_ADC_ABS_Q>EXT_ADC_MAX) then
+			if(ADC_Q_CLIPPED='1') then
 				ext_adc_Q_ovr_cnt <= 134217727;
 				EXT_ADC_Q_OVERRANGE <= '1';
 			elsif	ext_adc_Q_ovr_cnt > 0 then
@@ -521,36 +593,45 @@ your_instance_name : MainPLL
 						else
 							if write_not_read = '1' then
 								case mem_address is
-									when "000000000000000" =>
+									when "000000000010000" =>
 										-- write to GPIO register
 										SW1_CTL <= spi_int_out(2 downto 0);
 										SW2_CTL <= spi_int_out(6 downto 4);
 										MOD_EN <= spi_int_out(7);
-										SW1_CTL <= spi_int_out(2 downto 0);
-										--LED <= spi_int_out(12 downto 8);
 										EXT_PORT_VALUES(15 downto 12) <= spi_int_out(15 downto 12);
-									-- Ext ADC range and LED control
-									when "000000000000001" =>
-										EXT_ADC_LED_I_ENABLE <= spi_int_out(14);
-										EXT_ADC_LED_Q_ENABLE <= spi_int_out(15);
-										EXT_ADC_MAX <= unsigned(spi_int_out(9 downto 0));
-									-- modulation source phase increment
-									when "000000000000100" =>
-										mod_src_pinc <= mod_src_pinc(19 downto 16) & spi_int_out;
-									-- modulation setting1
-									when "000000000000101" =>
-										mod_setting1 <= spi_int_out;
-									-- modulation setting2
-									when "000000000000110" =>
-										mod_setting2 <= spi_int_out;
 									-- modulation and source types
-									when "000000000000111" =>
+									when "000000000000000" =>
 										mod_type <= spi_int_out(7 downto 0);
 										mod_src_type <= spi_int_out(11 downto 8);
 										mod_src_pinc <= spi_int_out(15 downto 12) & mod_src_pinc(15 downto 0);
+									-- modulation source phase increment
+									when "000000000000001" =>
+										mod_src_pinc <= mod_src_pinc(19 downto 16) & spi_int_out;
+									-- modulation setting1
+									when "000000000000010" =>
+										mod_setting1 <= spi_int_out;
+									-- modulation setting2
+									when "000000000000011" =>
+										mod_setting2 <= spi_int_out;
 									-- modulation setting3
-									when "000000000001000" =>
+									when "000000000000100" =>
 										mod_setting3 <= spi_int_out;
+									-- Ext ADC I offset and enable
+									when "000000000001000" =>
+										ADC_I_OFFSET <= spi_int_out(9 downto 0);
+										EXT_ADC_I_ENABLE <= spi_int_out(15);
+									-- Ext ADC I Scaling
+									when "000000000001001" =>
+										ADC_I_MULT <= spi_int_out(9 downto 0);
+										ADC_I_SHIFT <= spi_int_out(15 downto 12);
+									-- Ext ADC Q offset and enable
+									when "000000000001010" =>
+										ADC_Q_OFFSET <= spi_int_out(9 downto 0);
+										EXT_ADC_Q_ENABLE <= spi_int_out(15);										
+									-- Ext ADC Q Scaling
+									when "000000000001011" =>
+										ADC_Q_MULT <= spi_int_out(9 downto 0);
+										ADC_Q_SHIFT <= spi_int_out(15 downto 12);										
 									when others =>
 								end case;
 							end if;

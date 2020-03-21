@@ -43,14 +43,19 @@ entity ModSource is
 			  -- 0110: Square
 			  -- 0111: PRBS (PINC determines update rate)
 			  -- 1000: FIFO stream (PINC determines update rate)
-			  -- 1001-1111: reserved
+			  -- 1001: Ext I (TODO)
+			  -- 1010: Ext Q (TODO)
+			  -- 1011-1111: reserved
            SRCTYPE : in  STD_LOGIC_VECTOR (3 downto 0);
            PINC : in  STD_LOGIC_VECTOR (19 downto 0);
            RESULT : out  STD_LOGIC_VECTOR (11 downto 0);
 			  NEW_SAMPLE : out STD_LOGIC;
 			  FIFO_IN : in STD_LOGIC_VECTOR (11 downto 0);
 			  FIFO_WRITE : in STD_LOGIC;
-			  FIFO_LEVEL : out STD_LOGIC_VECTOR (STREAM_DEPTH-1 downto 0)
+			  FIFO_LEVEL : out STD_LOGIC_VECTOR (STREAM_DEPTH-1 downto 0);
+			  EXT_I : in STD_LOGIC_VECTOR (9 downto 0);
+			  EXT_Q : in STD_LOGIC_VECTOR (9 downto 0);
+			  EXT_NEW_SAMPLE : in STD_LOGIC
 			  );
 end ModSource;
 
@@ -246,6 +251,14 @@ begin
 						fifo_read <= '0';
 						updated <= '0';
 					end if;
+				-- Ext I
+				when "1001" =>
+					RESULT <= not EXT_I(9) & EXT_I(8 downto 0) & "00";
+					NEW_SAMPLE <= EXT_NEW_SAMPLE;
+				-- Ext Q
+				when "1010" =>
+					RESULT <= not EXT_Q(9) & EXT_Q(8 downto 0) & "00";
+					NEW_SAMPLE <= EXT_NEW_SAMPLE;					
 				-- invalid setting
 				when others =>
 					RESULT <= (others => '0');

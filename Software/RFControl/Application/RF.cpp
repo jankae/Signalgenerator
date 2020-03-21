@@ -8,7 +8,7 @@
 #include <cmath>
 #include "System/log.h"
 
-#define Log_RF		(LevelAll)
+#define Log_RF		(/*LevelDebug|*/LevelInfo|LevelWarn|LevelError|LevelCrit)
 
 #include "main.h"
 extern SPI_HandleTypeDef hspi1;
@@ -400,7 +400,7 @@ static void NewADCSamples(uint16_t *data, uint16_t len) {
 			if (cdbm_diff < 50) {
 				if (status.stabilized_cnt >= 10) {
 					status.stabilized = true;
-					LOG(Log_RF, LevelInfo, "Level stabilized");
+					LOG(Log_RF, LevelDebug, "Level stabilized");
 					status.unlevel = false;
 					spi_status->Status.AmplitudeUnlevel = 0;
 				} else {

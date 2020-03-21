@@ -2,7 +2,7 @@
 #include "main.h"
 #include "../System/log.h"
 
-#define Log_FPGA 	(LevelAll)
+#define Log_FPGA 	(/*LevelDebug|*/LevelInfo|LevelWarn|LevelError|LevelCrit)
 
 static uint16_t gpio = 0x0000;
 extern SPI_HandleTypeDef hspi1;
@@ -51,16 +51,7 @@ void FPGA::UpdateGPIO() {
 	WriteReg(Reg::GPIO, gpio);
 }
 
-void FPGA::ConfigureExtADC(uint16_t maxval, bool enableI, bool enableQ,
-		bool CouplingDC, bool Impedance1M, bool range1, bool range2) {
-	uint16_t value = maxval & 0x01FF;
-	if (enableI) {
-		value |= 0x4000;
-	}
-	if (enableQ) {
-		value |= 0x8000;
-	}
-	WriteReg(Reg::EXT_ADC, value);
+void FPGA::ConfigureExtADC(bool CouplingDC, bool Impedance1M, bool range1, bool range2) {
 	if (CouplingDC) {
 		SetGPIO(GPIO::ADC_DC);
 	} else {

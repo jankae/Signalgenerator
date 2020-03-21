@@ -13,13 +13,10 @@ using FrontToRF = struct fronttorf {
 		uint16_t ADCImp1M :1;
 		uint16_t ADCRange1 :1;
 		uint16_t ADCRange2 :1;
-		uint16_t ADCEnableI :1;
-		uint16_t ADCEnableQ :1;
-		uint16_t ADCMax : 9;
 	} Status;
 	int16_t offset_I;
 	int16_t offset_Q;
-	uint16_t modulation_registers[8];
+	uint16_t modulation_registers[16];
 } __attribute__((packed, aligned(8)));
 
 static constexpr uint32_t MagicConstant = 0xAE795C0D;
@@ -43,7 +40,7 @@ using RFToFront = struct rftofront {
 	} Status;
 	uint16_t reserved;
 	uint32_t MagicConstant;
-	uint8_t reserved2[24];
-} __attribute__((packed, aligned(8)));;
+	uint8_t reserved2[40];
+} __attribute__((packed, aligned(8)));
 
 }

@@ -23,8 +23,8 @@ static bool new_modulation_data = false;
 
 static MCP48X2 OffsetDAC = MCP48X2(&hspi1, OFFSET_CS_GPIO_Port, OFFSET_CS_Pin);
 
-static_assert(sizeof(Protocol::RFToFront) == 32);
-static_assert(sizeof(Protocol::FrontToRF) == 32);
+static_assert(sizeof(Protocol::RFToFront) == 48);
+static_assert(sizeof(Protocol::FrontToRF) == 48);
 
 void app(void) {
 //	RF::InternalReference(true);
@@ -74,15 +74,10 @@ void app(void) {
 			RF::InternalReference(spi_new.Status.UseIntRef);
 		}
 		if (spi_new.Status.ADCCouplingDC != spi_current.Status.ADCCouplingDC
-				|| spi_new.Status.ADCEnableI != spi_current.Status.ADCEnableI
-				|| spi_new.Status.ADCEnableQ != spi_current.Status.ADCEnableQ
 				|| spi_new.Status.ADCImp1M != spi_current.Status.ADCImp1M
-				|| spi_new.Status.ADCMax != spi_current.Status.ADCMax
 				|| spi_new.Status.ADCRange1 != spi_current.Status.ADCRange1
 				|| spi_new.Status.ADCRange2 != spi_current.Status.ADCRange2) {
-			FPGA::ConfigureExtADC(spi_new.Status.ADCMax,
-					spi_new.Status.ADCEnableI, spi_new.Status.ADCEnableQ,
-					spi_new.Status.ADCCouplingDC, spi_new.Status.ADCImp1M,
+			FPGA::ConfigureExtADC(spi_new.Status.ADCCouplingDC, spi_new.Status.ADCImp1M,
 					spi_new.Status.ADCRange1, spi_new.Status.ADCRange2);
 		}
 		if (spi_new.offset_I != spi_current.offset_I) {
@@ -109,7 +104,7 @@ void app(void) {
 		spi_current = spi_new;
 		if (new_modulation_data && RF::Stabilized()) {
 			// Update registers on FPGA
-			for (uint8_t i = 0; i < 8; i++) {
+			for (uint8_t i = 0; i < 16; i++) {
 				FPGA::WriteReg((FPGA::Reg) (i + (int) FPGA::Reg::MOD_REG0),
 						spi_current.modulation_registers[i]);
 			}

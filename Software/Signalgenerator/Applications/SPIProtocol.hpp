@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "FPGA.hpp"
 
 namespace Protocol {
 
@@ -13,13 +14,10 @@ using FrontToRF = struct fronttorf {
 		uint16_t ADCImp1M :1;
 		uint16_t ADCRange1 :1;
 		uint16_t ADCRange2 :1;
-		uint16_t ADCEnableI :1;
-		uint16_t ADCEnableQ :1;
-		uint16_t ADCMax : 9;
 	} Status;
 	int16_t offset_I;
 	int16_t offset_Q;
-	uint16_t modulation_registers[8];
+	uint16_t modulation_registers[16];
 } __attribute__((packed, aligned(8)));
 
 static constexpr uint32_t MagicConstant = 0xAE795C0D;
@@ -43,8 +41,8 @@ using RFToFront = struct rftofront {
 	} Status;
 	uint16_t reserved;
 	uint32_t MagicConstant;
-	uint8_t reserved2[24];
-} __attribute__((packed, aligned(8)));;
+	uint8_t reserved2[40];
+} __attribute__((packed, aligned(8)));
 
 enum class ModulationType : uint8_t {
 	AM = 0,
@@ -57,17 +55,6 @@ enum class ModulationType : uint8_t {
 	QAM16 = 7,
 	QAM32 = 8,
 	External = 9,
-};
-enum class SourceType : uint8_t {
-	Disabled = 0,
-	FixedValue = 1,
-	Sine = 2,
-	RampUp = 3,
-	RampDown = 4,
-	Triangle = 5,
-	Square = 6,
-	PRBS = 7,
-	Stream = 8,
 };
 
 using Modulation = struct modulation {
@@ -91,7 +78,7 @@ using Modulation = struct modulation {
 			uint32_t maxVoltage;
 		} External;
 	};
-	SourceType source;
+	FPGA::ModSrc source;
 	union {
 		struct {
 			int32_t value;
@@ -99,6 +86,12 @@ using Modulation = struct modulation {
 		struct {
 			uint32_t frequency;
 		} Periodic;
+		struct {
+			int32_t minVoltage;
+			int32_t maxVoltage;
+			bool ACCoupled;
+			bool Impedance50R;
+		} ExtSrc;
 	};
 };
 

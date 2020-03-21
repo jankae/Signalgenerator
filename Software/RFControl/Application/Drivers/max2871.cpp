@@ -14,7 +14,7 @@ bool MAX2871::Init() {
 	ChipEnable(false);
 	RFEnable(false);
 
-	SetReference(10000000, false, 5, false);
+	SetReference(10000000, true, 1, false);
 
 	// non-inverting loop filter
 	regs[2] |= (1UL << 6);
@@ -37,10 +37,10 @@ bool MAX2871::Init() {
 	regs[5] |= (1UL << 24);
 
 	SetPower(Power::n1dbm);
-	SetMode(Mode::LowSpur1);
+	SetMode(Mode::LowSpur2);
 	// for all other CP modes the PLL reports unlock condition (output signal appears to be locked)
-	SetCPMode(CPMode::Disabled);
-	SetCPCurrent(0);
+	SetCPMode(CPMode::CP20);
+	SetCPCurrent(15);
 	SetFrequency(1000000000);
 
 	Update();

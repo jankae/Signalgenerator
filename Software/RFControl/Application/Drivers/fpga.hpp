@@ -24,15 +24,26 @@ enum class GPIO : uint16_t {
 };
 
 enum class Reg : uint16_t {
-	GPIO = 0x0000,
-	EXT_ADC = 0x0001,
+	GPIO = 0x0010,
+//	EXT_ADC = 0x0001,
 //	DAC_I = 0x0002,		// direct write to I/Q DAC not supported by FPGA anymore
 //	DAC_Q = 0x0003,
-	MOD_REG0 = 0x0004,
-	MOD_REG1 = 0x0005,
-	MOD_REG2 = 0x0006,
-	MOD_REG3 = 0x0007,
-	MOD_REG4 = 0x0008,
+	MOD_REG0 = 0x0000,
+	MOD_REG1 = 0x0001,
+	MOD_REG2 = 0x0002,
+	MOD_REG3 = 0x0003,
+	MOD_REG4 = 0x0004,
+	MOD_REG5 = 0x0005,
+	MOD_REG6 = 0x0006,
+	MOD_REG7 = 0x0007,
+	MOD_REG8 = 0x0008,
+	MOD_REG9 = 0x0009,
+	MOD_REG10 = 0x000A,
+	MOD_REG11 = 0x000B,
+	MOD_REG12 = 0x000C,
+	MOD_REG13 = 0x000D,
+	MOD_REG14 = 0x000E,
+	MOD_REG15 = 0x000F,
 };
 
 inline GPIO operator|(GPIO a, GPIO b) {
@@ -51,8 +62,7 @@ Status ReadStatus();
 void SetGPIO(GPIO g);
 void ResetGPIO(GPIO g);
 void UpdateGPIO();
-void ConfigureExtADC(uint16_t maxval, bool enableI, bool enableQ,
-		bool CouplingDC, bool Impedance1M, bool range1, bool range2);
+void ConfigureExtADC(bool CouplingDC, bool Impedance1M, bool range1, bool range2);
 
 //void SetDAC(uint16_t i, uint16_t q);
 

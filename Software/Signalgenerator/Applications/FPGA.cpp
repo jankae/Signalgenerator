@@ -57,7 +57,7 @@ static void loadFIR(int16_t *taps) {
 
 void FPGA::SetFIRRaisedCosine(uint8_t sps, float beta) {
 	int16_t FIRdata[(HardwareLimits::FIRTaps + 1) / 2];
-	static constexpr int16_t MaxAmplitude = 1400; // TODO adjust to scale (keep in mind possible overflow in FPGA FIR addition!)
+	static constexpr int16_t MaxAmplitude = 1400;
 	for (uint8_t i = 0; i < (HardwareLimits::FIRTaps + 1) / 2; i++) {
 		int8_t t = i - (HardwareLimits::FIRTaps + 1) / 2 + 1;
 		float h_t;
@@ -121,4 +121,24 @@ void FPGA::SetFIRLowpass(uint32_t fc, uint32_t fs, float beta) {
 		FIRdata[i] = coefficients[i] / sum * MaxAmplitude;
 	}
 	loadFIR(FIRdata);
+}
+
+uint16_t FPGA::CalculateExtADCScaling(int32_t maxADCVoltage) {
+	/* ADC should report its maximum value (512) after scaling when maxADCVoltage is applied.
+	 * Scaling is done in two stages in the FPGA:
+	 * 1. Multiply (offset-removed) ADC value with a signed 10 bit integer
+	 * 2. Right-shift the result up to 15 bits
+	 */
+	// Calculate ideal multiplicator (extend result by all 9 bits available via 10 bit signed multiplication)
+	int32_t multiplicator = (int32_t) (HardwareLimits::MaxExtModADCValue
+			* HardwareLimits::MaxExtModADCVoltage) / maxADCVoltage;
+	uint8_t rightShift = 9;
+	// decrease multiplicator until valid range is reached
+	while (multiplicator < -HardwareLimits::MaxExtModADCValue
+			|| multiplicator >= HardwareLimits::MaxExtModADCValue) {
+		multiplicator >>= 1;
+		rightShift--;
+	}
+	// assemble FPGA register value
+	return ((uint32_t) rightShift) << 12 | (multiplicator & 0x03FF);
 }

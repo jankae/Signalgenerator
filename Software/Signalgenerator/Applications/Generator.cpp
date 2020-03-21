@@ -31,17 +31,34 @@ static bool QAMdiff = false;
 
 static bool ExtImpedance50 = true;
 static bool ExtCouplingAC = true;
-static int32_t ExtMaxLevel = 3000;
-static int32_t ExtMaxVoltage = 10000000;
-static int32_t ExtCutoff = 5000000;
-static int32_t ExtBeta = 8000;
+static int32_t ExtModMaxLevel = 3000;
+static int32_t ExtModMaxVoltage = 10000000;
+static int32_t ExtModCutoff = 5000000;
+static int32_t ExtModBeta = 8000;
+
+static int32_t ExtSrcMinLevel = -10000000;
+static int32_t ExtSrcMaxLevel = 10000000;
 
 bool updateFIR = false;
 
 // modulation source settings
-static Protocol::SourceType modSourceType = Protocol::SourceType::Disabled;
+static FPGA::ModSrc modSourceType = FPGA::ModSrc::Disabled;
+static uint8_t modSourceIndex = 0;
+static constexpr FPGA::ModSrc modSources[] = {
+		FPGA::ModSrc::Disabled,
+		FPGA::ModSrc::Fixed,
+		FPGA::ModSrc::Sine,
+		FPGA::ModSrc::RampUp,
+		FPGA::ModSrc::RampDown,
+		FPGA::ModSrc::Triangle,
+		FPGA::ModSrc::Square,
+		FPGA::ModSrc::PRBS,
+		FPGA::ModSrc::FIFO,
+		FPGA::ModSrc::ExtI,
+		FPGA::ModSrc::ExtQ,
+};
 static const char *modSrcTypeNames[] = { "Disabled", "Fixed", "Sine", "Ramp up",
-		"Ramp down", "Triangle", "Square", "PRBS", "Stream", nullptr };
+		"Ramp down", "Triangle", "Square", "PRBS", "Stream", "External I", "External Q", nullptr};
 static int32_t modSourceFreq = 1000;
 static int32_t modSourceValue = 4095;
 
@@ -50,8 +67,8 @@ static Label *lCom, *lUnlock, *lUnlevel;
 
 extern SPI_HandleTypeDef hspi1;
 
-static_assert(sizeof(Protocol::RFToFront) == 32);
-static_assert(sizeof(Protocol::FrontToRF) == 32);
+static_assert(sizeof(Protocol::RFToFront) == 48);
+static_assert(sizeof(Protocol::FrontToRF) == 48);
 
 static bool ModEnabled = false;
 
@@ -87,7 +104,11 @@ static MenuEntry *mExtMaxLevel;
 static MenuEntry *mExtCutoff;
 static MenuEntry *mExtBeta;
 
+static MenuEntry *mSrcExtTop;
+static MenuEntry *mSrcExtBottom;
+
 static void ModulationChanged(void*, Widget*) {
+	modSourceType = modSources[modSourceIndex];
 	if (ModEnabled) {
 		lModulation->setText(modTypeNames[(uint8_t) modType]);
 		lModDescr1->setColor(COLOR_BLACK);
@@ -130,6 +151,8 @@ static void ModulationChanged(void*, Widget*) {
 	mModulation->RemoveEntry(mExtMaxVoltage);
 	mModulation->RemoveEntry(mExtCutoff);
 	mModulation->RemoveEntry(mExtBeta);
+	mModulation->RemoveEntry(mSrcExtBottom);
+	mModulation->RemoveEntry(mSrcExtTop);
 
 	char descr[50] = "";
 	char value[10];
@@ -183,12 +206,12 @@ static void ModulationChanged(void*, Widget*) {
 		break;
 	case Protocol::ModulationType::External:
 		updateFIR = true;
-		if (modSourceType != Protocol::SourceType::Disabled) {
+		if (modSourceType != FPGA::ModSrc::Disabled) {
 			Dialog::MessageBox("Warning", Font_Big, "External modulation\n"
 					"active. Modulation\n"
 					"source has been\n"
 					"disabled.", Dialog::MsgBox::OK);
-			modSourceType = Protocol::SourceType::Disabled;
+			modSourceType = FPGA::ModSrc::Disabled;
 		}
 		snprintf(descr, sizeof(descr), "External,   ,    ");
 		if (ExtCouplingAC) {
@@ -204,9 +227,9 @@ static void ModulationChanged(void*, Widget*) {
 		lModDescr1->setText(descr);
 		strcpy(descr, "Fullscale: ");
 		if (ExtImpedance50) {
-			Unit::StringFromValue(&descr[11], 7, ExtMaxLevel, Unit::dbm);
+			Unit::StringFromValue(&descr[11], 7, ExtModMaxLevel, Unit::dbm);
 		} else {
-			Unit::StringFromValue(&descr[11], 5, ExtMaxVoltage, Unit::Voltage);
+			Unit::StringFromValue(&descr[11], 5, ExtModMaxVoltage, Unit::Voltage);
 		}
 		lModDescr2->setText(descr);
 		mModulation->AddEntry(mExtCoupling, -1);
@@ -223,36 +246,46 @@ static void ModulationChanged(void*, Widget*) {
 		break;
 	}
 	switch (modSourceType) {
-	case Protocol::SourceType::Disabled:
+	case FPGA::ModSrc::Disabled:
 		if (ModEnabled && modType != Protocol::ModulationType::External) {
 			lModSrcDescr->setColor(COLOR_RED);
 		}
 		strncpy(descr, "Source disabled", sizeof(descr));
 		break;
-	case Protocol::SourceType::FixedValue:
+	case FPGA::ModSrc::Fixed:
 		mModulation->AddEntry(mModSrcValue, 1);
 		snprintf(descr, sizeof(descr), "Fixed value(%lu)", modSourceValue);
 		break;
-	case Protocol::SourceType::RampDown:
-	case Protocol::SourceType::RampUp:
-	case Protocol::SourceType::Sine:
-	case Protocol::SourceType::Square:
-	case Protocol::SourceType::Triangle:
+	case FPGA::ModSrc::RampDown:
+	case FPGA::ModSrc::RampUp:
+	case FPGA::ModSrc::Sine:
+	case FPGA::ModSrc::Square:
+	case FPGA::ModSrc::Triangle:
 		mModulation->AddEntry(mModSrcFreq, 1);
 		Unit::StringFromValue(value, 9, modSourceFreq, Unit::Frequency);
 		snprintf(descr, sizeof(descr), "%s@%s",
-				modSrcTypeNames[(int) modSourceType], value);
+				modSrcTypeNames[modSourceIndex], value);
 		break;
-	case Protocol::SourceType::PRBS:
-	case Protocol::SourceType::Stream:
+	case FPGA::ModSrc::PRBS:
+	case FPGA::ModSrc::FIFO:
 		mModulation->AddEntry(mModSrcFreq, 1);
 		Unit::StringFromValue(value, 9, modSourceFreq, Unit::SampleRate);
 		snprintf(descr, sizeof(descr), "%s@%s",
-				modSrcTypeNames[(int) modSourceType], value);
+				modSrcTypeNames[modSourceIndex], value);
+		break;
+	case FPGA::ModSrc::ExtI:
+	case FPGA::ModSrc::ExtQ:
+		mModulation->AddEntry(mExtCoupling, 1);
+		mModulation->AddEntry(mExtImpedance, 2);
+		mModulation->AddEntry(mSrcExtBottom, 3);
+		mModulation->AddEntry(mSrcExtTop, 4);
+		snprintf(descr, sizeof(descr), "%s, %s, %s",
+				modSourceType == FPGA::ModSrc::ExtI ? "Ext. I" : "Ext. Q",
+				ExtCouplingAC ? "AC" : "DC", ExtImpedance50 ? "50R" : "1M");
 		break;
 	}
 	lModSrcDescr->setText(descr);
-	if (modSourceType == Protocol::SourceType::Stream) {
+	if (modSourceType == FPGA::ModSrc::FIFO) {
 		lSrcBufSoft->SetVisible(true);
 		pSrcBufSoft->SetVisible(true);
 		lSrcBufHard->SetVisible(true);
@@ -301,8 +334,8 @@ void Generator::Init() {
 
 	mModulation = new Menu("Configure\nModulation", mainmenu->getSize());
 	mModulation->AddEntry(
-			new MenuChooser("Source", modSrcTypeNames,
-					(uint8_t*) &modSourceType, ModulationChanged, nullptr));
+			new MenuChooser("Source", modSrcTypeNames, &modSourceIndex,
+					ModulationChanged, nullptr));
 	mModulation->AddEntry(
 			new MenuChooser("Type", modTypeNames, (uint8_t*) &modType,
 					ModulationChanged));
@@ -312,6 +345,12 @@ void Generator::Init() {
 	mModSrcValue = new MenuValue<int32_t>("Src Value", &modSourceValue,
 			Unit::None, ModulationChanged, nullptr, 0,
 			HardwareLimits::MaxSrcValue);
+	mSrcExtBottom = new MenuValue<int32_t>("U low", &ExtSrcMinLevel,
+			Unit::Voltage, ModulationChanged, nullptr,
+			-HardwareLimits::MaxExtModInputVoltage, HardwareLimits::MaxExtModInputVoltage);
+	mSrcExtTop = new MenuValue<int32_t>("U high", &ExtSrcMaxLevel,
+			Unit::Voltage, ModulationChanged, nullptr,
+			-HardwareLimits::MaxExtModInputVoltage, HardwareLimits::MaxExtModInputVoltage);
 	mAMDepth = new MenuValue<int32_t>("Depth", &AMDepth, Unit::Percent,
 			ModulationChanged, nullptr, 0, Unit::maxPercent);
 	mFMDeviation = new MenuValue<int32_t>("Deviation", &FMDeviation,
@@ -333,13 +372,13 @@ void Generator::Init() {
 			ModulationChanged, nullptr, "1MR", "50R");
 	mExtCoupling = new MenuBool("Coupling", &ExtCouplingAC, ModulationChanged,
 			nullptr, "DC", "AC");
-	mExtMaxLevel = new MenuValue<int32_t>("Fullscale", &ExtMaxLevel, Unit::dbm,
+	mExtMaxLevel = new MenuValue<int32_t>("Fullscale", &ExtModMaxLevel, Unit::dbm,
 			ModulationChanged, nullptr, 0, 3000);
-	mExtMaxVoltage = new MenuValue<int32_t>("Fullscale", &ExtMaxVoltage,
+	mExtMaxVoltage = new MenuValue<int32_t>("Fullscale", &ExtModMaxVoltage,
 			Unit::Voltage, ModulationChanged, nullptr, 100000, 10000000);
-	mExtCutoff = new MenuValue<int32_t>("Bandwidth", &ExtCutoff,
+	mExtCutoff = new MenuValue<int32_t>("Bandwidth", &ExtModCutoff,
 			Unit::Frequency, callback_setTrue, &updateFIR, 500000, 10000000);
-	mExtBeta = new MenuValue<int32_t>("Beta\n(Kaiser)", &ExtBeta, Unit::Fixed3,
+	mExtBeta = new MenuValue<int32_t>("Beta\n(Kaiser)", &ExtModBeta, Unit::Fixed3,
 			callback_setTrue, &updateFIR, 1000, 16000);
 
 	mModulation->AddEntry(new MenuBack());
@@ -451,7 +490,7 @@ void Generator::Init() {
 	while (1) {
 		uint32_t start = HAL_GetTick();
 		constexpr uint32_t delay = 100;
-		if (ModEnabled && modSourceType == Protocol::SourceType::Stream) {
+		if (ModEnabled && modSourceType == FPGA::ModSrc::FIFO) {
 			uint8_t FPGAfree = Stream::LoadToFPGA(delay);
 			uint8_t fillState = (255 - FPGAfree) * 100 / 255;
 			pSrcBufHard->setState(fillState);
@@ -470,8 +509,8 @@ void Generator::Init() {
 		if (updateFIR) {
 			ModulationChanged(nullptr, nullptr);
 			if (modType == Protocol::ModulationType::External) {
-				FPGA::SetFIRLowpass(ExtCutoff, HardwareLimits::ExtSamplerate,
-						(float) ExtBeta / 1000);
+				FPGA::SetFIRLowpass(ExtModCutoff, HardwareLimits::ExtSamplerate,
+						(float) ExtModBeta / 1000);
 			} else {
 				float beta = (float) QAMRolloff / 1000;
 				FPGA::SetFIRRaisedCosine(QAMSPS, beta);
@@ -509,7 +548,6 @@ void Generator::Init() {
 		memset(&send, 0, sizeof(send));
 		memset(&recv, 0, sizeof(recv));
 		send.Status.UseIntRef = IntRef ? 1 : 0;
-		send.Status.ADCMax = 511;
 		if (RFon) {
 			send.frequency = frequency;
 			send.dbm = Calibration::CorrectAmplitude(frequency, dbm);
@@ -556,10 +594,10 @@ void Generator::Init() {
 				mod.External.ACCoupled = ExtCouplingAC;
 				mod.External.Impedance50R = ExtImpedance50;
 				if (!ExtImpedance50) {
-					mod.External.maxVoltage = ExtMaxVoltage;
+					mod.External.maxVoltage = ExtModMaxVoltage;
 				} else {
 					// convert from dbm to peak voltage
-					float power_mW = pow(10.0f, (float) ExtMaxLevel / 1000.0f);
+					float power_mW = pow(10.0f, (float) ExtModMaxLevel / 1000.0f);
 					float Veff = sqrt(power_mW / 1000 * 50);
 					float Vp = sqrt(2) * Veff;
 					mod.External.maxVoltage = Vp * 1000000;
@@ -567,10 +605,20 @@ void Generator::Init() {
 				break;
 			}
 			mod.source = modSourceType;
-			if (modSourceType == Protocol::SourceType::FixedValue) {
+			switch(modSourceType) {
+			case FPGA::ModSrc::Fixed:
 				mod.Fixed.value = modSourceValue;
-			} else {
+				break;
+			case FPGA::ModSrc::ExtI:
+			case FPGA::ModSrc::ExtQ:
+				mod.ExtSrc.maxVoltage = ExtSrcMaxLevel;
+				mod.ExtSrc.minVoltage = ExtSrcMinLevel;
+				mod.ExtSrc.ACCoupled = ExtCouplingAC;
+				mod.ExtSrc.Impedance50R = ExtImpedance50;
+				break;
+			default:
 				mod.Periodic.frequency = modSourceFreq;
+				break;
 			}
 			Protocol::SetupModulation(send, mod);
 

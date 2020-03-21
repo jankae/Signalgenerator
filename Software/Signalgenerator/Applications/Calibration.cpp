@@ -334,7 +334,7 @@ void Calibration::RunBalance() {
 		// QAM modulation with both I and Q parts set to zero
 		Protocol::Modulation mod;
 		mod.type = Protocol::ModulationType::QAM2;
-		mod.source = Protocol::SourceType::FixedValue;
+		mod.source = FPGA::ModSrc::Fixed;
 		mod.Fixed.value = 0;
 		mod.QAM.SamplesPerSymbol = 8;
 		mod.QAM.SymbolsPerSecond = 1000;
@@ -484,7 +484,7 @@ void Calibration::RunSkew() {
 		mod.type = Protocol::ModulationType::FM_USB;
 		mod.FM.deviation = 1000000;
 		mod.FM.phase_offset = 49152 + SkewPoints[step].skew;
-		mod.source = Protocol::SourceType::FixedValue;
+		mod.source = FPGA::ModSrc::Fixed;
 		mod.Fixed.value = 4095;
 
 		Protocol::SetupModulation(send, mod);
