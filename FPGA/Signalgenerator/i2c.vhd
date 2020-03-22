@@ -55,9 +55,13 @@ architecture Behavioral of i2c is
 	signal i2c_busy : std_logic;
 	signal generate_start : std_logic;
 	signal generate_stop : std_logic;
+	signal sda_out : std_logic;
+	signal sda_in : std_logic;
 begin
 
 	BUSY <= i2c_busy;
+	SDA <= '0' when sda_out = '0' else 'Z';
+	sda_in <= SDA;
 
 	process(CLK, RESET)
 	begin
@@ -68,7 +72,7 @@ begin
 				state <= 0;
 				i2c_busy <= '0';
 				SCL <= 'Z';
-				SDA <= 'Z';
+				sda_out <= '1';
 				ACK <= '0';
 				generate_start <= '0';
 				generate_stop <= '0';
@@ -81,11 +85,11 @@ begin
 					if(generate_start = '1') then
 						case(state) is
 							when 0 =>
-								SDA <= 'Z';
+								sda_out <= '1';
 							when 1 =>
 								SCL <= 'Z';
 							when 2 =>
-								SDA <= '0';
+								sda_out <= '0';
 							when 3 =>
 								SCL <= '0';
 							when others =>
@@ -97,11 +101,11 @@ begin
 					elsif(generate_stop = '1') then
 						case(state) is
 							when 0 =>
-								SDA <= '0';
+								sda_out <= '0';
 							when 1 =>
 								SCL <= 'Z';
 							when 2 =>
-								SDA <= 'Z';
+								sda_out <= '1';
 							when others =>
 								i2c_busy <= '0';
 								generate_stop <= '0';
@@ -114,9 +118,9 @@ begin
 							when 0 =>
 								SCL <= '0';
 								if(data_latched(8) = '0') then
-									SDA <= '0';
+									sda_out <= '0';
 								else
-									SDA <= 'Z';
+									sda_out <= '1';
 								end if;
 								data_latched <= data_latched(7 downto 0) & '1';
 							when 1|2 =>
@@ -125,10 +129,10 @@ begin
 								SCL <= '0';
 						end case;
 						if(state = 34) then
-							if(SDA = '0') then
-								ACK <= '1';
-							else
+							if(sda_in = '1') then
 								ACK <= '0';
+							else
+								ACK <= '1';
 							end if;
 						elsif(state = 36) then
 							i2c_busy <= '0';

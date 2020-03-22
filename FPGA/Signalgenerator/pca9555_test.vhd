@@ -40,7 +40,10 @@ ARCHITECTURE behavior OF pca9555_test IS
     -- Component Declaration for the Unit Under Test (UUT)
  
     COMPONENT PCA9555
-	 GENERIC(ADDRESS : std_logic_vector(6 downto 0));
+	 GENERIC(
+			CLK_FREQ : integer;
+			ADDRESS : std_logic_vector(6 downto 0)
+	 );
     PORT(
          CLK : IN  std_logic;
          RESET : IN  std_logic;
@@ -72,7 +75,8 @@ BEGIN
 	-- Instantiate the Unit Under Test (UUT)
    uut: PCA9555
 	GENERIC MAP (
-		ADDRESS => "0100000"
+		ADDRESS => "0100000",
+		CLK_FREQ => 100000000
 	)
 	PORT MAP (
           CLK => CLK,
@@ -100,8 +104,10 @@ BEGIN
 		RESET <= '1';
       wait for 100 ns;	
 		RESET <= '0';
+		SDA <= '1';
 
       wait for CLK_period*10;
+		
 
       -- insert stimulus here
 		wait until UPDATED='1';

@@ -54,7 +54,8 @@ void Protocol::SetupModulation(FrontToRF &data, Modulation mod) {
 			maxADCVoltage = mod.External.maxVoltage;
 		}
 		// calculate ADC offset value
-		int16_t offset = ExtADCOffset * HardwareLimits::MaxExtModADCValue
+		int16_t offset = (int32_t) (ExtADCOffset
+				* HardwareLimits::MaxExtModADCValue)
 				/ HardwareLimits::MaxExtModADCVoltage;
 		if (offset >= HardwareLimits::MaxExtModADCValue) {
 			offset = HardwareLimits::MaxExtModADCValue - 1;
